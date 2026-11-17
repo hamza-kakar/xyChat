@@ -11,6 +11,7 @@
     "vitest.browser-chromium.config.ts",
     "vitest.browser-webkit.config.ts",
     "scripts",
-    "tests/browser"
+    "tests/browser",
+    "tests/fixtures"
   ]
 }

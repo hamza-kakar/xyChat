@@ -202,7 +202,9 @@
       "location": null
     }
   ],
-  "participants": ["Sara"],
+  "participants": [
+    "Sara"
+  ],
   "warnings": [],
   "stats": {
     "lines": 5,

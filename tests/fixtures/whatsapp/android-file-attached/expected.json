@@ -104,7 +104,9 @@
       "location": null
     }
   ],
-  "participants": ["Ali Khan"],
+  "participants": [
+    "Ali Khan"
+  ],
   "warnings": [],
   "stats": {
     "lines": 3,

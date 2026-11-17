@@ -88,7 +88,10 @@
       "location": null
     }
   ],
-  "participants": ["احمد", "Sara"],
+  "participants": [
+    "احمد",
+    "Sara"
+  ],
   "warnings": [],
   "stats": {
     "lines": 2,
