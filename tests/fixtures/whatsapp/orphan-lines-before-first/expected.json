@@ -1,0 +1,68 @@
+{
+  "format": {
+    "platform": "ios",
+    "headerPatternId": "ios-bracket",
+    "dateOrder": "DMY",
+    "dateOrderSource": "unambiguous",
+    "clock": "24h",
+    "hasSeconds": false,
+    "confidence": 1,
+    "sampleMessages": [
+      {
+        "seq": 0,
+        "sourceLine": 3,
+        "timestamp": {
+          "year": 2026,
+          "month": 11,
+          "day": 17,
+          "hour": 21,
+          "minute": 19,
+          "second": 0
+        },
+        "author": "Ali Khan",
+        "kind": "text",
+        "body": "real message",
+        "isEdited": false,
+        "attachment": null,
+        "poll": null,
+        "location": null
+      }
+    ]
+  },
+  "messages": [
+    {
+      "seq": 0,
+      "sourceLine": 3,
+      "timestamp": {
+        "year": 2026,
+        "month": 11,
+        "day": 17,
+        "hour": 21,
+        "minute": 19,
+        "second": 0
+      },
+      "author": "Ali Khan",
+      "kind": "text",
+      "body": "real message",
+      "isEdited": false,
+      "attachment": null,
+      "poll": null,
+      "location": null
+    }
+  ],
+  "participants": ["Ali Khan"],
+  "warnings": [
+    {
+      "line": 3,
+      "code": "ORPHAN_LINES_BEFORE_FIRST_MESSAGE",
+      "detail": "2 lines"
+    }
+  ],
+  "stats": {
+    "lines": 3,
+    "messages": 1,
+    "system": 0,
+    "media": 0
+  },
+  "parserVersion": "1.0.0"
+}

@@ -1,0 +1,300 @@
+{
+  "format": {
+    "platform": "ios",
+    "headerPatternId": "ios-bracket",
+    "dateOrder": "DMY",
+    "dateOrderSource": "unambiguous",
+    "clock": "12h",
+    "hasSeconds": true,
+    "confidence": 1,
+    "sampleMessages": [
+      {
+        "seq": 0,
+        "sourceLine": 1,
+        "timestamp": {
+          "year": 2026,
+          "month": 11,
+          "day": 17,
+          "hour": 21,
+          "minute": 19,
+          "second": 0
+        },
+        "author": "Ali Khan",
+        "kind": "media",
+        "body": "",
+        "isEdited": false,
+        "attachment": {
+          "fileName": null,
+          "mediaType": "image",
+          "status": "omitted"
+        },
+        "poll": null,
+        "location": null
+      },
+      {
+        "seq": 1,
+        "sourceLine": 2,
+        "timestamp": {
+          "year": 2026,
+          "month": 11,
+          "day": 17,
+          "hour": 21,
+          "minute": 19,
+          "second": 30
+        },
+        "author": "Sara",
+        "kind": "media",
+        "body": "",
+        "isEdited": false,
+        "attachment": {
+          "fileName": null,
+          "mediaType": "video",
+          "status": "omitted"
+        },
+        "poll": null,
+        "location": null
+      },
+      {
+        "seq": 2,
+        "sourceLine": 3,
+        "timestamp": {
+          "year": 2026,
+          "month": 11,
+          "day": 17,
+          "hour": 21,
+          "minute": 20,
+          "second": 0
+        },
+        "author": "Sara",
+        "kind": "media",
+        "body": "",
+        "isEdited": false,
+        "attachment": {
+          "fileName": null,
+          "mediaType": "audio",
+          "status": "omitted"
+        },
+        "poll": null,
+        "location": null
+      },
+      {
+        "seq": 3,
+        "sourceLine": 4,
+        "timestamp": {
+          "year": 2026,
+          "month": 11,
+          "day": 17,
+          "hour": 21,
+          "minute": 20,
+          "second": 30
+        },
+        "author": "Sara",
+        "kind": "media",
+        "body": "",
+        "isEdited": false,
+        "attachment": {
+          "fileName": null,
+          "mediaType": "sticker",
+          "status": "omitted"
+        },
+        "poll": null,
+        "location": null
+      },
+      {
+        "seq": 4,
+        "sourceLine": 5,
+        "timestamp": {
+          "year": 2026,
+          "month": 11,
+          "day": 17,
+          "hour": 21,
+          "minute": 21,
+          "second": 0
+        },
+        "author": "Ali Khan",
+        "kind": "media",
+        "body": "",
+        "isEdited": false,
+        "attachment": {
+          "fileName": null,
+          "mediaType": "gif",
+          "status": "omitted"
+        },
+        "poll": null,
+        "location": null
+      },
+      {
+        "seq": 5,
+        "sourceLine": 6,
+        "timestamp": {
+          "year": 2026,
+          "month": 11,
+          "day": 17,
+          "hour": 21,
+          "minute": 21,
+          "second": 30
+        },
+        "author": "Sara",
+        "kind": "media",
+        "body": "",
+        "isEdited": false,
+        "attachment": {
+          "fileName": null,
+          "mediaType": "document",
+          "status": "omitted"
+        },
+        "poll": null,
+        "location": null
+      }
+    ]
+  },
+  "messages": [
+    {
+      "seq": 0,
+      "sourceLine": 1,
+      "timestamp": {
+        "year": 2026,
+        "month": 11,
+        "day": 17,
+        "hour": 21,
+        "minute": 19,
+        "second": 0
+      },
+      "author": "Ali Khan",
+      "kind": "media",
+      "body": "",
+      "isEdited": false,
+      "attachment": {
+        "fileName": null,
+        "mediaType": "image",
+        "status": "omitted"
+      },
+      "poll": null,
+      "location": null
+    },
+    {
+      "seq": 1,
+      "sourceLine": 2,
+      "timestamp": {
+        "year": 2026,
+        "month": 11,
+        "day": 17,
+        "hour": 21,
+        "minute": 19,
+        "second": 30
+      },
+      "author": "Sara",
+      "kind": "media",
+      "body": "",
+      "isEdited": false,
+      "attachment": {
+        "fileName": null,
+        "mediaType": "video",
+        "status": "omitted"
+      },
+      "poll": null,
+      "location": null
+    },
+    {
+      "seq": 2,
+      "sourceLine": 3,
+      "timestamp": {
+        "year": 2026,
+        "month": 11,
+        "day": 17,
+        "hour": 21,
+        "minute": 20,
+        "second": 0
+      },
+      "author": "Sara",
+      "kind": "media",
+      "body": "",
+      "isEdited": false,
+      "attachment": {
+        "fileName": null,
+        "mediaType": "audio",
+        "status": "omitted"
+      },
+      "poll": null,
+      "location": null
+    },
+    {
+      "seq": 3,
+      "sourceLine": 4,
+      "timestamp": {
+        "year": 2026,
+        "month": 11,
+        "day": 17,
+        "hour": 21,
+        "minute": 20,
+        "second": 30
+      },
+      "author": "Sara",
+      "kind": "media",
+      "body": "",
+      "isEdited": false,
+      "attachment": {
+        "fileName": null,
+        "mediaType": "sticker",
+        "status": "omitted"
+      },
+      "poll": null,
+      "location": null
+    },
+    {
+      "seq": 4,
+      "sourceLine": 5,
+      "timestamp": {
+        "year": 2026,
+        "month": 11,
+        "day": 17,
+        "hour": 21,
+        "minute": 21,
+        "second": 0
+      },
+      "author": "Ali Khan",
+      "kind": "media",
+      "body": "",
+      "isEdited": false,
+      "attachment": {
+        "fileName": null,
+        "mediaType": "gif",
+        "status": "omitted"
+      },
+      "poll": null,
+      "location": null
+    },
+    {
+      "seq": 5,
+      "sourceLine": 6,
+      "timestamp": {
+        "year": 2026,
+        "month": 11,
+        "day": 17,
+        "hour": 21,
+        "minute": 21,
+        "second": 30
+      },
+      "author": "Sara",
+      "kind": "media",
+      "body": "",
+      "isEdited": false,
+      "attachment": {
+        "fileName": null,
+        "mediaType": "document",
+        "status": "omitted"
+      },
+      "poll": null,
+      "location": null
+    }
+  ],
+  "participants": ["Ali Khan", "Sara"],
+  "warnings": [],
+  "stats": {
+    "lines": 6,
+    "messages": 6,
+    "system": 0,
+    "media": 6
+  },
+  "parserVersion": "1.0.0"
+}

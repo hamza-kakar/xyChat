@@ -1,0 +1,116 @@
+{
+  "format": {
+    "platform": "android",
+    "headerPatternId": "android-dash",
+    "dateOrder": "DMY",
+    "dateOrderSource": "unambiguous",
+    "clock": "24h",
+    "hasSeconds": false,
+    "confidence": 1,
+    "sampleMessages": [
+      {
+        "seq": 0,
+        "sourceLine": 1,
+        "timestamp": {
+          "year": 2026,
+          "month": 11,
+          "day": 17,
+          "hour": 21,
+          "minute": 26,
+          "second": 0
+        },
+        "author": "Sara",
+        "kind": "location",
+        "body": "",
+        "isEdited": false,
+        "attachment": null,
+        "poll": null,
+        "location": {
+          "lat": 24.8607,
+          "lng": 67.0011,
+          "url": "https://maps.google.com/?q=24.8607,67.0011"
+        }
+      },
+      {
+        "seq": 1,
+        "sourceLine": 2,
+        "timestamp": {
+          "year": 2026,
+          "month": 11,
+          "day": 17,
+          "hour": 21,
+          "minute": 27,
+          "second": 0
+        },
+        "author": "Ali Khan",
+        "kind": "location",
+        "body": "",
+        "isEdited": false,
+        "attachment": null,
+        "poll": null,
+        "location": {
+          "lat": -33.8688,
+          "lng": 151.2093,
+          "url": "https://maps.google.com/?q=-33.8688,151.2093"
+        }
+      }
+    ]
+  },
+  "messages": [
+    {
+      "seq": 0,
+      "sourceLine": 1,
+      "timestamp": {
+        "year": 2026,
+        "month": 11,
+        "day": 17,
+        "hour": 21,
+        "minute": 26,
+        "second": 0
+      },
+      "author": "Sara",
+      "kind": "location",
+      "body": "",
+      "isEdited": false,
+      "attachment": null,
+      "poll": null,
+      "location": {
+        "lat": 24.8607,
+        "lng": 67.0011,
+        "url": "https://maps.google.com/?q=24.8607,67.0011"
+      }
+    },
+    {
+      "seq": 1,
+      "sourceLine": 2,
+      "timestamp": {
+        "year": 2026,
+        "month": 11,
+        "day": 17,
+        "hour": 21,
+        "minute": 27,
+        "second": 0
+      },
+      "author": "Ali Khan",
+      "kind": "location",
+      "body": "",
+      "isEdited": false,
+      "attachment": null,
+      "poll": null,
+      "location": {
+        "lat": -33.8688,
+        "lng": 151.2093,
+        "url": "https://maps.google.com/?q=-33.8688,151.2093"
+      }
+    }
+  ],
+  "participants": ["Sara", "Ali Khan"],
+  "warnings": [],
+  "stats": {
+    "lines": 2,
+    "messages": 2,
+    "system": 0,
+    "media": 0
+  },
+  "parserVersion": "1.0.0"
+}

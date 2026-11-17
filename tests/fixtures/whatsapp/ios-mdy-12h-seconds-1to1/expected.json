@@ -1,0 +1,100 @@
+{
+  "format": {
+    "platform": "ios",
+    "headerPatternId": "ios-bracket",
+    "dateOrder": "MDY",
+    "dateOrderSource": "unambiguous",
+    "clock": "12h",
+    "hasSeconds": true,
+    "confidence": 1,
+    "sampleMessages": [
+      {
+        "seq": 0,
+        "sourceLine": 1,
+        "timestamp": {
+          "year": 2026,
+          "month": 11,
+          "day": 17,
+          "hour": 21,
+          "minute": 19,
+          "second": 3
+        },
+        "author": "Bob",
+        "kind": "text",
+        "body": "a",
+        "isEdited": false,
+        "attachment": null,
+        "poll": null,
+        "location": null
+      },
+      {
+        "seq": 1,
+        "sourceLine": 2,
+        "timestamp": {
+          "year": 2026,
+          "month": 11,
+          "day": 18,
+          "hour": 8,
+          "minute": 0,
+          "second": 0
+        },
+        "author": "Bob",
+        "kind": "text",
+        "body": "b",
+        "isEdited": false,
+        "attachment": null,
+        "poll": null,
+        "location": null
+      }
+    ]
+  },
+  "messages": [
+    {
+      "seq": 0,
+      "sourceLine": 1,
+      "timestamp": {
+        "year": 2026,
+        "month": 11,
+        "day": 17,
+        "hour": 21,
+        "minute": 19,
+        "second": 3
+      },
+      "author": "Bob",
+      "kind": "text",
+      "body": "a",
+      "isEdited": false,
+      "attachment": null,
+      "poll": null,
+      "location": null
+    },
+    {
+      "seq": 1,
+      "sourceLine": 2,
+      "timestamp": {
+        "year": 2026,
+        "month": 11,
+        "day": 18,
+        "hour": 8,
+        "minute": 0,
+        "second": 0
+      },
+      "author": "Bob",
+      "kind": "text",
+      "body": "b",
+      "isEdited": false,
+      "attachment": null,
+      "poll": null,
+      "location": null
+    }
+  ],
+  "participants": ["Bob"],
+  "warnings": [],
+  "stats": {
+    "lines": 2,
+    "messages": 2,
+    "system": 0,
+    "media": 0
+  },
+  "parserVersion": "1.0.0"
+}

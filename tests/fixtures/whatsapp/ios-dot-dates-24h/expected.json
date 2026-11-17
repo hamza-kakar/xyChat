@@ -1,0 +1,100 @@
+{
+  "format": {
+    "platform": "ios",
+    "headerPatternId": "ios-bracket",
+    "dateOrder": "DMY",
+    "dateOrderSource": "unambiguous",
+    "clock": "24h",
+    "hasSeconds": true,
+    "confidence": 1,
+    "sampleMessages": [
+      {
+        "seq": 0,
+        "sourceLine": 1,
+        "timestamp": {
+          "year": 2026,
+          "month": 11,
+          "day": 17,
+          "hour": 21,
+          "minute": 19,
+          "second": 0
+        },
+        "author": "Anna",
+        "kind": "text",
+        "body": "dotted date",
+        "isEdited": false,
+        "attachment": null,
+        "poll": null,
+        "location": null
+      },
+      {
+        "seq": 1,
+        "sourceLine": 2,
+        "timestamp": {
+          "year": 2026,
+          "month": 11,
+          "day": 18,
+          "hour": 9,
+          "minute": 0,
+          "second": 30
+        },
+        "author": "Anna",
+        "kind": "text",
+        "body": "another dotted",
+        "isEdited": false,
+        "attachment": null,
+        "poll": null,
+        "location": null
+      }
+    ]
+  },
+  "messages": [
+    {
+      "seq": 0,
+      "sourceLine": 1,
+      "timestamp": {
+        "year": 2026,
+        "month": 11,
+        "day": 17,
+        "hour": 21,
+        "minute": 19,
+        "second": 0
+      },
+      "author": "Anna",
+      "kind": "text",
+      "body": "dotted date",
+      "isEdited": false,
+      "attachment": null,
+      "poll": null,
+      "location": null
+    },
+    {
+      "seq": 1,
+      "sourceLine": 2,
+      "timestamp": {
+        "year": 2026,
+        "month": 11,
+        "day": 18,
+        "hour": 9,
+        "minute": 0,
+        "second": 30
+      },
+      "author": "Anna",
+      "kind": "text",
+      "body": "another dotted",
+      "isEdited": false,
+      "attachment": null,
+      "poll": null,
+      "location": null
+    }
+  ],
+  "participants": ["Anna"],
+  "warnings": [],
+  "stats": {
+    "lines": 2,
+    "messages": 2,
+    "system": 0,
+    "media": 0
+  },
+  "parserVersion": "1.0.0"
+}
