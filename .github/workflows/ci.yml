@@ -62,7 +62,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium webkit
       # Browser-mode storage/worker tests arrive with milestone M2.
-      - run: pnpm exec vitest run --config vitest.browser.config.ts --coverage --passWithNoTests
+      # (No --coverage: @vitest/coverage-v8 does not support browser mode.)
+      - run: pnpm exec vitest run --config vitest.browser.config.ts --passWithNoTests
 
   build:
     name: Build and size-limit

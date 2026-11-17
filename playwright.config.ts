@@ -9,7 +9,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: process.env['CI'] !== undefined,
   retries: process.env['CI'] !== undefined ? 1 : 0,
-  ...(process.env['CI'] !== undefined ? { workers: 2 } : {}),
+  // One worker on CI: parallel browser startup on 2-core runners makes
+  // first-time OPFS initialization transiently fail (UnknownError).
+  ...(process.env['CI'] !== undefined ? { workers: 1 } : {}),
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
   use: {
     baseURL: BASE_URL,
