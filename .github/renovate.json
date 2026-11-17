@@ -1,0 +1,24 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "rangeStrategy": "pin",
+  "schedule": ["every week"],
+  "packageRules": [
+    {
+      "description": "Group minor/patch updates weekly",
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "weekly minor & patch updates"
+    },
+    {
+      "description": "Major version bumps get their own PRs",
+      "matchUpdateTypes": ["major"],
+      "separateMajorMinor": true
+    },
+    {
+      "description": "GitHub Actions updates are grouped and digest-pinned",
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions",
+      "pinDigests": true
+    }
+  ]
+}
