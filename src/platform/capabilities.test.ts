@@ -55,4 +55,62 @@ describe('checkCapabilities', () => {
     });
     expect(report.failures).toEqual([{ id: 'opfs', reason: 'SecurityError' }]);
   });
+
+  it('does not retry probes that return false', async () => {
+    let attempts = 0;
+    const report = await checkCapabilities({
+      moduleWorkers: () => true,
+      webAssembly: () => true,
+      opfs: () => {
+        attempts += 1;
+        return false;
+      },
+      syncAccessHandle: () => true,
+      cryptoSubtle: () => true,
+      navigatorLocks: () => true,
+    });
+    expect(attempts).toBe(1);
+    expect(report.failures).toEqual([{ id: 'opfs', reason: 'unavailable' }]);
+  });
+});
+
+describe('checkCapabilities transient-error retry', () => {
+  it('retries thrown probe errors and succeeds on recovery', async () => {
+    let attempts = 0;
+    const report = await checkCapabilities({
+      moduleWorkers: () => true,
+      webAssembly: () => true,
+      opfs: () => {
+        attempts += 1;
+        if (attempts < 3) {
+          throw new Error('UnknownError: transient');
+        }
+        return true;
+      },
+      syncAccessHandle: () => true,
+      cryptoSubtle: () => true,
+      navigatorLocks: () => true,
+    });
+    expect(attempts).toBe(3);
+    expect(report.ok).toBe(true);
+    expect(report.failures).toEqual([]);
+  });
+
+  it('gives up after the retry budget and records the last error', async () => {
+    let attempts = 0;
+    const report = await checkCapabilities({
+      moduleWorkers: () => true,
+      webAssembly: () => true,
+      opfs: () => {
+        attempts += 1;
+        throw new Error('UnknownError: persistent');
+      },
+      syncAccessHandle: () => true,
+      cryptoSubtle: () => true,
+      navigatorLocks: () => true,
+    });
+    expect(attempts).toBe(3);
+    expect(report.ok).toBe(false);
+    expect(report.failures).toEqual([{ id: 'opfs', reason: 'UnknownError: persistent' }]);
+  });
 });

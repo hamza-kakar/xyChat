@@ -135,23 +135,76 @@ export type CapabilityProbes = Readonly<
 export const defaultProbes: CapabilityProbes = {
   moduleWorkers: async () => (await probeStorage()).moduleWorkers,
   webAssembly: probeWebAssembly,
+  // Errors are deliberately NOT caught here: storage init can fail
+  // transiently (UnknownError under memory pressure), and the retry in
+  // checkCapabilities absorbs that. A genuine absence rethrows every time.
   opfs: async () => {
-    try {
-      await navigator.storage.getDirectory();
-      return true;
-    } catch (error) {
-      return { id: 'opfs', reason: String(error) };
-    }
+    await navigator.storage.getDirectory();
+    return true;
   },
   syncAccessHandle: async () => {
     const outcome = await probeStorage();
-    return outcome.syncAccessHandle
-      ? true
-      : { id: 'syncAccessHandle', reason: outcome.syncAccessHandleReason };
+    if (outcome.syncAccessHandle) {
+      return true;
+    }
+    throw new Error(outcome.syncAccessHandleReason || 'sync access handle unavailable');
   },
   cryptoSubtle: probeCryptoSubtle,
   navigatorLocks: probeNavigatorLocks,
 };
+
+const MAX_PROBE_ATTEMPTS = 3;
+const PROBE_RETRY_DELAY_MS = 250;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function errorText(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return typeof error === 'string' ? error : 'probe failed';
+}
+
+/**
+/**
+ * Runs one capability probe with transient-error retry.
+ *
+ * Thrown probe errors are retried with a short backoff: browsers (notably
+ * under device memory pressure) can reject first-time storage initialization
+ * with transient errors, and a retry distinguishes that from real absence.
+ * Probes that return `false` or a structured failure are final — those mean
+ * the capability is genuinely not supported, not a transient hiccup.
+ *
+ * @returns The failure, or null when the probe passed.
+ */
+async function runCapabilityProbe(
+  id: CapabilityId,
+  probe: CapabilityProbes[CapabilityId],
+): Promise<CapabilityFailure | null> {
+  let lastError: unknown = null;
+  for (let attempt = 1; attempt <= MAX_PROBE_ATTEMPTS; attempt += 1) {
+    try {
+      const result = await probe();
+      if (result === false) {
+        return { id, reason: 'unavailable' };
+      }
+      if (typeof result !== 'boolean') {
+        return result;
+      }
+      return null;
+    } catch (error) {
+      lastError = error;
+      if (attempt < MAX_PROBE_ATTEMPTS) {
+        await delay(PROBE_RETRY_DELAY_MS * attempt);
+      }
+    }
+  }
+  return { id, reason: errorText(lastError).slice(0, 120) };
+}
 
 /**
  * Runs every capability probe, capturing the reason a probe failed so the
@@ -180,16 +233,9 @@ export async function checkCapabilities(
   ];
   const failures: CapabilityFailure[] = [];
   for (const id of ids) {
-    const probe = merged[id];
-    try {
-      const result = await probe();
-      if (result === false) {
-        failures.push({ id, reason: 'unavailable' });
-      } else if (typeof result === 'object') {
-        failures.push(result);
-      }
-    } catch (error) {
-      failures.push({ id, reason: String(error).slice(0, 120) });
+    const failure = await runCapabilityProbe(id, merged[id]);
+    if (failure !== null) {
+      failures.push(failure);
     }
   }
   return { ok: failures.length === 0, failures };
