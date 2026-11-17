@@ -3,7 +3,8 @@ import { defineConfig } from 'vitest/config';
 
 /**
  * Unit + component test projects (AGENTS.md §19.1). Browser-mode tests have
- * their own config (vitest.browser.config.ts).
+ * their own config (vitest.browser.config.ts). TZ coverage for `core` comes
+ * from the CI matrix (UTC, Asia/Karachi, America/Los_Angeles).
  */
 export default defineConfig({
   // Mirrors the define in vite.config.ts so modules depending on the build
@@ -21,6 +22,13 @@ export default defineConfig({
     projects: [
       {
         test: {
+          name: 'node',
+          environment: 'node',
+          include: ['src/core/**/*.test.ts'],
+        },
+      },
+      {
+        test: {
           name: 'component',
           environment: 'happy-dom',
           include: ['src/app/**/*.test.ts', 'src/app/**/*.test.tsx', 'src/platform/**/*.test.ts'],
@@ -32,9 +40,12 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
       reportsDirectory: 'coverage',
-      include: ['src/app/**', 'src/platform/**'],
+      include: ['src/core/**', 'src/app/**', 'src/platform/**'],
+      // src/core/model contains only type declarations (no runtime code).
+      exclude: ['src/core/model/**'],
       thresholds: {
-        // core (95/90) joins with M1; storage/workers thresholds with M2.
+        // AGENTS.md §19.4: core ≥ 95% lines, ≥ 90% branches.
+        'src/core/**': { lines: 95, branches: 90 },
         'src/app/**': { lines: 70 },
       },
     },
