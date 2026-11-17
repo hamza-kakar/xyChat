@@ -165,6 +165,13 @@ export default tseslint.config(
       ],
     },
   },
+  // Test data literals (dates, counts) are not magic numbers.
+  {
+    files: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    rules: {
+      '@typescript-eslint/no-magic-numbers': 'off',
+    },
+  },
 
   // ---- Logger sink may use console (dev builds only, §18.7) ----
   {
