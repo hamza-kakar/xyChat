@@ -1,0 +1,46 @@
+/*
+ * Design tokens (AGENTS.md §12.2). Original palette — not a copy of any
+ * existing product. Values are WCAG-AA checked against their pairing
+ * backgrounds by src/app/styles/tokens.test.ts; change pairs together.
+ */
+
+:root {
+  color-scheme: light dark;
+  /* Pairs that must satisfy WCAG AA are listed and verified in tokens.test.ts. */
+
+  --surface: #f6f7f8;
+  --surface-raised: #ffffff;
+  --bubble-in: #ffffff;
+  --bubble-out: #d7f0e3;
+  --text: #1a1d1f;
+  --text-on-bubble: #1a1d1f;
+  --text-muted: #5c676d;
+  --accent: #0e7c66;
+  --accent-contrast: #ffffff;
+  --danger: #b3261e;
+  --danger-contrast: #ffffff;
+  --focus-ring: #0b6e5c;
+  --border: #d5dadd;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --surface: #101413;
+  --surface-raised: #1a1f1e;
+  --bubble-in: #1f2524;
+  --bubble-out: #24523f;
+  --text: #e7ecea;
+  --text-on-bubble: #e7ecea;
+  --text-muted: #a3b0ac;
+  --accent: #3fbf9f;
+  --accent-contrast: #06231c;
+  --danger: #f2b8b5;
+  --danger-contrast: #370b08;
+  --focus-ring: #45d0af;
+  --border: #2c3432;
+}
