@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkCapabilities } from './capabilities';
+import { checkCapabilities, type CapabilityFailure } from './capabilities';
 
 describe('checkCapabilities', () => {
   it('reports ok when every probe passes', async () => {
@@ -25,7 +25,11 @@ describe('checkCapabilities', () => {
       navigatorLocks: () => false,
     });
     expect(report.ok).toBe(false);
-    expect(report.failures).toEqual(['opfs', 'syncAccessHandle', 'navigatorLocks']);
+    expect(report.failures).toEqual([
+      { id: 'opfs', reason: 'unavailable' },
+      { id: 'syncAccessHandle', reason: 'unavailable' },
+      { id: 'navigatorLocks', reason: 'unavailable' },
+    ]);
   });
 
   it('supports async probes and preserves capability order', async () => {
@@ -37,6 +41,18 @@ describe('checkCapabilities', () => {
       cryptoSubtle: () => true,
       navigatorLocks: () => true,
     });
-    expect(report.failures).toEqual(['moduleWorkers']);
+    expect(report.failures).toEqual([{ id: 'moduleWorkers', reason: 'unavailable' }]);
+  });
+
+  it('accepts structured failure reasons from probes', async () => {
+    const report = await checkCapabilities({
+      moduleWorkers: () => true,
+      webAssembly: () => true,
+      opfs: (): CapabilityFailure => ({ id: 'opfs', reason: 'SecurityError' }),
+      syncAccessHandle: () => true,
+      cryptoSubtle: () => true,
+      navigatorLocks: () => true,
+    });
+    expect(report.failures).toEqual([{ id: 'opfs', reason: 'SecurityError' }]);
   });
 });
