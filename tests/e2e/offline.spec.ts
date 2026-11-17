@@ -9,10 +9,27 @@ test('app reloads offline after the service worker activates', async ({ page, co
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1, name: 'waChatBack' })).toBeVisible();
 
-  await page.waitForFunction(async () => {
-    const registrations = await navigator.serviceWorker.getRegistrations();
-    return registrations.some((registration) => registration.active !== null);
-  });
+  // Wait not only for activation but for precaching to finish, so the reload
+  // is guaranteed to be served from Cache Storage.
+  await page.waitForFunction(
+    async () => {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      const active = registrations.some((registration) => registration.active !== null);
+      if (!active) {
+        return false;
+      }
+      const keys = await caches.keys();
+      for (const key of keys) {
+        const cache = await caches.open(key);
+        const requests = await cache.keys();
+        if (requests.length > 0) {
+          return true;
+        }
+      }
+      return false;
+    },
+    { timeout: 30_000 },
+  );
 
   await context.setOffline(true);
   await page.reload();

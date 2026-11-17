@@ -36,7 +36,9 @@ describe('CapabilityGate', () => {
   });
 
   it('renders the unsupported screen listing failures', async () => {
-    mockedCheck.mockResolvedValue(report({ ok: false, failures: ['webAssembly'] }));
+    mockedCheck.mockResolvedValue(
+      report({ ok: false, failures: [{ id: 'webAssembly', reason: 'unavailable' }] }),
+    );
     render(
       <CapabilityGate>
         <p>inner content</p>
