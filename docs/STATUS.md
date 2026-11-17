@@ -35,8 +35,13 @@ Progress tracker for waChatBack. Updated in every PR.
 
 ## Known issues
 
-- WebKit e2e cannot run on this dev machine (missing GTK/GStreamer system
-  libraries; no passwordless sudo). It runs in CI via
+- **WebKit e2e skips storage-dependent flows on Linux** — Playwright's
+  bundled WebKit build cannot open OPFS (upstream
+  microsoft/playwright#18235); the capability gate refuses boot there by
+  design. Chromium runs the full suite; real iOS Safari is verified on
+  device per `docs/TESTING.md`. See ADR 0007.
+- WebKit e2e also cannot run on this dev machine (missing GTK/GStreamer
+  system libraries; no passwordless sudo). It runs in CI via
   `playwright install-deps`. Local e2e verified on Chromium.
 - Lighthouse 12 removed the PWA category, so `installable-manifest` is no
   longer an available audit. Manifest installability is instead verified by
@@ -50,5 +55,7 @@ Progress tracker for waChatBack. Updated in every PR.
 - ADR 0001: TypeScript 5.9 instead of 7.x (typescript-eslint caps at <6.1.0);
   dev-only lint support dependencies added.
 - ADR 0006: pure-Node icon generator instead of a rasterizer dependency.
+- ADR 0007: WebKit e2e skips OPFS-dependent flows on Linux (upstream
+  Playwright limitation); Chromium covers the automated suite.
 - LHCI PWA assertion replaced with available audits (see known issues) —
   recorded here until an ADR is warranted.
