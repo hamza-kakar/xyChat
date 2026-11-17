@@ -1,11 +1,13 @@
 import { test, expect } from '@playwright/test';
 import { cspViolations, installCspListener } from './helpers/csp-violations';
+import { skipWithoutOpfs } from './helpers/skip-without-opfs';
 
 test.beforeEach(async ({ page }) => {
   await installCspListener(page);
 });
 
 test('app reloads offline after the service worker activates', async ({ page, context }) => {
+  await skipWithoutOpfs(page);
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1, name: 'waChatBack' })).toBeVisible();
 
