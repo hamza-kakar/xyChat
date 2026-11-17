@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   asAttachmentId,
   asBookmarkId,
@@ -13,6 +13,12 @@ import {
   newParticipantId,
   type ChatId,
 } from './ids';
+
+const originalCrypto = globalThis.crypto;
+
+afterEach(() => {
+  Object.defineProperty(globalThis, 'crypto', { value: originalCrypto });
+});
 
 describe('id constructors', () => {
   it('generates unique chat ids', () => {
@@ -33,6 +39,11 @@ describe('id constructors', () => {
 
   it('generates unique bookmark ids', () => {
     expect(newBookmarkId()).not.toBe(newBookmarkId());
+  });
+
+  it('throws a clear error when the runtime lacks crypto.randomUUID', () => {
+    Object.defineProperty(globalThis, 'crypto', { value: undefined });
+    expect(() => newChatId()).toThrow('crypto.randomUUID unavailable');
   });
 });
 

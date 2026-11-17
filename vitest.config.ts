@@ -41,8 +41,14 @@ export default defineConfig({
       reporter: ['text', 'html', 'lcov'],
       reportsDirectory: 'coverage',
       include: ['src/core/**', 'src/app/**', 'src/platform/**'],
-      // src/core/model contains only type declarations (no runtime code).
-      exclude: ['src/core/model/**'],
+      // Type-only modules and re-export barrels contain no runtime code
+      // (same convention as excluding *.d.ts).
+      exclude: [
+        'src/core/model/**',
+        'src/core/parser/pattern-id.ts',
+        'src/core/parser/locale/types.ts',
+        'src/core/**/index.ts',
+      ],
       thresholds: {
         // AGENTS.md §19.4: core ≥ 95% lines, ≥ 90% branches.
         'src/core/**': { lines: 95, branches: 90 },
