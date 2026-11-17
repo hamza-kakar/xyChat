@@ -97,6 +97,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium webkit
+      # WebKit's SQLite-backed OPFS fails with UnknownError when /dev/shm is
+      # small; enlarge it before the run.
+      - run: sudo mount -o remount,size=2G /dev/shm
       - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           name: dist
