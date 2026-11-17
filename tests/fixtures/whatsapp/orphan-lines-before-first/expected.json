@@ -50,7 +50,9 @@
       "location": null
     }
   ],
-  "participants": ["Ali Khan"],
+  "participants": [
+    "Ali Khan"
+  ],
   "warnings": [
     {
       "line": 3,
