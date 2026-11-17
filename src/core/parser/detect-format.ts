@@ -200,8 +200,11 @@ export function detectFormatInternal(
 ): Result<DetectedFormat, FormatError> {
   const normalized = normalizeNewlines(stripBom(text));
   const lines = normalized.split('\n');
-  const nonEmptyTotal = lines.filter((line) => line.trim() !== '').length;
-  const minMatches = nonEmptyTotal < MIN_MATCHES_LARGE ? MIN_MATCHES_SMALL : MIN_MATCHES_LARGE;
+  // All grammars see the same header-like candidates, so counting them once
+  // with any grammar yields the shared denominator (§8.4 step 2). Small
+  // files — fewer than 3 header-like lines — need only 1 match (§8.4 step 3).
+  const candidateCount = collectEvidence(lines, SAMPLE_LINE_COUNT, 'ios-bracket').headerLikeLines;
+  const minMatches = candidateCount < MIN_MATCHES_LARGE ? MIN_MATCHES_SMALL : MIN_MATCHES_LARGE;
 
   const candidates = (
     ['ios-bracket', 'ios-bracket-nocomma', 'android-dash', 'android-dash-nocomma'] as const

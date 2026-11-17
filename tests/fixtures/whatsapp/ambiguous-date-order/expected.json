@@ -1,0 +1,100 @@
+{
+  "format": {
+    "platform": "ios",
+    "headerPatternId": "ios-bracket",
+    "dateOrder": "DMY",
+    "dateOrderSource": "default",
+    "clock": "12h",
+    "hasSeconds": false,
+    "confidence": 1,
+    "sampleMessages": [
+      {
+        "seq": 0,
+        "sourceLine": 1,
+        "timestamp": {
+          "year": 2026,
+          "month": 4,
+          "day": 3,
+          "hour": 9,
+          "minute": 19,
+          "second": 0
+        },
+        "author": "Ali Khan",
+        "kind": "text",
+        "body": "april third (DMY) or march fourth (MDY)?",
+        "isEdited": false,
+        "attachment": null,
+        "poll": null,
+        "location": null
+      },
+      {
+        "seq": 1,
+        "sourceLine": 2,
+        "timestamp": {
+          "year": 2026,
+          "month": 5,
+          "day": 3,
+          "hour": 9,
+          "minute": 20,
+          "second": 0
+        },
+        "author": "Sara",
+        "kind": "text",
+        "body": "ambiguous indeed",
+        "isEdited": false,
+        "attachment": null,
+        "poll": null,
+        "location": null
+      }
+    ]
+  },
+  "messages": [
+    {
+      "seq": 0,
+      "sourceLine": 1,
+      "timestamp": {
+        "year": 2026,
+        "month": 4,
+        "day": 3,
+        "hour": 9,
+        "minute": 19,
+        "second": 0
+      },
+      "author": "Ali Khan",
+      "kind": "text",
+      "body": "april third (DMY) or march fourth (MDY)?",
+      "isEdited": false,
+      "attachment": null,
+      "poll": null,
+      "location": null
+    },
+    {
+      "seq": 1,
+      "sourceLine": 2,
+      "timestamp": {
+        "year": 2026,
+        "month": 5,
+        "day": 3,
+        "hour": 9,
+        "minute": 20,
+        "second": 0
+      },
+      "author": "Sara",
+      "kind": "text",
+      "body": "ambiguous indeed",
+      "isEdited": false,
+      "attachment": null,
+      "poll": null,
+      "location": null
+    }
+  ],
+  "participants": ["Ali Khan", "Sara"],
+  "warnings": [],
+  "stats": {
+    "lines": 2,
+    "messages": 2,
+    "system": 0,
+    "media": 0
+  },
+  "parserVersion": "1.0.0"
+}

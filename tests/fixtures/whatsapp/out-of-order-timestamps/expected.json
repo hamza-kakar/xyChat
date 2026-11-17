@@ -1,0 +1,106 @@
+{
+  "format": {
+    "platform": "ios",
+    "headerPatternId": "ios-bracket",
+    "dateOrder": "DMY",
+    "dateOrderSource": "unambiguous",
+    "clock": "24h",
+    "hasSeconds": false,
+    "confidence": 1,
+    "sampleMessages": [
+      {
+        "seq": 0,
+        "sourceLine": 1,
+        "timestamp": {
+          "year": 2026,
+          "month": 11,
+          "day": 17,
+          "hour": 21,
+          "minute": 30,
+          "second": 0
+        },
+        "author": "Ali Khan",
+        "kind": "text",
+        "body": "later first",
+        "isEdited": false,
+        "attachment": null,
+        "poll": null,
+        "location": null
+      },
+      {
+        "seq": 1,
+        "sourceLine": 2,
+        "timestamp": {
+          "year": 2026,
+          "month": 11,
+          "day": 17,
+          "hour": 21,
+          "minute": 10,
+          "second": 0
+        },
+        "author": "Sara",
+        "kind": "text",
+        "body": "earlier second",
+        "isEdited": false,
+        "attachment": null,
+        "poll": null,
+        "location": null
+      }
+    ]
+  },
+  "messages": [
+    {
+      "seq": 0,
+      "sourceLine": 1,
+      "timestamp": {
+        "year": 2026,
+        "month": 11,
+        "day": 17,
+        "hour": 21,
+        "minute": 30,
+        "second": 0
+      },
+      "author": "Ali Khan",
+      "kind": "text",
+      "body": "later first",
+      "isEdited": false,
+      "attachment": null,
+      "poll": null,
+      "location": null
+    },
+    {
+      "seq": 1,
+      "sourceLine": 2,
+      "timestamp": {
+        "year": 2026,
+        "month": 11,
+        "day": 17,
+        "hour": 21,
+        "minute": 10,
+        "second": 0
+      },
+      "author": "Sara",
+      "kind": "text",
+      "body": "earlier second",
+      "isEdited": false,
+      "attachment": null,
+      "poll": null,
+      "location": null
+    }
+  ],
+  "participants": ["Ali Khan", "Sara"],
+  "warnings": [
+    {
+      "line": 2,
+      "code": "OUT_OF_ORDER_TIMESTAMP",
+      "detail": "line 2"
+    }
+  ],
+  "stats": {
+    "lines": 2,
+    "messages": 2,
+    "system": 0,
+    "media": 0
+  },
+  "parserVersion": "1.0.0"
+}

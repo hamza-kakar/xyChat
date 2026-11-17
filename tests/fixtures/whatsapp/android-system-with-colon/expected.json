@@ -1,0 +1,100 @@
+{
+  "format": {
+    "platform": "android",
+    "headerPatternId": "android-dash",
+    "dateOrder": "DMY",
+    "dateOrderSource": "unambiguous",
+    "clock": "24h",
+    "hasSeconds": false,
+    "confidence": 1,
+    "sampleMessages": [
+      {
+        "seq": 0,
+        "sourceLine": 1,
+        "timestamp": {
+          "year": 2026,
+          "month": 11,
+          "day": 17,
+          "hour": 21,
+          "minute": 24,
+          "second": 0
+        },
+        "author": null,
+        "kind": "system",
+        "body": "Ali Khan changed the subject from \"Fam: old\" to \"Family\"",
+        "isEdited": false,
+        "attachment": null,
+        "poll": null,
+        "location": null
+      },
+      {
+        "seq": 1,
+        "sourceLine": 2,
+        "timestamp": {
+          "year": 2026,
+          "month": 11,
+          "day": 17,
+          "hour": 21,
+          "minute": 25,
+          "second": 0
+        },
+        "author": "Sara",
+        "kind": "text",
+        "body": "normal message",
+        "isEdited": false,
+        "attachment": null,
+        "poll": null,
+        "location": null
+      }
+    ]
+  },
+  "messages": [
+    {
+      "seq": 0,
+      "sourceLine": 1,
+      "timestamp": {
+        "year": 2026,
+        "month": 11,
+        "day": 17,
+        "hour": 21,
+        "minute": 24,
+        "second": 0
+      },
+      "author": null,
+      "kind": "system",
+      "body": "Ali Khan changed the subject from \"Fam: old\" to \"Family\"",
+      "isEdited": false,
+      "attachment": null,
+      "poll": null,
+      "location": null
+    },
+    {
+      "seq": 1,
+      "sourceLine": 2,
+      "timestamp": {
+        "year": 2026,
+        "month": 11,
+        "day": 17,
+        "hour": 21,
+        "minute": 25,
+        "second": 0
+      },
+      "author": "Sara",
+      "kind": "text",
+      "body": "normal message",
+      "isEdited": false,
+      "attachment": null,
+      "poll": null,
+      "location": null
+    }
+  ],
+  "participants": ["Sara"],
+  "warnings": [],
+  "stats": {
+    "lines": 2,
+    "messages": 2,
+    "system": 1,
+    "media": 0
+  },
+  "parserVersion": "1.0.0"
+}

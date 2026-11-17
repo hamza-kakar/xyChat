@@ -1,0 +1,108 @@
+{
+  "format": {
+    "platform": "android",
+    "headerPatternId": "android-dash",
+    "dateOrder": "DMY",
+    "dateOrderSource": "unambiguous",
+    "clock": "24h",
+    "hasSeconds": false,
+    "confidence": 1,
+    "sampleMessages": [
+      {
+        "seq": 0,
+        "sourceLine": 1,
+        "timestamp": {
+          "year": 2026,
+          "month": 11,
+          "day": 17,
+          "hour": 21,
+          "minute": 29,
+          "second": 0
+        },
+        "author": "Ali Khan",
+        "kind": "media",
+        "body": "",
+        "isEdited": false,
+        "attachment": {
+          "fileName": "IMG-20261117-WA0007.vcf",
+          "mediaType": "image",
+          "status": "referenced"
+        },
+        "poll": null,
+        "location": null
+      },
+      {
+        "seq": 1,
+        "sourceLine": 2,
+        "timestamp": {
+          "year": 2026,
+          "month": 11,
+          "day": 17,
+          "hour": 21,
+          "minute": 30,
+          "second": 0
+        },
+        "author": "Sara",
+        "kind": "text",
+        "body": "saved it",
+        "isEdited": false,
+        "attachment": null,
+        "poll": null,
+        "location": null
+      }
+    ]
+  },
+  "messages": [
+    {
+      "seq": 0,
+      "sourceLine": 1,
+      "timestamp": {
+        "year": 2026,
+        "month": 11,
+        "day": 17,
+        "hour": 21,
+        "minute": 29,
+        "second": 0
+      },
+      "author": "Ali Khan",
+      "kind": "media",
+      "body": "",
+      "isEdited": false,
+      "attachment": {
+        "fileName": "IMG-20261117-WA0007.vcf",
+        "mediaType": "image",
+        "status": "referenced"
+      },
+      "poll": null,
+      "location": null
+    },
+    {
+      "seq": 1,
+      "sourceLine": 2,
+      "timestamp": {
+        "year": 2026,
+        "month": 11,
+        "day": 17,
+        "hour": 21,
+        "minute": 30,
+        "second": 0
+      },
+      "author": "Sara",
+      "kind": "text",
+      "body": "saved it",
+      "isEdited": false,
+      "attachment": null,
+      "poll": null,
+      "location": null
+    }
+  ],
+  "participants": ["Ali Khan", "Sara"],
+  "warnings": [],
+  "stats": {
+    "lines": 2,
+    "messages": 2,
+    "system": 0,
+    "media": 1
+  },
+  "parserVersion": "1.0.0"
+}

@@ -1,0 +1,116 @@
+{
+  "format": {
+    "platform": "ios",
+    "headerPatternId": "ios-bracket",
+    "dateOrder": "DMY",
+    "dateOrderSource": "unambiguous",
+    "clock": "12h",
+    "hasSeconds": true,
+    "confidence": 1,
+    "sampleMessages": [
+      {
+        "seq": 0,
+        "sourceLine": 1,
+        "timestamp": {
+          "year": 2026,
+          "month": 11,
+          "day": 17,
+          "hour": 21,
+          "minute": 20,
+          "second": 1
+        },
+        "author": "Sara",
+        "kind": "media",
+        "body": "sunset at the beach",
+        "isEdited": false,
+        "attachment": {
+          "fileName": "00000012-PHOTO-2026-11-17-21-20-01.jpg",
+          "mediaType": "image",
+          "status": "referenced"
+        },
+        "poll": null,
+        "location": null
+      },
+      {
+        "seq": 1,
+        "sourceLine": 3,
+        "timestamp": {
+          "year": 2026,
+          "month": 11,
+          "day": 17,
+          "hour": 21,
+          "minute": 21,
+          "second": 0
+        },
+        "author": "Ali Khan",
+        "kind": "media",
+        "body": "",
+        "isEdited": false,
+        "attachment": {
+          "fileName": "00000013-VIDEO-2026-11-17-21-21-00.mp4",
+          "mediaType": "video",
+          "status": "referenced"
+        },
+        "poll": null,
+        "location": null
+      }
+    ]
+  },
+  "messages": [
+    {
+      "seq": 0,
+      "sourceLine": 1,
+      "timestamp": {
+        "year": 2026,
+        "month": 11,
+        "day": 17,
+        "hour": 21,
+        "minute": 20,
+        "second": 1
+      },
+      "author": "Sara",
+      "kind": "media",
+      "body": "sunset at the beach",
+      "isEdited": false,
+      "attachment": {
+        "fileName": "00000012-PHOTO-2026-11-17-21-20-01.jpg",
+        "mediaType": "image",
+        "status": "referenced"
+      },
+      "poll": null,
+      "location": null
+    },
+    {
+      "seq": 1,
+      "sourceLine": 3,
+      "timestamp": {
+        "year": 2026,
+        "month": 11,
+        "day": 17,
+        "hour": 21,
+        "minute": 21,
+        "second": 0
+      },
+      "author": "Ali Khan",
+      "kind": "media",
+      "body": "",
+      "isEdited": false,
+      "attachment": {
+        "fileName": "00000013-VIDEO-2026-11-17-21-21-00.mp4",
+        "mediaType": "video",
+        "status": "referenced"
+      },
+      "poll": null,
+      "location": null
+    }
+  ],
+  "participants": ["Sara", "Ali Khan"],
+  "warnings": [],
+  "stats": {
+    "lines": 3,
+    "messages": 2,
+    "system": 0,
+    "media": 2
+  },
+  "parserVersion": "1.0.0"
+}
