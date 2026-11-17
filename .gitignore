@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+
+# Test output
+coverage/
+playwright-report/
+test-results/
+.lighthouseci/
+lighthouse-reports/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Local env files (never commit)
+.env
+.env.*
+!.env.example
+
+# Editor/OS cruft
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# pnpm
+.pnpm-store/
+
+# Generated at build time, not committed
+public/icons/
