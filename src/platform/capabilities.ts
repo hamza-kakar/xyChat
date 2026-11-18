@@ -187,7 +187,7 @@ export const defaultProbes: CapabilityProbes = {
 };
 
 /** Worker probe timeout; a timeout is final (not retried) so boot stays bounded. */
-const WORKER_PROBE_TIMEOUT_MS = 5_000;
+export const WORKER_PROBE_TIMEOUT_MS = 5_000;
 /** Delay before the single retry of a failed (not timed-out) worker probe. */
 const WORKER_RETRY_DELAY_MS = 250;
 
