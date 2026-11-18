@@ -49,13 +49,6 @@ function stripLeadingMarks(text: string): string {
   return text.startsWith(LRM) || text.startsWith('\u200F') ? text.slice(1) : text;
 }
 
-/** True when the first line matches any of the anchored patterns. */
-function matchesAny(lines: readonly string[], patterns: readonly RegExp[]): boolean {
-  /* v8 ignore next -- callers always pass a non-empty lines array */
-  const first = lines[0] ?? '';
-  return patterns.some((re) => re.test(first));
-}
-
 /** Strips a trailing edited marker from the message's last line. */
 function stripEditedMarker(lines: readonly string[], locale: LocalePatterns): readonly string[] {
   /* v8 ignore next -- lines always has at least the first body line */
@@ -112,7 +105,6 @@ function systemBody(core: BodyCore): ClassifiedBody {
 function tryClassifySystem(
   firstLine: string,
   continuation: readonly string[],
-  locale: LocalePatterns,
 ): ClassifiedBody | null {
   // SYSTEM_ANY is the union of locale.system, so one test decides.
   if (SYSTEM_ANY.test(firstLine)) {
@@ -274,7 +266,7 @@ function tryPoll(core: BodyCore, locale: LocalePatterns): ClassifiedBody | null 
 }
 
 /** Tries the exact call bodies from the locale table. */
-function tryCall(core: BodyCore, locale: LocalePatterns): ClassifiedBody | null {
+function tryCall(core: BodyCore): ClassifiedBody | null {
   // CALLS_ANY is the union of locale.calls, so one test decides.
   if (CALLS_ANY.test(core.firstLine)) {
     return makeBody(core, 'call', {
@@ -301,7 +293,7 @@ function classifyKind(
     (c) => tryOmittedMedia(c, locale),
     (c) => tryLocation(c, locale),
     (c) => tryPoll(c, locale),
-    (c) => tryCall(c, locale),
+    (c) => tryCall(c),
   ];
   for (const step of chained) {
     const outcome = step(core);
@@ -332,7 +324,7 @@ export function classifyBody(
   const firstLine = cleanBodyLine(rest);
 
   // 1. System check on the whole REST, before any author split (§8.6.1).
-  const wholeRestSystem = tryClassifySystem(firstLine, continuationLines, locale);
+  const wholeRestSystem = tryClassifySystem(firstLine, continuationLines);
   if (wholeRestSystem !== null) {
     return wholeRestSystem;
   }
