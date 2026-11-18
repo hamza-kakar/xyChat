@@ -15,6 +15,8 @@ probe or for a documented, owner-reviewed deferral. This is that ADR.
 
 ## Decision
 
+> **Ratified by the owner (2026-11-18):** the M2 deferral stands.
+
 - Defer the FTS5-trigram probe to **M2**, where sqlite-wasm and the single
   database connection are introduced anyway.
 - In M2, the probe runs inside db.worker during boot: open an in-memory
