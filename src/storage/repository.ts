@@ -3,7 +3,7 @@
  * mirrors of the SQL schema rows, with branded IDs. `rows.ts` validates raw
  * SQLite rows into these types at every read.
  */
-import type { Brand } from '../ids';
+import type { Brand } from '../core/ids';
 import type {
   AttachmentStatus,
   ClockFormat,
@@ -11,8 +11,10 @@ import type {
   LocalDateTime,
   MediaType,
   MessageKind,
+  ParsedLocation,
+  ParsedPoll,
   SourcePlatform,
-} from './parser';
+} from '../core/model';
 
 /** A persisted chat. */
 export interface Chat {
@@ -187,11 +189,11 @@ export interface BookmarkView {
 }
 
 /** Clock/date-order/format shape needed by import confirmation (§12.8). */
-export type ExportFormat = {
+export interface ExportFormat {
   readonly platform: SourcePlatform;
   readonly dateOrder: DateOrder;
   readonly clock: ClockFormat;
-};
+}
 
 export type {
   AttachmentStatus,
@@ -200,5 +202,5 @@ export type {
   MediaType,
   MessageKind,
   SourcePlatform,
-} from './parser';
-export type { ParsedPoll as Poll, ParsedLocation as Location } from './parser';
+} from '../core/model';
+export type { ParsedPoll as Poll, ParsedLocation as Location } from '../core/model';

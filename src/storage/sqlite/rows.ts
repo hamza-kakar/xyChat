@@ -1,11 +1,28 @@
 /**
  * Row → domain validation (AGENTS.md §18.5, §10.5): every row read from
- * SQLite is parsed through a Valibot schema before it becomes a domain
- * object. Invalid rows are a bug in the writer, not undefined behavior.
+ * SQLite is parsed through a Valibot schema and mapped to its camelCase
+ * domain object. Invalid rows throw a descriptive error — they are writer
+ * bugs, not undefined behavior.
  */
 import * as v from 'valibot';
-import { asAttachmentId, asBookmarkId, asChatId, asImportId, asMessageId, asParticipantId } from '../../core/ids';
-import type { Attachment, Bookmark, Chat, ChatSummary, ImportRecord, Message, Participant } from '../repository';
+import {
+  asAttachmentId,
+  asBookmarkId,
+  asChatId,
+  asImportId,
+  asMessageId,
+  asParticipantId,
+} from '../../core/ids';
+import type {
+  Attachment,
+  Bookmark,
+  Chat,
+  ChatSummary,
+  ImportRecord,
+  Message,
+  Participant,
+} from '../repository';
+import type { ParsedLocation, ParsedPoll } from '../../core/model';
 import { parseLocalDateTime } from './local-date-time-parse';
 
 /** String branded as a chat id. */
@@ -22,7 +39,10 @@ const BookmarkIdSchema = v.pipe(v.string(), v.nonEmpty(), v.transform(asBookmark
 const ImportIdSchema = v.pipe(v.string(), v.nonEmpty(), v.transform(asImportId));
 
 /** 0/1 integer mapped to a boolean. */
-const BooleanInt = v.pipe(v.picklist([0, 1]), v.transform((n) => n === 1));
+const BooleanInt = v.pipe(
+  v.picklist([0, 1]),
+  v.transform((n) => n === 1),
+);
 
 /** ISO-8601 UTC timestamp string. */
 const IsoTimestamp = v.pipe(v.string(), v.regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/u));
@@ -34,20 +54,57 @@ const TsLocal = v.pipe(
   v.transform((raw) => parseLocalDateTime(raw)),
 );
 
-/** `extra_json` payload for poll messages. */
-export const PollSchema = v.object({
+/** Poll `extra_json` payload schema. */
+const PollSchema = v.object({
   question: v.string(),
   options: v.array(v.object({ text: v.string(), votes: v.nullable(v.number()) })),
 });
 
-/** `extra_json` payload for location messages. */
-export const LocationSchema = v.object({
+/** Location `extra_json` payload schema. */
+const LocationSchema = v.object({
   lat: v.number(),
   lng: v.number(),
   url: v.string(),
 });
 
-/** chats row schema. */
+/** Parses one row; throws a descriptive error on mismatch (writer bug). */
+function parseRow<T>(
+  schema: v.GenericSchema<unknown, T>,
+  row: Record<string, unknown>,
+  table: string,
+): T {
+  const result = v.safeParse(schema, row);
+  if (!result.success) {
+    const issues = result.issues
+      .map((i) => `${i.path?.map((p) => String(p.key)).join('.')}: ${i.message}`)
+      .join('; ');
+    const rowId = row['id'] ?? row['key'];
+    const rowIdText = typeof rowId === 'string' || typeof rowId === 'number' ? String(rowId) : '?';
+    throw new Error(`invalid ${table} row (id=${rowIdText}): ${issues}`);
+  }
+  return result.output;
+}
+
+/** Parses an `extra_json` payload for a poll or location message. */
+function extraFromJson(
+  raw: string | null,
+  kind: Message['kind'],
+): ParsedPoll | ParsedLocation | null {
+  if (raw === null) {
+    return null;
+  }
+  const parsed: unknown = JSON.parse(raw);
+  if (kind === 'poll') {
+    const poll = v.safeParse(PollSchema, parsed);
+    return poll.success ? poll.output : null;
+  }
+  if (kind === 'location') {
+    const loc = v.safeParse(LocationSchema, parsed);
+    return loc.success ? loc.output : null;
+  }
+  return null;
+}
+
 const ChatRow = v.object({
   id: ChatIdSchema,
   title: v.string(),
@@ -65,7 +122,29 @@ const ChatRow = v.object({
   updated_at: IsoTimestamp,
 });
 
-/** participants row schema. */
+type ChatParsed = v.InferOutput<typeof ChatRow>;
+
+/** Validates a chats row into a {@link Chat}. */
+export function chatFromRow(row: Record<string, unknown>): Chat {
+  const r: ChatParsed = parseRow(ChatRow, row, 'chats');
+  return {
+    id: r.id,
+    title: r.title,
+    isGroup: r.is_group,
+    selfParticipantId: r.self_participant_id,
+    sourcePlatform: r.source_platform,
+    dateOrder: r.date_order,
+    messageCount: r.message_count,
+    mediaCount: r.media_count,
+    mediaBytes: r.media_bytes,
+    firstTsKey: r.first_ts_key,
+    lastTsKey: r.last_ts_key,
+    lastMessagePreview: r.last_message_preview,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
 const ParticipantRow = v.object({
   id: ParticipantIdSchema,
   chat_id: ChatIdSchema,
@@ -74,7 +153,20 @@ const ParticipantRow = v.object({
   message_count: v.number(),
 });
 
-/** messages row schema (joined with author display name). */
+type ParticipantParsed = v.InferOutput<typeof ParticipantRow>;
+
+/** Validates a participants row into a {@link Participant}. */
+export function participantFromRow(row: Record<string, unknown>): Participant {
+  const r: ParticipantParsed = parseRow(ParticipantRow, row, 'participants');
+  return {
+    id: r.id,
+    chatId: r.chat_id,
+    displayName: r.display_name,
+    colorIndex: r.color_index,
+    messageCount: r.message_count,
+  };
+}
+
 const MessageRow = v.object({
   id: v.number(),
   chat_id: ChatIdSchema,
@@ -90,7 +182,29 @@ const MessageRow = v.object({
   extra_json: v.nullable(v.string()),
 });
 
-/** attachments row schema. */
+type MessageParsed = v.InferOutput<typeof MessageRow>;
+
+/** Validates a messages row into a {@link Message}. */
+export function messageFromRow(row: Record<string, unknown>): Message {
+  const r: MessageParsed = parseRow(MessageRow, row, 'messages');
+  const extra = extraFromJson(r.extra_json, r.kind);
+  return {
+    rowId: r.id,
+    chatId: r.chat_id,
+    fingerprint: r.fingerprint,
+    seq: r.seq,
+    tsLocal: r.ts_local,
+    tsKey: r.ts_key,
+    authorId: r.author_id,
+    authorName: r.author_name,
+    kind: r.kind,
+    body: r.body,
+    isEdited: r.is_edited,
+    poll: r.kind === 'poll' ? (extra as ParsedPoll | null) : null,
+    location: r.kind === 'location' ? (extra as ParsedLocation | null) : null,
+  };
+}
+
 const AttachmentRow = v.object({
   id: AttachmentIdSchema,
   message_id: v.number(),
@@ -117,7 +231,28 @@ const AttachmentRow = v.object({
   status: v.picklist(['present', 'missing', 'omitted']),
 });
 
-/** bookmarks row schema. */
+type AttachmentParsed = v.InferOutput<typeof AttachmentRow>;
+
+/** Validates an attachments row into an {@link Attachment}. */
+export function attachmentFromRow(row: Record<string, unknown>): Attachment {
+  const r: AttachmentParsed = parseRow(AttachmentRow, row, 'attachments');
+  return {
+    id: r.id,
+    messageId: r.message_id,
+    chatId: r.chat_id,
+    fileName: r.file_name,
+    mediaType: r.media_type,
+    mime: r.mime,
+    byteSize: r.byte_size,
+    opfsPath: r.opfs_path,
+    thumbPath: r.thumb_path,
+    width: r.width,
+    height: r.height,
+    durationMs: r.duration_ms,
+    status: r.status,
+  };
+}
+
 const BookmarkRow = v.object({
   id: BookmarkIdSchema,
   chat_id: ChatIdSchema,
@@ -126,7 +261,20 @@ const BookmarkRow = v.object({
   created_at: IsoTimestamp,
 });
 
-/** imports row schema. */
+type BookmarkParsed = v.InferOutput<typeof BookmarkRow>;
+
+/** Validates a bookmarks row into a {@link Bookmark}. */
+export function bookmarkFromRow(row: Record<string, unknown>): Bookmark {
+  const r: BookmarkParsed = parseRow(BookmarkRow, row, 'bookmarks');
+  return {
+    id: r.id,
+    chatId: r.chat_id,
+    messageId: r.message_id,
+    note: r.note,
+    createdAt: r.created_at,
+  };
+}
+
 const ImportRow = v.object({
   id: ImportIdSchema,
   chat_id: v.nullable(ChatIdSchema),
@@ -138,83 +286,23 @@ const ImportRow = v.object({
   finished_at: v.nullable(IsoTimestamp),
 });
 
-/** Parses one row; throws a descriptive error on mismatch (writer bug). */
-function parseRow<T>(schema: v.GenericSchema<unknown, T>, row: Record<string, unknown>, table: string): T {
-  const result = v.safeParse(schema, row);
-  if (!result.success) {
-    const issues = result.issues.map((i) => `${i.path?.map((p) => String(p.key)).join('.')}: ${i.message}`).join('; ');
-    throw new Error(`invalid ${table} row (id=${String(row['id'] ?? row['key'] ?? '?')}): ${issues}`);
-  }
-  return result.output;
-}
-
-/** Validates a chats row into a {@link Chat}. */
-export function chatFromRow(row: Record<string, unknown>): Chat {
-  return parseRow(ChatRow, row, 'chats');
-}
-
-/** Validates a participants row into a {@link Participant}. */
-export function participantFromRow(row: Record<string, unknown>): Participant {
-  return parseRow(ParticipantRow, row, 'participants');
-}
-
-/** Parses an `extra_json` payload for a message. */
-function extraFromJson(
-  raw: string | null,
-  kind: Message['kind'],
-): Message['poll'] & { readonly location?: Message['location'] } {
-  if (raw === null) {
-    return null;
-  }
-  const parsed: unknown = JSON.parse(raw);
-  if (kind === 'poll') {
-    const poll = v.safeParse(PollSchema, parsed);
-    return poll.success ? poll.output : null;
-  }
-  if (kind === 'location') {
-    const loc = v.safeParse(LocationSchema, parsed);
-    return loc.success ? loc.output : null;
-  }
-  return null;
-}
-
-/** Validates a messages row into a {@link Message}. */
-export function messageFromRow(row: Record<string, unknown>): Message {
-  const parsed = parseRow(MessageRow, row, 'messages');
-  const extra = extraFromJson(parsed.extra_json, parsed.kind);
-  return {
-    rowId: parsed.id,
-    chatId: parsed.chat_id,
-    fingerprint: parsed.fingerprint,
-    seq: parsed.seq,
-    tsLocal: parsed.ts_local,
-    tsKey: parsed.ts_key,
-    authorId: parsed.author_id,
-    authorName: parsed.author_name,
-    kind: parsed.kind,
-    body: parsed.body,
-    isEdited: parsed.is_edited,
-    poll: parsed.kind === 'poll' ? (extra ?? null) : null,
-    location: parsed.kind === 'location' ? (extra ?? null) : null,
-  };
-}
-
-/** Validates an attachments row into an {@link Attachment}. */
-export function attachmentFromRow(row: Record<string, unknown>): Attachment {
-  return parseRow(AttachmentRow, row, 'attachments');
-}
-
-/** Validates a bookmarks row into a {@link Bookmark}. */
-export function bookmarkFromRow(row: Record<string, unknown>): Bookmark {
-  return parseRow(BookmarkRow, row, 'bookmarks');
-}
+type ImportParsed = v.InferOutput<typeof ImportRow>;
 
 /** Validates an imports row into an {@link ImportRecord}. */
 export function importFromRow(row: Record<string, unknown>): ImportRecord {
-  return parseRow(ImportRow, row, 'imports');
+  const r: ImportParsed = parseRow(ImportRow, row, 'imports');
+  return {
+    id: r.id,
+    chatId: r.chat_id,
+    fileName: r.file_name,
+    fileBytes: r.file_bytes,
+    status: r.status,
+    parserVersion: r.parser_version,
+    startedAt: r.started_at,
+    finishedAt: r.finished_at,
+  };
 }
 
-/** Chat-list aggregate row (subset of chats). */
 const ChatSummaryRow = v.object({
   id: ChatIdSchema,
   title: v.string(),
@@ -224,7 +312,17 @@ const ChatSummaryRow = v.object({
   last_message_preview: v.nullable(v.string()),
 });
 
+type ChatSummaryParsed = v.InferOutput<typeof ChatSummaryRow>;
+
 /** Validates a chat-list row into a {@link ChatSummary}. */
 export function chatSummaryFromRow(row: Record<string, unknown>): ChatSummary {
-  return parseRow(ChatSummaryRow, row, 'chats(summary)');
+  const r: ChatSummaryParsed = parseRow(ChatSummaryRow, row, 'chats(summary)');
+  return {
+    id: r.id,
+    title: r.title,
+    isGroup: r.is_group,
+    messageCount: r.message_count,
+    lastTsKey: r.last_ts_key,
+    lastMessagePreview: r.last_message_preview,
+  };
 }
