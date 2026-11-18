@@ -47,8 +47,10 @@ export const en: LocalePatterns = {
     { re: /^\u200E?Contact card omitted$/iu, mediaType: 'contact-card' },
   ],
 
-  attachedIos: /\u200E?<attached: (.+?)>/u,
-  attachedAndroid: /^(.+?) \(file attached\)$/u,
+  // Anchored per §8.7 (all locale regexes are anchored) — also keeps the
+  // no-close adversarial case linear (§8.7: no catastrophic backtracking).
+  attachedIos: /^\u200E?<attached: ([^>]+)>/u,
+  attachedAndroid: /^(.+) \(file attached\)$/u,
 
   calls: [
     /^\u200E?Voice call$/u,
