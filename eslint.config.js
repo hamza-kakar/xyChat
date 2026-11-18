@@ -173,6 +173,14 @@ export default tseslint.config(
       '@typescript-eslint/no-magic-numbers': 'off',
     },
   },
+  // A constants file's VALUES are the named constants themselves — the rule
+  // targets magic numbers in logic, not constant definitions (§18.6).
+  {
+    files: ['src/core/limits.ts'],
+    rules: {
+      '@typescript-eslint/no-magic-numbers': 'off',
+    },
+  },
 
   // ---- Logger sink may use console (dev builds only, §18.7) ----
   {
