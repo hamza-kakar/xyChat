@@ -7,7 +7,13 @@ vi.mock('../../../platform/capabilities', () => ({
   checkCapabilities: vi.fn(),
 }));
 
+vi.mock('../../../client/db-client', () => ({
+  ensureDbReady: vi.fn(),
+}));
+import { ensureDbReady } from '../../../client/db-client';
+
 const mockedCheck = vi.mocked(checkCapabilities);
+const mockedReady = vi.mocked(ensureDbReady);
 
 function report(overrides: Partial<CapabilityReport>): CapabilityReport {
   return { ok: true, failures: [], ...overrides };
@@ -27,6 +33,7 @@ describe('CapabilityGate', () => {
 
   it('renders children when all capabilities pass', async () => {
     mockedCheck.mockResolvedValue(report({}));
+    mockedReady.mockResolvedValue(true);
     render(
       <CapabilityGate>
         <p>inner content</p>
