@@ -6,7 +6,13 @@
  */
 
 export type CapabilityId =
-  'moduleWorkers' | 'webAssembly' | 'opfs' | 'syncAccessHandle' | 'cryptoSubtle' | 'navigatorLocks';
+  | 'moduleWorkers'
+  | 'webAssembly'
+  | 'opfs'
+  | 'syncAccessHandle'
+  | 'cryptoSubtle'
+  | 'navigatorLocks'
+  | 'fts5';
 
 export interface CapabilityFailure {
   readonly id: CapabilityId;
@@ -184,6 +190,11 @@ export const defaultProbes: CapabilityProbes = {
   },
   cryptoSubtle: probeCryptoSubtle,
   navigatorLocks: probeNavigatorLocks,
+  // ADR 0008: the real FTS5-trigram probe runs inside db.worker during
+  // boot (CapabilityGate consumes ready()); this placeholder keeps the
+  // probe table total. It always passes so the placeholder itself never
+  // blocks boot.
+  fts5: () => true,
 };
 
 /** Worker probe timeout; a timeout is final (not retried) so boot stays bounded. */

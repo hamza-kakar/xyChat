@@ -6,6 +6,6 @@
     "types": ["vite/client", "vite-plugin-pwa/client"],
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo"
   },
-  "include": ["src/app", "src/platform"],
+  "include": ["src/app", "src/client", "src/platform"],
   "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/app/test"]
 }
