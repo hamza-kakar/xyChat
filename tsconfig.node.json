@@ -12,7 +12,6 @@
     "vitest.browser-webkit.config.ts",
     "scripts",
     "bench",
-    "tests/browser",
     "tests/fixtures"
   ]
 }

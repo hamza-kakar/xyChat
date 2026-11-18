@@ -83,12 +83,21 @@ describe('property: locale regexes stay fast (§19.2.7)', () => {
         re.test(input);
       }
     }
+    // Median of 7 runs: a single call can absorb a GC pause or scheduler
+    // hiccup under coverage instrumentation; the median reflects the regex's
+    // actual cost, which is what §19.2 budgets.
+    const RUNS_PER_REGEX = 7;
     for (const input of adversarial) {
       for (const re of regexes) {
-        const start = performance.now();
-        re.test(input);
-        const elapsed = performance.now() - start;
-        expect(elapsed).toBeLessThan(50);
+        const samples: number[] = [];
+        for (let i = 0; i < RUNS_PER_REGEX; i += 1) {
+          const start = performance.now();
+          re.test(input);
+          samples.push(performance.now() - start);
+        }
+        samples.sort((a, b) => a - b);
+        const median = samples[Math.floor(RUNS_PER_REGEX / 2)] ?? Number.POSITIVE_INFINITY;
+        expect(median).toBeLessThan(50);
       }
     }
   });
