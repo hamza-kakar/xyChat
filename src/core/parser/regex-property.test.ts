@@ -76,6 +76,13 @@ describe('property: locale regexes stay fast (§19.2.7)', () => {
       ...en.calls,
       en.pollOption,
     ];
+    // JIT warmup: discard one pass so the measured steady state reflects the
+    // regex cost, not the first-call compile (CI machines jitter).
+    for (const input of adversarial) {
+      for (const re of regexes) {
+        re.test(input);
+      }
+    }
     for (const input of adversarial) {
       for (const re of regexes) {
         const start = performance.now();
