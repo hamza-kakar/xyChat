@@ -30,13 +30,17 @@ const CSP_DIRECTIVES = [
   "manifest-src 'self'",
 ].join('; ');
 
-function injectCspMeta(): Plugin {
+function injectBuildMeta(): Plugin {
   return {
-    name: 'chatkeep:inject-csp-meta',
+    name: 'wachatback:inject-meta',
     apply: 'build',
     transformIndexHtml(html) {
       const metaTag = `<meta http-equiv="Content-Security-Policy" content="${CSP_DIRECTIVES}">`;
-      return html.replace('</title>', `</title>\n    ${metaTag}`);
+      // The app name lives in one constant (AGENTS.md header); index.html
+      // gets it injected at build time so a rename is a one-line change.
+      return html
+        .replace('</title>', `</title>\n    ${metaTag}`)
+        .replaceAll('{{APP_NAME}}', APP_NAME);
     },
   };
 }
@@ -51,11 +55,11 @@ async function readPackageVersion(): Promise<string> {
 export default defineConfig(async () => {
   const appVersion = await readPackageVersion();
   return {
-    base: process.env['VITE_BASE'] ?? '/waChatBack/',
+    base: process.env['VITE_BASE'] ?? '/wachatback/',
     plugins: [
       react(),
       tailwindcss(),
-      injectCspMeta(),
+      injectBuildMeta(),
       VitePWA({
         registerType: 'prompt',
         manifest: {
@@ -66,7 +70,7 @@ export default defineConfig(async () => {
           scope: './',
           display: 'standalone',
           background_color: '#f6f7f8',
-          theme_color: '#0e7c66',
+          theme_color: '#101413',
           icons: [
             {
               src: 'icons/icon-192.png',

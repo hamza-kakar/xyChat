@@ -47,7 +47,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm test -- --coverage
+      - run: pnpm test:coverage
 
   browser:
     name: Browser tests
@@ -62,8 +62,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium webkit
       # Browser-mode storage/worker tests arrive with milestone M2.
-      # (No --coverage: @vitest/coverage-v8 does not support browser mode.)
-      - run: pnpm exec vitest run --config vitest.browser.config.ts --passWithNoTests
+      # v8 coverage works in browser mode (Chromium); WebKit would need the
+      # istanbul provider — a decision recorded with M2's ADR.
+      - run: pnpm exec vitest run --config vitest.browser.config.ts --coverage --passWithNoTests
 
   build:
     name: Build and size-limit

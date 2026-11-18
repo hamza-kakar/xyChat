@@ -1,13 +1,31 @@
 /*
- * Design tokens (AGENTS.md §12.2). Original palette — not a copy of any
- * existing product. Values are WCAG-AA checked against their pairing
- * backgrounds by src/app/styles/tokens.test.ts; change pairs together.
+ * Design tokens (AGENTS.md §12.1–§12.2). Original palette — not a copy of
+ * any existing product. The dark palette is defined ONCE as `--dark-*`
+ * primitives and applied both by the system scheme (no explicit light
+ * override) and by the manual `[data-theme='dark']` override (M7).
+ * Values are WCAG-AA checked against their pairing backgrounds by
+ * src/app/styles/tokens.test.ts; change pairs together.
  */
 
 :root {
   color-scheme: light dark;
-  /* Pairs that must satisfy WCAG AA are listed and verified in tokens.test.ts. */
 
+  /* ---- Dark palette (single source of truth) ---- */
+  --dark-surface: #101413;
+  --dark-surface-raised: #1a1f1e;
+  --dark-bubble-in: #1f2524;
+  --dark-bubble-out: #24523f;
+  --dark-text: #e7ecea;
+  --dark-text-on-bubble: #e7ecea;
+  --dark-text-muted: #a3b0ac;
+  --dark-accent: #3fbf9f;
+  --dark-accent-contrast: #06231c;
+  --dark-danger: #f2b8b5;
+  --dark-danger-contrast: #370b08;
+  --dark-focus-ring: #45d0af;
+  --dark-border: #2c3432;
+
+  /* ---- Light palette (defaults) ---- */
   --surface: #f6f7f8;
   --surface-raised: #ffffff;
   --bubble-in: #ffffff;
@@ -23,24 +41,38 @@
   --border: #d5dadd;
 }
 
-:root[data-theme='light'] {
-  color-scheme: light;
+/* System dark scheme, unless the user forced light (M7 override). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --surface: var(--dark-surface);
+    --surface-raised: var(--dark-surface-raised);
+    --bubble-in: var(--dark-bubble-in);
+    --bubble-out: var(--dark-bubble-out);
+    --text: var(--dark-text);
+    --text-on-bubble: var(--dark-text-on-bubble);
+    --text-muted: var(--dark-text-muted);
+    --accent: var(--dark-accent);
+    --accent-contrast: var(--dark-accent-contrast);
+    --danger: var(--dark-danger);
+    --danger-contrast: var(--dark-danger-contrast);
+    --focus-ring: var(--dark-focus-ring);
+    --border: var(--dark-border);
+  }
 }
 
+/* Manual dark override (Settings → Appearance, milestone M7). */
 :root[data-theme='dark'] {
-  color-scheme: dark;
-
-  --surface: #101413;
-  --surface-raised: #1a1f1e;
-  --bubble-in: #1f2524;
-  --bubble-out: #24523f;
-  --text: #e7ecea;
-  --text-on-bubble: #e7ecea;
-  --text-muted: #a3b0ac;
-  --accent: #3fbf9f;
-  --accent-contrast: #06231c;
-  --danger: #f2b8b5;
-  --danger-contrast: #370b08;
-  --focus-ring: #45d0af;
-  --border: #2c3432;
+  --surface: var(--dark-surface);
+  --surface-raised: var(--dark-surface-raised);
+  --bubble-in: var(--dark-bubble-in);
+  --bubble-out: var(--dark-bubble-out);
+  --text: var(--dark-text);
+  --text-on-bubble: var(--dark-text-on-bubble);
+  --text-muted: var(--dark-text-muted);
+  --accent: var(--dark-accent);
+  --accent-contrast: var(--dark-accent-contrast);
+  --danger: var(--dark-danger);
+  --danger-contrast: var(--dark-danger-contrast);
+  --focus-ring: var(--dark-focus-ring);
+  --border: var(--dark-border);
 }

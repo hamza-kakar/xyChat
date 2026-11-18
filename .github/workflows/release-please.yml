@@ -8,8 +8,15 @@ permissions:
   contents: write
   pull-requests: write
 
+# NOTE: release PRs opened with the default GITHUB_TOKEN do not trigger CI.
+# Branch protection should therefore allow this workflow's own commits, or a
+# repository admin re-runs CI manually on release PRs (documented for M9).
 jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
       - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1
+        with:
+          release-type: node
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { UnsupportedScreen } from './unsupported-screen';
 
 describe('UnsupportedScreen', () => {
-  it('lists every failed capability in human terms', () => {
+  it('lists failed capabilities with localized names only', () => {
     render(
       <UnsupportedScreen
         failures={[
@@ -13,10 +13,11 @@ describe('UnsupportedScreen', () => {
       />,
     );
     expect(
-      screen.getByRole('heading', { name: 'This browser isn’t supported' }),
+      screen.getByRole('heading', { name: 'This browser isn\u2019t supported' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Private file storage (OPFS)')).toBeInTheDocument();
-    expect(screen.getByText(/SecurityError/)).toBeInTheDocument();
     expect(screen.getByText('Single-instance locking (navigator.locks)')).toBeInTheDocument();
+    // Raw engine error text is diagnostics, never UI copy (§12.1).
+    expect(screen.queryByText(/SecurityError/)).not.toBeInTheDocument();
   });
 });

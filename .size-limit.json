@@ -2,11 +2,13 @@
   {
     "name": "Main-thread initial JS (gzip)",
     "path": ["dist/assets/index-*.js"],
-    "limit": "170 KB"
+    "limit": "170 KB",
+    "gzip": true
   },
   {
     "name": "Initial CSS (gzip)",
     "path": ["dist/assets/index-*.css"],
-    "limit": "25 KB"
+    "limit": "25 KB",
+    "gzip": true
   }
 ]

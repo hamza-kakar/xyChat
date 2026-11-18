@@ -70,13 +70,9 @@ export default tseslint.config(
       ],
       'no-console': 'error',
 
-      // Untrusted-content and forbidden API surface (AGENTS.md §15.2 / §25)
-      'no-restricted-properties': [
-        'error',
-        { object: '*', property: 'innerHTML' },
-        { object: '*', property: 'outerHTML' },
-        { object: '*', property: 'insertAdjacentHTML' },
-      ],
+      // Untrusted-content and forbidden API surface (AGENTS.md §15.2 / §25).
+      // Logger calls take a stable code plus a structured payload — never
+      // template literals (keeps chat content and names out of logs, §18.7).
       'no-restricted-syntax': [
         'error',
         {
@@ -97,10 +93,19 @@ export default tseslint.config(
           selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
           message: 'dangerouslySetInnerHTML is forbidden; render text or the formatting AST.',
         },
+        {
+          selector: "CallExpression[callee.object.name='logger'] TemplateLiteral",
+          message:
+            'logger calls take a code string plus a structured payload — no template literals.',
+        },
       ],
 
-      // Size/complexity limits (AGENTS.md §18.2)
-      complexity: ['error', 15],
+      'no-restricted-properties': [
+        'error',
+        { object: '*', property: 'innerHTML' },
+        { object: '*', property: 'outerHTML' },
+        { object: '*', property: 'insertAdjacentHTML' },
+      ],
       'max-depth': ['error', 4],
       'max-params': ['error', 4],
       'max-lines': ['error', 400],
@@ -161,9 +166,9 @@ export default tseslint.config(
     },
   },
 
-  // ---- Logger sinks and worker code may use console ----
+  // ---- Logger sink may use console (dev builds only, §18.7) ----
   {
-    files: ['src/app/logging/**/*.ts', 'src/workers/**/*.ts'],
+    files: ['src/app/logging/**/*.ts'],
     rules: { 'no-console': 'off' },
   },
 

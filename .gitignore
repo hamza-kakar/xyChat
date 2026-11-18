@@ -34,5 +34,8 @@ Thumbs.db
 # pnpm
 .pnpm-store/
 
+# Coding-agent workspace config (not part of the product layout, §5)
+.zcode/
+
 # Generated at build time, not committed
 public/icons/
