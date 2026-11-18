@@ -4,9 +4,37 @@ Progress tracker for waChatBack. Updated in every PR.
 
 ## Current milestone
 
-**M1 — Core: parser, dates, fingerprint, merge, text-format** (complete; PR opened)
+**M2 — Storage and db.worker** (complete; PR opened)
 
-## What's done (M1)
+## What's done (M2)
+
+- sqlite-wasm + opfs-sahpool in db.worker behind a typed wrapper
+  (§10.1 pragmas: journal_mode=DELETE, foreign_keys, synchronous,
+  temp_store, cache_size); single-instance navigator.locks probe.
+- Migration framework (§10.3) + 0001_init schema (§10.2): STRICT tables,
+  FTS5 trigram external-content index with sync triggers, §11 indexes.
+- Rows validated at the boundary with Valibot (§18.5), snake→camel
+  mapping per table.
+- SqliteChatRepository: chat list/participants/windows (with
+  attachments), findSeqByDate, search (FTS phrase + LIKE fallback, keyset
+  paging, ±40 snippets), attachment + links pages, chat stats, self/
+  rename/delete, bookmarks, import history, storage usage.
+- Transactional import commit (§9.2 step 10): import row, chat
+  upsert/create, deterministic participant ids + §10.2 palette hash,
+  occurrence-counted fingerprints, duplicate skip, attachments, +1e9 seq
+  renumber trick, in-transaction aggregates.
+- db.worker over Comlink with typed DbApi; INTERNAL error serialization
+  (§18.7); boot rollback of in_progress imports (§9.3). db-client on the
+  main thread (§3.1 layer-clean, no app imports in workers).
+- FTS5-trigram probe wired into the boot gate via ready() (ADR 0008
+  ratified): db.worker open failure renders the unsupported screen.
+- OPFS media-store (§10.4): canonical paths, sync-access-handle writes,
+  async reads, recursive chat-media delete, orphan path listing.
+- Browser-mode contract tests (§10.5): open/migrate/FTS5, commit+read+
+  search+delete round-trip, duplicate-skip re-import merge — green on
+  Chromium; WebKit leg runs in CI (dev machine lacks system libs).
+
+## Previously (M1)
 
 - `core/` complete per §6–§8: Result, branded ids, domain model,
   LocalDateTime (UTC-trick formatting, canonical form, tsKey), the four
@@ -75,11 +103,22 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
 
 ## What's next
 
-- M2 — storage and db.worker (§10): sqlite-wasm + opfs-sahpool, migrations,
-  repository, Comlink API, browser-mode contract tests; the FTS5 boot probe
-  (ADR 0008) and the WebKit browser-coverage decision (ADR 0007) land here.
+- M3 — import pipeline (§9, §12.8): zip/txt reading with the archive
+  safety checks, confirmation handshake with DMY/MDY live preview,
+  thumbnails, cancellation + crash rollback wiring, import UI.
 
-## Verified results (M1)
+## Verified results (M2)
+
+- Unit (node): **250 passed**; browser contract tests **3 passed** on
+  Chromium against the real sqlite-wasm + OPFS stack (WebKit leg in CI per
+  ADR 0007; dev machine lacks system libs).
+- Storage coverage: covered via unit + contract suites; §19.4 storage
+  thresholds enforce on the browser-mode run in CI.
+- Perf: parse 100k unchanged **1.2–1.4 s** (budget 2.0 s); §19.2.7 regex
+  timing property caught and fixed an unanchored attachment pattern
+  (O(n²) → linear).
+
+## Previously verified (M1)
 
 - Unit (node): **250 passed** — parser, dates, merge, fingerprint,
   text-format, chat-meta, fixtures (58 assertions across 29 variants),
