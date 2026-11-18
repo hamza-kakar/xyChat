@@ -9,18 +9,18 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { basename, join, resolve } from 'node:path';
 import * as zipJs from '@zip.js/zip.js';
-import { detectFormat, parseChat, type DetectedFormat } from '../src/core/parser';
+import { detectFormat, parseChat } from '../src/core/parser';
 import { anonymizeExportText, collectAllNames, createAuthorMapper } from './anonymize-lib';
 
 /** Tiny valid placeholder bytes per media extension family. */
 const PLACEHOLDER_BY_EXTENSION: Readonly<Record<string, Uint8Array>> = {
   // 1x1 transparent PNG.
   png: new Uint8Array([
-    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48,
-    0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00,
-    0x00, 0x1f, 0x15, 0xc4, 0x89, 0x00, 0x00, 0x00, 0x0a, 0x49, 0x44, 0x41, 0x54, 0x78,
-    0x9c, 0x63, 0x00, 0x01, 0x00, 0x00, 0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00,
-    0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4,
+    0x89, 0x00, 0x00, 0x00, 0x0a, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00,
+    0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae,
+    0x42, 0x60, 0x82,
   ]),
 };
 
@@ -49,8 +49,12 @@ function anonymizeTextExport(text: string): { readonly text: string; readonly au
 }
 
 /** Anonymizes a zip export: chat text transformed, media replaced. */
-async function anonymizeZipExport(bytes: Uint8Array): Promise<{ readonly outBytes: Uint8Array; readonly authors: number; readonly mediaFiles: number }> {
-  const reader = new zipJs.ZipReader(new zipJs.BlobReader(new Blob([bytes.slice().buffer as ArrayBuffer])));
+async function anonymizeZipExport(bytes: Uint8Array): Promise<{
+  readonly outBytes: Uint8Array;
+  readonly authors: number;
+  readonly mediaFiles: number;
+}> {
+  const reader = new zipJs.ZipReader(new zipJs.BlobReader(new Blob([bytes.slice().buffer])));
   const writer = new zipJs.ZipWriter(new zipJs.BlobWriter('application/zip'));
   let chatText: string | null = null;
   let chatEntryName: string | null = null;
@@ -69,8 +73,8 @@ async function anonymizeZipExport(bytes: Uint8Array): Promise<{ readonly outByte
       chatText = await entry.getData(new zipJs.TextWriter());
       continue;
     }
-    const data = await entry.getData(new zipJs.Uint8ArrayWriter());
-    await writer.add(name, new zipJs.BlobReader(new Blob([placeholderFor(name).slice().buffer as ArrayBuffer])));
+    await entry.getData(new zipJs.Uint8ArrayWriter());
+    await writer.add(name, new zipJs.BlobReader(new Blob([placeholderFor(name).slice().buffer])));
     mediaFiles += 1;
   }
   await reader.close();
@@ -78,7 +82,10 @@ async function anonymizeZipExport(bytes: Uint8Array): Promise<{ readonly outByte
     throw new Error('no chat text entry found in archive');
   }
   const anonymized = anonymizeTextExport(chatText);
-  await writer.add(chatEntryName, new zipJs.BlobReader(new Blob([new TextEncoder().encode(anonymized.text)])));
+  await writer.add(
+    chatEntryName,
+    new zipJs.BlobReader(new Blob([new TextEncoder().encode(anonymized.text)])),
+  );
   const outBlob = await writer.close();
   const outBytes = new Uint8Array(await outBlob.arrayBuffer());
   return { outBytes, authors: anonymized.authors, mediaFiles };
@@ -101,7 +108,9 @@ async function main(): Promise<void> {
     const result = await anonymizeZipExport(new Uint8Array(bytes));
     const outPath = join(outDir, `anonymized-${inputName}`);
     writeFileSync(outPath, result.outBytes);
-    console.log(`wrote ${outPath} (${result.authors} authors, ${result.mediaFiles} media files replaced)`);
+    console.log(
+      `wrote ${outPath} (${result.authors} authors, ${result.mediaFiles} media files replaced)`,
+    );
     return;
   }
   if (inputName.endsWith('.txt')) {

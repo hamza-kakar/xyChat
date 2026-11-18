@@ -88,9 +88,7 @@
       "location": null
     }
   ],
-  "participants": [
-    "Bob"
-  ],
+  "participants": ["Bob"],
   "warnings": [],
   "stats": {
     "lines": 2,

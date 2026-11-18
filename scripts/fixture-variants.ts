@@ -40,12 +40,15 @@ export const ENCRYPTED =
 
 /** Variant definitions rendered by scripts/generate-fixtures.ts. */
 export const VARIANTS_PART1: readonly VariantSpec[] = [
-{
+  {
     id: 'ios-dmy-12h-seconds-group',
     description: 'iOS export, DMY dates, 12h clock with seconds, group chat with system events.',
     lines: [
       ios({ day: 17, h12: 9, m: 19, s: 3, meridiem: 'PM' }, 'Ali Khan: Hello there'),
-      ios({ day: 17, h12: 9, m: 19, s: 30, meridiem: 'PM' }, 'Sara: line one\nline two of the same message'),
+      ios(
+        { day: 17, h12: 9, m: 19, s: 30, meridiem: 'PM' },
+        'Sara: line one\nline two of the same message',
+      ),
       ios(
         { day: 17, h12: 9, m: 20, s: 1, meridiem: 'PM' },
         'Family Group: \u200EMessages and calls are end-to-end encrypted. No one outside of this chat, not even WhatsApp, can read or listen to them.',
@@ -59,7 +62,7 @@ export const VARIANTS_PART1: readonly VariantSpec[] = [
     expectedClock: '12h',
     expectedSeconds: true,
   },
-{
+  {
     id: 'ios-mdy-12h-seconds-1to1',
     description: 'iOS export, MDY dates (second component > 12), 1:1 chat.',
     lines: ['[11/17/2026, 9:19:03 PM] Bob: a', '[11/18/2026, 8:00:00 AM] Bob: b'],
@@ -70,7 +73,7 @@ export const VARIANTS_PART1: readonly VariantSpec[] = [
     expectedClock: '12h',
     expectedSeconds: true,
   },
-{
+  {
     id: 'ios-dmy-24h-seconds',
     description: 'iOS export with 24h clock and seconds.',
     lines: ['[17/11/2026, 21:19:03] Ali Khan: hi 24h', '[17/11/2026, 21:20:00] Sara: hello back'],
@@ -81,7 +84,7 @@ export const VARIANTS_PART1: readonly VariantSpec[] = [
     expectedClock: '24h',
     expectedSeconds: true,
   },
-{
+  {
     id: 'ios-dot-dates-24h',
     description: 'iOS export with dot-separated dates and a trailing year dot.',
     lines: ['[17.11.26., 21:19] Anna: dotted date', '[18.11.26., 09:00:30] Anna: another dotted'],
@@ -92,7 +95,7 @@ export const VARIANTS_PART1: readonly VariantSpec[] = [
     expectedClock: '24h',
     expectedSeconds: true,
   },
-{
+  {
     id: 'ios-narrow-nbsp-meridiem',
     description: 'iOS export where the meridiem is preceded by U+202F.',
     lines: [
@@ -106,13 +109,19 @@ export const VARIANTS_PART1: readonly VariantSpec[] = [
     expectedClock: '12h',
     expectedSeconds: true,
   },
-{
+  {
     id: 'ios-lrm-attachments',
     description: 'iOS export with LRM-prefixed attachment markers and captions.',
     lines: [
-      ios({ day: 17, h12: 9, m: 20, s: 1, meridiem: 'PM' }, 'Sara: \u200E<attached: 00000012-PHOTO-2026-11-17-21-20-01.jpg>'),
+      ios(
+        { day: 17, h12: 9, m: 20, s: 1, meridiem: 'PM' },
+        'Sara: \u200E<attached: 00000012-PHOTO-2026-11-17-21-20-01.jpg>',
+      ),
       'sunset at the beach',
-      ios({ day: 17, h12: 9, m: 21, s: 0, meridiem: 'PM' }, 'Ali Khan: \u200E<attached: 00000013-VIDEO-2026-11-17-21-21-00.mp4>'),
+      ios(
+        { day: 17, h12: 9, m: 21, s: 0, meridiem: 'PM' },
+        'Ali Khan: \u200E<attached: 00000013-VIDEO-2026-11-17-21-21-00.mp4>',
+      ),
     ],
     expectedPlatform: 'ios',
     expectedPatternId: 'ios-bracket',
@@ -121,11 +130,14 @@ export const VARIANTS_PART1: readonly VariantSpec[] = [
     expectedClock: '12h',
     expectedSeconds: true,
   },
-{
+  {
     id: 'ios-system-as-group-author',
     description: 'iOS export where system events are written under the group name.',
     lines: [
-      ios({ day: 17, h12: 9, m: 19, s: 0, meridiem: 'PM' }, 'Family Group: \u200EAli Khan added Sara'),
+      ios(
+        { day: 17, h12: 9, m: 19, s: 0, meridiem: 'PM' },
+        'Family Group: \u200EAli Khan added Sara',
+      ),
       ios({ day: 17, h12: 9, m: 19, s: 30, meridiem: 'PM' }, 'Sara: thanks for adding me'),
     ],
     expectedPlatform: 'ios',
@@ -135,7 +147,7 @@ export const VARIANTS_PART1: readonly VariantSpec[] = [
     expectedClock: '12h',
     expectedSeconds: true,
   },
-{
+  {
     id: 'ios-without-media-omitted',
     description: 'iOS export made without media: omitted placeholders of several kinds.',
     lines: [
@@ -153,7 +165,7 @@ export const VARIANTS_PART1: readonly VariantSpec[] = [
     expectedClock: '12h',
     expectedSeconds: true,
   },
-{
+  {
     id: 'android-dmy-24h-group',
     description: 'Android export, DMY 24h, group lifecycle events.',
     lines: [
@@ -170,7 +182,7 @@ export const VARIANTS_PART1: readonly VariantSpec[] = [
     expectedClock: '24h',
     expectedSeconds: false,
   },
-{
+  {
     id: 'android-mdy-12h-1to1',
     description: 'Android export, MDY 12h, 1:1 chat.',
     lines: ['11/17/26, 9:25 PM - Bob: US-style 12h', '11/17/26, 9:26 PM - Alice: replies quickly'],
@@ -181,7 +193,7 @@ export const VARIANTS_PART1: readonly VariantSpec[] = [
     expectedClock: '12h',
     expectedSeconds: false,
   },
-{
+  {
     id: 'android-file-attached',
     description: 'Android export with `FILENAME (file attached)` markers and captions.',
     lines: [
@@ -196,7 +208,7 @@ export const VARIANTS_PART1: readonly VariantSpec[] = [
     expectedClock: '24h',
     expectedSeconds: false,
   },
-{
+  {
     id: 'android-media-omitted',
     description: 'Android export made without media.',
     lines: [
@@ -210,7 +222,7 @@ export const VARIANTS_PART1: readonly VariantSpec[] = [
     expectedClock: '24h',
     expectedSeconds: false,
   },
-{
+  {
     id: 'android-system-with-colon',
     description: 'Android system event whose text contains a colon-space.',
     lines: [
@@ -224,7 +236,7 @@ export const VARIANTS_PART1: readonly VariantSpec[] = [
     expectedClock: '24h',
     expectedSeconds: false,
   },
-{
+  {
     id: 'ymd-dates',
     description: 'Year-first (YMD) dates detected from a 4-digit first component.',
     lines: ['2026-11-17, 21:19 - Ali Khan: iso-ish dates', '2026-11-18, 08:00 - Sara: next day'],
@@ -235,7 +247,7 @@ export const VARIANTS_PART1: readonly VariantSpec[] = [
     expectedClock: '24h',
     expectedSeconds: false,
   },
-{
+  {
     id: 'two-digit-years',
     description: 'Two-digit years map to 2000+yy.',
     lines: ['[17/11/26, 21:19] Ali Khan: two-digit year', '[17/11/26, 21:20] Sara: likewise'],

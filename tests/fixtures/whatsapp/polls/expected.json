@@ -112,10 +112,7 @@
       "location": null
     }
   ],
-  "participants": [
-    "Ali Khan",
-    "Sara"
-  ],
+  "participants": ["Ali Khan", "Sara"],
   "warnings": [],
   "stats": {
     "lines": 5,
