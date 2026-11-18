@@ -12,6 +12,7 @@ export default tseslint.config(
     ignores: [
       'dist/**',
       'coverage/**',
+      'coverage-browser-chromium/**',
       'node_modules/**',
       'playwright-report/**',
       'test-results/**',

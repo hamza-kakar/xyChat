@@ -1,0 +1,72 @@
+/**
+ * db.worker's Comlink API surface (AGENTS.md §3.2): the ONLY channel the
+ * main thread may use for storage. Every method is wrapped by the worker
+ * and serializes unexpected exceptions to `{ code: 'INTERNAL', id }`
+ * (§18.7). This interface is imported TYPE-ONLY by the client (§3.1).
+ */
+import type {
+  Attachment,
+  AttachmentPage,
+  BookmarkView,
+  Chat,
+  ChatStats,
+  ChatSummary,
+  ImportRecord,
+  LinkPage,
+  MessageWindow,
+  SearchPage,
+  SearchQuery,
+  StorageUsage,
+  Participant,
+} from '../storage/repository';
+import type { ImportCommitInput, ImportCommitResult } from '../storage/sqlite/import-commit';
+import type { ChatId, ParticipantId } from '../core/ids';
+
+/** A serialized worker error (§18.7). */
+export interface WorkerError {
+  readonly code: 'INTERNAL';
+  readonly message: string;
+}
+
+/** The db.worker API exposed over Comlink. */
+export interface DbApi {
+  /** Resolves once the DB is open, migrated and FTS5-verified. */
+  ready(): Promise<{ ok: true } | { ok: false; error: WorkerError }>;
+  listChats(): Promise<readonly ChatSummary[]>;
+  getChat(id: ChatId): Promise<Chat | null>;
+  getParticipants(chatId: ChatId): Promise<readonly Participant[]>;
+  getMessageWindow(q: {
+    chatId: ChatId;
+    anchorSeq: number;
+    before: number;
+    after: number;
+  }): Promise<MessageWindow>;
+  findSeqByDate(chatId: ChatId, tsKey: number): Promise<number | null>;
+  search(q: SearchQuery): Promise<SearchPage>;
+  listAttachments(q: {
+    chatId: ChatId;
+    types: readonly string[];
+    cursor: number | null;
+    limit: number;
+  }): Promise<AttachmentPage>;
+  listLinks(q: { chatId: ChatId; cursor: number | null; limit: number }): Promise<LinkPage>;
+  getChatStats(chatId: ChatId): Promise<ChatStats>;
+  setSelf(chatId: ChatId, participantId: ParticipantId | null): Promise<void>;
+  renameChat(chatId: ChatId, title: string): Promise<void>;
+  /** Deletes a chat; returns the OPFS paths to remove (§10.4). */
+  deleteChat(chatId: ChatId): Promise<readonly string[]>;
+  addBookmark(chatId: ChatId, messageId: number, note: string | null): Promise<string>;
+  updateBookmark(id: string, note: string | null): Promise<void>;
+  removeBookmark(id: string): Promise<void>;
+  listBookmarks(chatId: ChatId | null): Promise<readonly BookmarkView[]>;
+  listImports(chatId: ChatId): Promise<readonly ImportRecord[]>;
+  storageUsage(): Promise<StorageUsage>;
+  /** Transactional import commit (§9.2 step 10). */
+  commitImport(input: ImportCommitInput): Promise<ImportCommitResult>;
+  /** Registers OPFS paths against the import row for crash rollback. */
+  recordWrittenPaths(importId: string, paths: readonly string[]): Promise<void>;
+  /** Boot-time rollback of in_progress imports (§9.3); returns OPFS paths to delete. */
+  rollbackInProgressImports(): Promise<readonly string[]>;
+  /** Raw attachment rows for a message (media viewer, §12.5). */
+  getAttachmentsForMessage(messageId: number): Promise<readonly Attachment[]>;
+}
