@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { checkCapabilities, type CapabilityReport } from '../../../platform/capabilities';
+import { checkCapabilities, type CapabilityId } from '../../../platform/capabilities';
+import { ensureDbReady } from '../../../client/db-client';
 import { en } from '../../i18n/en';
 import { UnsupportedScreen } from './unsupported-screen';
 
@@ -7,28 +8,60 @@ interface CapabilityGateProps {
   readonly children: ReactNode;
 }
 
+interface GateFailure {
+  readonly id: CapabilityId;
+  readonly reason: string;
+}
+
 type GateState =
   | { readonly phase: 'checking' }
   | { readonly phase: 'ready' }
-  | { readonly phase: 'unsupported'; readonly report: CapabilityReport };
+  | { readonly phase: 'unsupported'; readonly failures: readonly GateFailure[] };
 
 /**
- * Runs the boot capability check (AGENTS.md §12.11) and renders children only
- * when every required browser feature is available.
+ * Boot gate (§12.11): first the browser capability probes, then the
+ * db.worker boot (migrations + the ratified FTS5-trigram probe, ADR 0008).
+ * Any failure renders the unsupported screen; never a blank page.
  */
 export function CapabilityGate({ children }: CapabilityGateProps) {
   const [state, setState] = useState<GateState>({ phase: 'checking' });
 
   useEffect(() => {
-    let cancelled = false;
-    void checkCapabilities().then((report) => {
-      if (cancelled) {
+    const state = { cancelled: false };
+    // Read through a function: TS property narrowing would otherwise see
+    // `cancelled` as always-false inside this closure (the cleanup assigns
+    // from a different closure).
+    const isCancelled = (): boolean => state.cancelled;
+    const run = async (): Promise<void> => {
+      const report = await checkCapabilities();
+      if (isCancelled()) {
         return;
       }
-      setState(report.ok ? { phase: 'ready' } : { phase: 'unsupported', report });
-    });
+      if (!report.ok) {
+        setState({ phase: 'unsupported', failures: [...report.failures] });
+        return;
+      }
+      const dbReady = await ensureDbReady();
+      if (isCancelled()) {
+        return;
+      }
+      if (!dbReady) {
+        setState({
+          phase: 'unsupported',
+          failures: [
+            {
+              id: 'fts5',
+              reason: 'database boot failed (unsupported engine or open error)',
+            },
+          ],
+        });
+        return;
+      }
+      setState({ phase: 'ready' });
+    };
+    void run();
     return () => {
-      cancelled = true;
+      state.cancelled = true;
     };
   }, []);
 
@@ -42,7 +75,7 @@ export function CapabilityGate({ children }: CapabilityGateProps) {
     );
   }
   if (state.phase === 'unsupported') {
-    return <UnsupportedScreen failures={state.report.failures} />;
+    return <UnsupportedScreen failures={state.failures} />;
   }
   return children;
 }
