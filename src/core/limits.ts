@@ -3,8 +3,6 @@
  * live in core so workers and the UI share them without layer violations
  * (§3.1). Exceeding any limit produces a typed error, never a crash.
  */
-/** Bytes per KiB. */
-const KIB = 1024;
 /** Bytes per MiB. */
 const MIB = 1024 * 1024;
 /** Bytes per GiB. */
