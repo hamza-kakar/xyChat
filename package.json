@@ -1,5 +1,5 @@
 {
-  "name": "wachatchback",
+  "name": "wachatback",
   "private": true,
   "version": "0.1.0",
   "description": "Private, offline viewer for exported WhatsApp chats. Your chats never leave this device.",
@@ -21,7 +21,7 @@
     "deps:check": "depcruise src --config .dependency-cruiser.cjs",
     "test": "vitest run",
     "test:browser": "vitest run --config vitest.browser.config.ts",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "vitest run --coverage && vitest run --config vitest.browser.config.ts --coverage --passWithNoTests",
     "test:e2e": "playwright test",
     "bench": "vitest bench",
     "size": "size-limit",

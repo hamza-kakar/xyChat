@@ -1,7 +1,8 @@
 /**
  * Browser capability detection (AGENTS.md §12.11). Every check must pass
  * before the app renders; a failure produces a full-screen explanation,
- * never a blank page.
+ * never a blank page. The FTS5-trigram check joins in M2, where the single
+ * SQLite connection lives (ADR 0008).
  */
 
 export type CapabilityId =
@@ -9,7 +10,10 @@ export type CapabilityId =
 
 export interface CapabilityFailure {
   readonly id: CapabilityId;
-  /** Browser-provided error text, or 'unavailable' when the probe is false. */
+  /**
+   * Engine-provided error text for diagnostics (logger / e2e snapshots).
+   * Never rendered to users directly; the UI shows localized names only.
+   */
   readonly reason: string;
 }
 
@@ -41,14 +45,14 @@ self.onmessage = async () => {
 };
 `;
 
-interface ProbeOutcome {
+interface StorageProbeOutcome {
   readonly moduleWorkers: boolean;
   readonly syncAccessHandle: boolean;
   readonly syncAccessHandleReason: string;
 }
 
-/** Spawns a module worker from a blob URL; resolves null if it cannot run. */
-async function probeWorker(): Promise<WorkerReply | null> {
+/** Worker reply, or null when it never answered within the timeout. */
+async function askProbeWorker(): Promise<WorkerReply | null> {
   const blob = new Blob([PROBE_WORKER_SOURCE], { type: 'text/javascript' });
   const url = URL.createObjectURL(blob);
   try {
@@ -56,7 +60,7 @@ async function probeWorker(): Promise<WorkerReply | null> {
     const outcome = await new Promise<WorkerReply | null>((resolve) => {
       const timer = setTimeout(() => {
         resolve(null);
-      }, 10_000);
+      }, WORKER_PROBE_TIMEOUT_MS);
       worker.onmessage = (event: MessageEvent<unknown>) => {
         clearTimeout(timer);
         const reply = event.data as Partial<WorkerReply> | null;
@@ -80,23 +84,44 @@ async function probeWorker(): Promise<WorkerReply | null> {
   }
 }
 
-async function probeStorage(): Promise<ProbeOutcome> {
-  const reply = await probeWorker();
-  if (reply === null) {
-    // The worker could not be constructed or never answered: both probes fail.
+/**
+ * Outcome of the ONE storage-probe worker spawned per app load; both the
+ * moduleWorkers and syncAccessHandle probes read this cached result instead
+ * of spawning a second worker (review M0 round 1, minor 16).
+ */
+let cachedStorageProbe: Promise<StorageProbeOutcome> | null = null;
+
+function storageProbe(): Promise<StorageProbeOutcome> {
+  cachedStorageProbe ??= (async (): Promise<StorageProbeOutcome> => {
+    const first = await askProbeWorker();
+    if (first === null) {
+      // Timeout: final (a timeout is not transient) — keeps boot bounded.
+      return {
+        moduleWorkers: false,
+        syncAccessHandle: false,
+        syncAccessHandleReason: 'worker did not respond within the probe timeout',
+      };
+    }
+    if (first.ok) {
+      return { moduleWorkers: true, syncAccessHandle: true, syncAccessHandleReason: '' };
+    }
+    // First-run storage initialization can fail transiently (fresh profile);
+    // retry once with a fresh worker, then settle on the second answer.
+    const second = await delay(WORKER_RETRY_DELAY_MS).then(() => askProbeWorker());
+    if (second === null) {
+      return {
+        moduleWorkers: false,
+        syncAccessHandle: false,
+        syncAccessHandleReason: 'worker did not respond within the probe timeout',
+      };
+    }
     return {
-      moduleWorkers: false,
-      syncAccessHandle: false,
-      syncAccessHandleReason: 'worker did not respond within 10s',
+      moduleWorkers: true,
+      syncAccessHandle: second.ok,
+      syncAccessHandleReason: second.error,
     };
-  }
-  // A reply proves a module worker constructed, started and posted a message;
-  // its payload reports the OPFS sync-access-handle dance.
-  return {
-    moduleWorkers: true,
-    syncAccessHandle: reply.ok,
-    syncAccessHandleReason: reply.error,
-  };
+  })();
+  return cachedStorageProbe;
 }
 
 /** Minimal valid WASM module (empty function) — used to validate WebAssembly. */
@@ -131,29 +156,44 @@ export type CapabilityProbes = Readonly<
   Record<CapabilityId, () => ProbeResult | Promise<ProbeResult>>
 >;
 
-/** The real browser probes, exposed for tests to substitute. */
+/**
+ * The real browser probes, exposed for tests to substitute. Worker-side
+ * failures surface as structured results (final, no retry — a worker that
+ * answered 'fail' answered deterministically); only a *thrown* main-thread
+ * OPFS error is retried, because engines under memory pressure report
+ * transient UnknownError there.
+ */
 export const defaultProbes: CapabilityProbes = {
-  moduleWorkers: async () => (await probeStorage()).moduleWorkers,
+  moduleWorkers: async () => {
+    const outcome = await storageProbe();
+    return outcome.moduleWorkers
+      ? true
+      : { id: 'moduleWorkers', reason: 'module worker construction failed' };
+  },
   webAssembly: probeWebAssembly,
-  // Errors are deliberately NOT caught here: storage init can fail
-  // transiently (UnknownError under memory pressure), and the retry in
-  // checkCapabilities absorbs that. A genuine absence rethrows every time.
   opfs: async () => {
+    // Thrown errors propagate to the retry loop in checkCapabilities.
     await navigator.storage.getDirectory();
     return true;
   },
   syncAccessHandle: async () => {
-    const outcome = await probeStorage();
-    if (outcome.syncAccessHandle) {
-      return true;
-    }
-    throw new Error(outcome.syncAccessHandleReason || 'sync access handle unavailable');
+    const outcome = await storageProbe();
+    return outcome.syncAccessHandle
+      ? true
+      : { id: 'syncAccessHandle', reason: outcome.syncAccessHandleReason };
   },
   cryptoSubtle: probeCryptoSubtle,
   navigatorLocks: probeNavigatorLocks,
 };
 
+/** Worker probe timeout; a timeout is final (not retried) so boot stays bounded. */
+const WORKER_PROBE_TIMEOUT_MS = 5_000;
+/** Delay before the single retry of a failed (not timed-out) worker probe. */
+const WORKER_RETRY_DELAY_MS = 250;
+
+/** Cap on retry attempts for thrown (transient) probe errors. */
 const MAX_PROBE_ATTEMPTS = 3;
+/** Linear backoff base for retries. */
 const PROBE_RETRY_DELAY_MS = 250;
 
 function delay(ms: number): Promise<void> {
@@ -170,14 +210,13 @@ function errorText(error: unknown): string {
 }
 
 /**
-/**
  * Runs one capability probe with transient-error retry.
  *
- * Thrown probe errors are retried with a short backoff: browsers (notably
- * under device memory pressure) can reject first-time storage initialization
- * with transient errors, and a retry distinguishes that from real absence.
- * Probes that return `false` or a structured failure are final — those mean
- * the capability is genuinely not supported, not a transient hiccup.
+ * Thrown probe errors are retried with a short backoff: engines can reject
+ * first-time storage initialization with transient errors. Probes returning
+ * `false` or a structured failure are final — those mean the capability is
+ * genuinely not supported. The whole boot check stays bounded: the worker
+ * probe is never retried (a timeout is not transient).
  *
  * @returns The failure, or null when the probe passed.
  */
@@ -206,10 +245,19 @@ async function runCapabilityProbe(
   return { id, reason: errorText(lastError).slice(0, 120) };
 }
 
+const CAPABILITY_ORDER: readonly CapabilityId[] = [
+  'moduleWorkers',
+  'webAssembly',
+  'opfs',
+  'syncAccessHandle',
+  'cryptoSubtle',
+  'navigatorLocks',
+];
+
 /**
- * Runs every capability probe, capturing the reason a probe failed so the
- * unsupported screen (and e2e diagnostics) can show it. Reasons come from
- * the browser engine itself and never contain user content.
+ * Runs every capability probe, capturing the reason a probe failed for
+ * diagnostics. Reasons come from the browser engine itself and never contain
+ * user content.
  *
  * @param probes Override map for tests; unspecified capabilities use the real
  *   browser probes.
@@ -222,17 +270,9 @@ async function runCapabilityProbe(
 export async function checkCapabilities(
   probes: Partial<CapabilityProbes> = {},
 ): Promise<CapabilityReport> {
-  const merged = { ...defaultProbes, ...probes };
-  const ids: readonly CapabilityId[] = [
-    'moduleWorkers',
-    'webAssembly',
-    'opfs',
-    'syncAccessHandle',
-    'cryptoSubtle',
-    'navigatorLocks',
-  ];
+  const merged: CapabilityProbes = { ...defaultProbes, ...probes };
   const failures: CapabilityFailure[] = [];
-  for (const id of ids) {
+  for (const id of CAPABILITY_ORDER) {
     const failure = await runCapabilityProbe(id, merged[id]);
     if (failure !== null) {
       failures.push(failure);

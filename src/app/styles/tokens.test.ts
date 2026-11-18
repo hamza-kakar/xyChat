@@ -1,8 +1,9 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-
 // Vitest stubs .css imports (even with ?raw) and rewrites import.meta.url to
 // a non-file scheme, so the source is read relative to the project root.
+import { readFileSync } from 'node:fs';
+import { formatString } from '../i18n/format-string';
+
 const tokensCss = readFileSync('src/app/styles/tokens.css', 'utf8');
 
 /** Collects `--token: #hex` declarations out of a CSS block body. */
@@ -18,33 +19,40 @@ function collectTokens(body: string): Map<string, string> {
   return tokens;
 }
 
-/**
- * Parses a CSS block into `--token: #hex` pairs, recursing into nested braces.
- */
-function parseBlock(source: string, start: number): Map<string, string> {
+/** Parses the body of the first block following `selector`. */
+function blockAfter(selector: string): string {
+  const index = tokensCss.indexOf(selector);
+  expect(index, `selector ${selector} present in tokens.css`).toBeGreaterThanOrEqual(0);
   let depth = 0;
-  let blockStart = -1;
-  for (let i = start; i < source.length; i += 1) {
-    const char = source[i];
+  let start = -1;
+  for (let i = index; i < tokensCss.length; i += 1) {
+    const char = tokensCss[i];
     if (char === '{') {
       depth += 1;
       if (depth === 1) {
-        blockStart = i;
+        start = i;
       }
     } else if (char === '}') {
       depth -= 1;
       if (depth === 0) {
-        return collectTokens(source.slice(blockStart + 1, i));
+        return tokensCss.slice(start + 1, i);
       }
     }
   }
-  return new Map();
+  return '';
 }
 
-function tokenBlock(selector: string): Map<string, string> {
-  const index = tokensCss.indexOf(selector);
-  expect(index, `selector ${selector} present in tokens.css`).toBeGreaterThanOrEqual(0);
-  return parseBlock(tokensCss, index);
+/** The :root block holds the dark primitives and the light defaults. */
+const rootTokens = collectTokens(blockAfter(':root'));
+
+/** Light value of a token (its literal in :root). */
+function light(name: string): string | undefined {
+  return rootTokens.get(name);
+}
+
+/** Dark value: the `--dark-<name>` primitive (single source of truth). */
+function dark(name: string): string | undefined {
+  return rootTokens.get(`dark-${name}`);
 }
 
 function channel(value: number): number {
@@ -80,26 +88,37 @@ const CONTRAST_PAIRS: readonly (readonly [string, string])[] = [
 ];
 
 describe('design token contrast', () => {
-  const themes: readonly { readonly name: string; readonly selector: string }[] = [
-    { name: 'light', selector: ':root' },
-    { name: 'dark', selector: ":root[data-theme='dark']" },
-  ];
+  it('defines every dark primitive used by the mapping blocks', () => {
+    // Every var(--dark-x) referenced in the mapping must exist in :root.
+    for (const match of tokensCss.matchAll(/var\(--dark-([\w-]+)\)/g)) {
+      const name = match[1];
+      expect(name !== undefined && rootTokens.has(`dark-${name}`), `--dark-${name}`).toBe(true);
+    }
+  });
 
-  for (const theme of themes) {
-    it(`${theme.name} theme meets WCAG AA (4.5:1) for all text pairs`, () => {
-      const tokens = tokenBlock(theme.selector);
-      for (const [foreground, background] of CONTRAST_PAIRS) {
-        const fg = tokens.get(foreground);
-        const bg = tokens.get(background);
-        expect(fg, `${theme.name} token --${foreground}`).toBeDefined();
-        expect(bg, `${theme.name} token --${background}`).toBeDefined();
-        if (fg !== undefined && bg !== undefined) {
-          expect(
-            contrastRatio(fg, bg),
-            `${theme.name}: ${foreground} on ${background}`,
-          ).toBeGreaterThanOrEqual(4.5);
-        }
+  it.each(CONTRAST_PAIRS)(
+    'light theme: %s on %s meets WCAG AA (4.5:1)',
+    (foreground, background) => {
+      const fg = light(foreground);
+      const bg = light(background);
+      expect(fg, formatString('light token --{name}', { name: foreground })).toBeDefined();
+      expect(bg, formatString('light token --{name}', { name: background })).toBeDefined();
+      if (fg !== undefined && bg !== undefined) {
+        expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(4.5);
       }
-    });
-  }
+    },
+  );
+
+  it.each(CONTRAST_PAIRS)(
+    'dark theme: %s on %s meets WCAG AA (4.5:1)',
+    (foreground, background) => {
+      const fg = dark(foreground);
+      const bg = dark(background);
+      expect(fg, formatString('dark token --dark-{name}', { name: foreground })).toBeDefined();
+      expect(bg, formatString('dark token --dark-{name}', { name: background })).toBeDefined();
+      if (fg !== undefined && bg !== undefined) {
+        expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(4.5);
+      }
+    },
+  );
 });

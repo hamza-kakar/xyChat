@@ -2,7 +2,7 @@
   "ci": {
     "collect": {
       "startServerCommand": "pnpm preview --port 4173 --strictPort",
-      "url": ["http://localhost:4173/waChatBack/"],
+      "url": ["http://localhost:4173/wachatback/"],
       "numberOfRuns": 3
     },
     "assert": {

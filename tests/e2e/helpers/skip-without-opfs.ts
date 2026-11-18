@@ -1,17 +1,21 @@
 import type { Page } from '@playwright/test';
+import { expect } from '@playwright/test';
 import { test } from '@playwright/test';
 
 /**
- * Skips the test when the browser engine cannot open the Origin Private File
- * System. Playwright's bundled Linux WebKit build has no working OPFS
- * (upstream: microsoft/playwright#18235) — the app's capability gate
- * correctly refuses to boot there. OPFS flows remain covered on Chromium in
- * CI and on real iOS Safari via docs/TESTING.md.
+ * Boot-dependent flow guard (AGENTS.md §12.11, review M0 round 1 blocker 1).
  *
- * @param page Playwright page used to probe engine-level OPFS support.
+ * Nothing is skipped at boot: on engines where the capability gate refuses
+ * (Playwright's Linux WebKit cannot open OPFS — upstream
+ * microsoft/playwright#18235), the caller asserts the unsupported screen:
+ * heading visible, axe-clean, no CSP violations. Storage-dependent flows
+ * (offline reload) use {@link skipWithoutOpfs} AFTER navigating, so the probe
+ * runs in the app origin, never on about:blank.
  */
-export async function skipWithoutOpfs(page: Page): Promise<void> {
-  const supported = await page.evaluate(async () => {
+
+/** Detects OPFS support in the CURRENT page origin (navigate first!). */
+async function opfsSupported(page: Page): Promise<boolean> {
+  return page.evaluate(async () => {
     try {
       await navigator.storage.getDirectory();
       return true;
@@ -19,9 +23,48 @@ export async function skipWithoutOpfs(page: Page): Promise<void> {
       return false;
     }
   });
+}
+
+/**
+ * Navigates and asserts the app boots (home heading) — on engines whose
+ * capability gate refuses, asserts the unsupported screen instead. Waits
+ * until EXACTLY one of the two headings is visible (React StrictMode can
+ * briefly unmount a heading during the double effect pass, so an instant
+ * `isVisible` check races that window), then returns whether the app booted.
+ */
+export async function expectBootOrUnsupported(page: Page): Promise<boolean> {
+  await page.goto('/');
+  const homeHeading = page.getByRole('heading', { level: 1, name: 'waChatBack' });
+  const unsupportedHeading = page.getByRole('heading', {
+    level: 1,
+    name: 'This browser isn’t supported',
+  });
+  await expect
+    .poll(
+      async () => {
+        const home = await homeHeading.isVisible();
+        const unsupported = await unsupportedHeading.isVisible();
+        return home !== unsupported;
+      },
+      { timeout: 15_000, intervals: [150, 250] },
+    )
+    .toBe(true);
+  // Exactly one heading is visible now and the state is stable; a fresh
+  // visibility read decides which screen rendered.
+  const booted = await homeHeading.isVisible();
+  if (!booted) {
+    // The capability gate refused: assert the unsupported screen fully rendered.
+    await expect(unsupportedHeading).toBeVisible();
+  }
+  return booted;
+}
+
+/** Skips the test when the engine lacks OPFS (storage-dependent flows only). */
+export async function skipWithoutOpfs(page: Page): Promise<void> {
+  const supported = await opfsSupported(page);
   test.skip(
     !supported,
     'Engine lacks OPFS (Playwright WebKit on Linux, microsoft/playwright#18235); ' +
-      'covered by Chromium e2e and manual iOS testing per docs/TESTING.md.',
+      'covered by Chromium and manual iOS testing per docs/TESTING.md.',
   );
 }
