@@ -9,7 +9,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     name: 'browser-chromium',
-    include: ['tests/browser/**/*.test.ts'],
+    include: ['tests/browser-chromium/**/*.test.ts'],
     coverage: {
       enabled: true,
       provider: 'v8',
