@@ -51,9 +51,11 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
 
 ## What's next
 
-- Awaiting M0 re-review and approval. M1 (core parser, dates, fingerprint,
-  merge, text-format) is developed on `m1-parser` but paused; it will be
-  rebased onto the approved M0.
+- Awaiting M0 re-review. Per owner decision (2026-11-18): the agent merges
+  milestone PRs once CI is green and review approves; M1 (`m1-parser`, WIP
+  committed) rebases onto the approved M0 before continuing. `.zcode/`
+  stays untracked; FTS5 deferral (ADR 0008) and the M2 WebKit question
+  (ADR 0007) are ratified as written.
 
 ## Known issues
 
