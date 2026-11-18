@@ -21,7 +21,7 @@
     "deps:check": "depcruise src --config .dependency-cruiser.cjs",
     "test": "vitest run",
     "test:browser": "vitest run --config vitest.browser.config.ts",
-    "test:coverage": "vitest run --coverage && vitest run --config vitest.browser.config.ts --coverage --passWithNoTests",
+    "test:coverage": "vitest run --coverage && vitest run --config vitest.browser.config.ts --passWithNoTests",
     "test:e2e": "playwright test",
     "bench": "vitest bench",
     "size": "size-limit",

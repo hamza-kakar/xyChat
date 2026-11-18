@@ -62,9 +62,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium webkit
       # Browser-mode storage/worker tests arrive with milestone M2.
-      # v8 coverage works in browser mode (Chromium); WebKit would need the
-      # istanbul provider — a decision recorded with M2's ADR.
-      - run: pnpm exec vitest run --config vitest.browser.config.ts --coverage --passWithNoTests
+      # Coverage is per-project in the config: v8 for the Chromium project
+      # (vitest forbids v8 coverage on non-Chromium instances), WebKit runs
+      # without it — see ADR 0007 for the M2 decision this leaves open.
+      - run: pnpm exec vitest run --config vitest.browser.config.ts --passWithNoTests
 
   build:
     name: Build and size-limit
