@@ -53,7 +53,11 @@ interface MergePlanBuilder {
 
 /** Emits a stored entry in the output, marking its fingerprint as present. */
 function emitExisting(plan: MergePlanBuilder, entry: MergeEntry): void {
-  plan.messages.push({ fingerprint: entry.fingerprint, message: entry.message, fromIncoming: false });
+  plan.messages.push({
+    fingerprint: entry.fingerprint,
+    message: entry.message,
+    fromIncoming: false,
+  });
   plan.emitted.add(entry.fingerprint);
 }
 

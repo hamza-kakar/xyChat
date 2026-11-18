@@ -48,9 +48,11 @@ const MARK_BEFORE_MARKER_RE = new RegExp(
  * @param line A single line without its newline.
  */
 export function cleanHeaderLine(line: string): string {
-  let cleaned = line.replace(new RegExp(`^[${HEADER_BIDI_CHARS}]+`, 'u'), '');
-  cleaned = cleaned.split(NARROW_NO_BREAK_SPACE).join(' ').split(NO_BREAK_SPACE).join(' ');
-  return cleaned;
+  // Fast path: most lines contain no marks or non-breaking spaces.
+  if (!NBSP_RE.test(line) && !LEADING_BIDI_RE.test(line)) {
+    return line;
+  }
+  return line.replace(LEADING_BIDI_RE, '').replace(NBSP_RE, ' ');
 }
 
 /**
@@ -72,11 +74,5 @@ export function cleanBodyLine(line: string): string {
  * @param matched The exact substring matched by a locale pattern.
  */
 export function stripMarksBeforeMarker(matched: string): string {
-  return matched.replace(
-    new RegExp(
-      `[${LRM}${RLM}]+(<|image|video|audio|sticker|GIF|document|Contact|Media|This|Voice|Video|Missed)`,
-      'u',
-    ),
-    '$1',
-  );
+  return matched.replace(MARK_BEFORE_MARKER_RE, '$1');
 }

@@ -126,6 +126,13 @@ describe('attachments', () => {
     expect(r.body).toBe('Caption here');
   });
 
+  it('parses iOS attachment markers with no caption', () => {
+    const r = ios('Sara: \u200E<attached: 00000012-PHOTO-2026-11-17-21-20-01.jpg>');
+    expect(r.kind).toBe('media');
+    expect(r.body).toBe('');
+    expect(r.attachment?.fileName).toBe('00000012-PHOTO-2026-11-17-21-20-01.jpg');
+  });
+
   it('classifies omitted placeholders with inferred types', () => {
     expect(ios('Ali Khan: \u200Eimage omitted')).toMatchObject({
       kind: 'media',
@@ -181,6 +188,17 @@ describe('polls', () => {
         { text: 'Karahi', votes: 1 },
       ],
     });
+  });
+
+  it('falls back to text when a poll line is not an OPTION', () => {
+    const r = android('Ali Khan: POLL:', ['Dinner?', 'not an option line']);
+    expect(r.kind).toBe('text');
+  });
+
+  it('falls back to text for a bare POLL: with no options', () => {
+    const r = android('Ali Khan: POLL:');
+    expect(r.kind).toBe('text');
+    expect(r.body).toBe('POLL:');
   });
 
   it('falls back to text for malformed polls', () => {

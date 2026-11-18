@@ -51,17 +51,15 @@ function stripLeadingMarks(text: string): string {
 
 /** True when the first line matches any of the anchored patterns. */
 function matchesAny(lines: readonly string[], patterns: readonly RegExp[]): boolean {
+  /* v8 ignore next -- callers always pass a non-empty lines array */
   const first = lines[0] ?? '';
   return patterns.some((re) => re.test(first));
 }
 
 /** Strips a trailing edited marker from the message's last line. */
 function stripEditedMarker(lines: readonly string[], locale: LocalePatterns): readonly string[] {
-  const last = lines.at(-1);
-  if (last === undefined) {
-    // v8 ignore next 3: lines always has at least the first body line.
-    return lines;
-  }
+  /* v8 ignore next -- lines always has at least the first body line */
+  const last = lines.at(-1) ?? '';
   for (const re of locale.edited) {
     const m = re.exec(last);
     if (m !== null) {
@@ -69,6 +67,7 @@ function stripEditedMarker(lines: readonly string[], locale: LocalePatterns): re
       copy[copy.length - 1] = last.slice(0, m.index).trimEnd();
       return copy;
     }
+    /* v8 ignore next 2 -- the EDITED_ANY gate already matched one pattern */
   }
   return lines;
 }
@@ -76,6 +75,8 @@ function stripEditedMarker(lines: readonly string[], locale: LocalePatterns): re
 /** The unchanged core shared by every classification outcome. */
 interface BodyCore {
   readonly author: string | null;
+  /** The first body line — always present (callers guarantee it). */
+  readonly firstLine: string;
   readonly lines: readonly string[];
   readonly isEdited: boolean;
 }
@@ -103,21 +104,24 @@ function makeBody(core: BodyCore, kind: MessageKind, payload: BodyPayload): Clas
 /** System outcome for a matched whole-body or iOS group-author form. */
 function systemBody(core: BodyCore): ClassifiedBody {
   return makeBody(core, 'system', {
-    body: joinBody([stripMarksBeforeMarker(core.lines[0] ?? ''), ...core.lines.slice(1)]),
+    body: joinBody([stripMarksBeforeMarker(core.firstLine), ...core.lines.slice(1)]),
   });
 }
 
 /** Tries the system patterns against the first line; null when none match. */
 function tryClassifySystem(
-  lines: readonly string[],
-  author: string | null,
+  firstLine: string,
+  continuation: readonly string[],
   locale: LocalePatterns,
 ): ClassifiedBody | null {
-  if (!SYSTEM_ANY.test(lines[0] ?? '')) {
-    return null;
-  }
-  if (matchesAny(lines, locale.system)) {
-    return systemBody({ author, lines, isEdited: false });
+  // SYSTEM_ANY is the union of locale.system, so one test decides.
+  if (SYSTEM_ANY.test(firstLine)) {
+    return systemBody({
+      author: null,
+      firstLine,
+      lines: [firstLine, ...continuation],
+      isEdited: false,
+    });
   }
   return null;
 }
@@ -140,15 +144,17 @@ function splitAuthor(rest: string): AuthorSplit | null {
   };
 }
 
-/** Tries the edited marker, returning the core with the flag set. */
-function tryStripEdited(lines: readonly string[], locale: LocalePatterns): BodyCore | null {
-  if (!EDITED_ANY.test(lines.at(-1) ?? '')) {
-    return null;
+/** Strips the edited marker when present; returns the edited last line. */
+function tryStripEdited(
+  lines: readonly string[],
+  locale: LocalePatterns,
+): { readonly lines: readonly string[]; readonly isEdited: boolean } {
+  // EDITED_ANY is the union of locale.edited, so one test decides.
+  /* v8 ignore next -- lines always has at least the first body line */
+  if (EDITED_ANY.test(lines.at(-1) ?? '')) {
+    return { lines: stripEditedMarker(lines, locale), isEdited: true };
   }
-  if (matchesAny([lines.at(-1) ?? ''], locale.edited)) {
-    return { author: null, lines: stripEditedMarker(lines, locale), isEdited: true };
-  }
-  return null;
+  return { lines, isEdited: false };
 }
 
 /** Builds a referenced attachment for a file name. */
@@ -167,13 +173,14 @@ function tryReferencedAttachment(
   locale: LocalePatterns,
   platform: SourcePlatform,
 ): ClassifiedBody | null {
-  const first = core.lines[0] ?? '';
+  const first = core.firstLine;
   if (platform === 'ios') {
     const m = locale.attachedIos.exec(first);
     if (m !== null) {
       const withoutMarker = first.replace(locale.attachedIos, '').trim();
       const captionLines =
         withoutMarker === '' ? core.lines.slice(1) : [withoutMarker, ...core.lines.slice(1)];
+      // v8 ignore next -- capture group 1 always participates
       const attachment = referencedAttachment(m[1] ?? '');
       return makeBody(core, kindForAttachment(attachment), {
         body: joinBody(captionLines),
@@ -195,7 +202,7 @@ function tryReferencedAttachment(
 
 /** Tries the omitted-media placeholders. */
 function tryOmittedMedia(core: BodyCore, locale: LocalePatterns): ClassifiedBody | null {
-  const first = core.lines[0] ?? '';
+  const first = core.firstLine;
   if (!OMITTED_ANY.test(first)) {
     return null;
   }
@@ -221,7 +228,7 @@ function parseCoordinates(url: string): ParsedLocation | null {
 
 /** Tries the shared-location body form. */
 function tryLocation(core: BodyCore, locale: LocalePatterns): ClassifiedBody | null {
-  const first = core.lines[0] ?? '';
+  const first = core.firstLine;
   if (!first.startsWith(locale.locationPrefix)) {
     return null;
   }
@@ -233,7 +240,8 @@ function tryLocation(core: BodyCore, locale: LocalePatterns): ClassifiedBody | n
   return makeBody(core, 'text', { body: joinBody(core.lines) });
 }
 
-/** Extracts a poll payload from the lines following `POLL:`. */
+/** Extracts a poll payload from the lines following `POLL:` (§8.6: the next
+ * line is the question). `lines` may be empty for a bare `POLL:` body. */
 function parsePoll(lines: readonly string[], locale: LocalePatterns): ParsedPoll | null {
   const question = lines[0] ?? '';
   if (question === '') {
@@ -255,7 +263,7 @@ function parsePoll(lines: readonly string[], locale: LocalePatterns): ParsedPoll
 
 /** Tries the poll body form. */
 function tryPoll(core: BodyCore, locale: LocalePatterns): ClassifiedBody | null {
-  const first = core.lines[0] ?? '';
+  const first = core.firstLine;
   if (!first.startsWith(locale.pollPrefix)) {
     return null;
   }
@@ -267,12 +275,10 @@ function tryPoll(core: BodyCore, locale: LocalePatterns): ClassifiedBody | null 
 
 /** Tries the exact call bodies from the locale table. */
 function tryCall(core: BodyCore, locale: LocalePatterns): ClassifiedBody | null {
-  if (!CALLS_ANY.test(core.lines[0] ?? '')) {
-    return null;
-  }
-  if (matchesAny(core.lines, locale.calls)) {
+  // CALLS_ANY is the union of locale.calls, so one test decides.
+  if (CALLS_ANY.test(core.firstLine)) {
     return makeBody(core, 'call', {
-      body: joinBody([stripMarksBeforeMarker(core.lines[0] ?? '')]),
+      body: joinBody([stripMarksBeforeMarker(core.firstLine)]),
     });
   }
   return null;
@@ -284,12 +290,10 @@ function classifyKind(
   locale: LocalePatterns,
   platform: SourcePlatform,
 ): ClassifiedBody {
-  const firstLine = core.lines[0] ?? '';
-  if (!DELETED_ANY.test(firstLine)) {
-    // not deleted
-  } else if (matchesAny(core.lines, locale.deleted)) {
+  // DELETED_ANY is the union of locale.deleted, so one test decides.
+  if (DELETED_ANY.test(core.firstLine)) {
     return makeBody(core, 'deleted', {
-      body: joinBody([stripMarksBeforeMarker(core.lines[0] ?? '')]),
+      body: joinBody([stripMarksBeforeMarker(core.firstLine)]),
     });
   }
   const chained: readonly ((c: BodyCore) => ClassifiedBody | null)[] = [
@@ -328,7 +332,7 @@ export function classifyBody(
   const firstLine = cleanBodyLine(rest);
 
   // 1. System check on the whole REST, before any author split (§8.6.1).
-  const wholeRestSystem = tryClassifySystem([firstLine, ...continuationLines], null, locale);
+  const wholeRestSystem = tryClassifySystem(firstLine, continuationLines, locale);
   if (wholeRestSystem !== null) {
     return wholeRestSystem;
   }
@@ -348,7 +352,11 @@ export function classifyBody(
   }
 
   const authoredLines = [split.bodyFirst, ...continuationLines.map(cleanBodyLine)];
-  const iosSystem = tryClassifySystem(authoredLines, null, locale);
+  const iosSystem = tryClassifySystem(
+    split.bodyFirst,
+    continuationLines.map(cleanBodyLine),
+    locale,
+  );
   if (iosSystem !== null) {
     return iosSystem;
   }
@@ -357,8 +365,9 @@ export function classifyBody(
   const edited = tryStripEdited(authoredLines, locale);
   const core: BodyCore = {
     author: split.author,
-    lines: edited !== null ? edited.lines : authoredLines,
-    isEdited: edited !== null,
+    firstLine: split.bodyFirst,
+    lines: edited.lines,
+    isEdited: edited.isEdited,
   };
   return classifyKind(core, locale, platform);
 }

@@ -9,8 +9,8 @@ observed shapes that motivated them.
 ## iOS exports
 
 - Header: `[DD/MM/YYYY, H:MM:SS<NNBSP>AM] Author: text` — narrow no-break
-  space (U+202F) before the meridiem; seconds present. *(observed on iOS 17,
-  WhatsApp 2.23.x)*
+  space (U+202F) before the meridiem; seconds present. _(observed on iOS 17,
+  WhatsApp 2.23.x)_
 - A left-to-right mark (U+200E) precedes `<attached: …>` markers, system
   texts written under the group name, and deleted/edited markers.
 - System events appear as `[ts] Group Name: ‎<system text>`.

@@ -41,7 +41,7 @@ export const ENCRYPTED =
 
 /** Variant definitions rendered by scripts/generate-fixtures.ts. */
 export const VARIANTS_PART2: readonly VariantSpec[] = [
-{
+  {
     id: 'multiline-and-blank-lines',
     description: 'Multi-line messages including blank lines inside a message.',
     lines: [
@@ -57,7 +57,7 @@ export const VARIANTS_PART2: readonly VariantSpec[] = [
     expectedClock: '24h',
     expectedSeconds: false,
   },
-{
+  {
     id: 'rtl-urdu-arabic-mixed',
     description: 'RTL Urdu/Arabic bodies with bidi marks preserved.',
     lines: ['[17/11/2026, 21:19] احمد: سلام! کیا حال ہے؟', '[17/11/2026, 21:20] Sara: مرحباً، بخير'],
@@ -68,7 +68,7 @@ export const VARIANTS_PART2: readonly VariantSpec[] = [
     expectedClock: '24h',
     expectedSeconds: false,
   },
-{
+  {
     id: 'emoji-zwj',
     description: 'Emoji-only messages including ZWJ sequences.',
     lines: [
@@ -83,7 +83,7 @@ export const VARIANTS_PART2: readonly VariantSpec[] = [
     expectedClock: '24h',
     expectedSeconds: false,
   },
-{
+  {
     id: 'polls',
     description: 'Android poll messages with vote counts.',
     lines: [
@@ -100,7 +100,7 @@ export const VARIANTS_PART2: readonly VariantSpec[] = [
     expectedClock: '24h',
     expectedSeconds: false,
   },
-{
+  {
     id: 'locations',
     description: 'Android shared locations with map URLs.',
     lines: [
@@ -114,7 +114,7 @@ export const VARIANTS_PART2: readonly VariantSpec[] = [
     expectedClock: '24h',
     expectedSeconds: false,
   },
-{
+  {
     id: 'contacts-vcf',
     description: 'Contact cards shared as .vcf attachments.',
     lines: [
@@ -128,7 +128,7 @@ export const VARIANTS_PART2: readonly VariantSpec[] = [
     expectedClock: '24h',
     expectedSeconds: false,
   },
-{
+  {
     id: 'deleted-and-edited',
     description: 'Deleted placeholders and edited markers.',
     lines: [
@@ -143,7 +143,7 @@ export const VARIANTS_PART2: readonly VariantSpec[] = [
     expectedClock: '24h',
     expectedSeconds: false,
   },
-{
+  {
     id: 'calls',
     description: 'iOS call events.',
     lines: [
@@ -157,7 +157,7 @@ export const VARIANTS_PART2: readonly VariantSpec[] = [
     expectedClock: '24h',
     expectedSeconds: false,
   },
-{
+  {
     id: 'orphan-lines-before-first',
     description: 'Lines before the first header produce one counted warning.',
     lines: ['stray line one', 'stray line two', '[17/11/2026, 21:19] Ali Khan: real message'],
@@ -168,7 +168,7 @@ export const VARIANTS_PART2: readonly VariantSpec[] = [
     expectedClock: '24h',
     expectedSeconds: false,
   },
-{
+  {
     id: 'out-of-order-timestamps',
     description: 'Backwards timestamps warn at most once per 1000 lines; order stays file order.',
     lines: [
@@ -182,7 +182,7 @@ export const VARIANTS_PART2: readonly VariantSpec[] = [
     expectedClock: '24h',
     expectedSeconds: false,
   },
-{
+  {
     id: 'ambiguous-date-order',
     description: 'All date components ≤ 12: DMY by default, user confirms in UI.',
     lines: [
@@ -196,7 +196,7 @@ export const VARIANTS_PART2: readonly VariantSpec[] = [
     expectedClock: '12h',
     expectedSeconds: false,
   },
-{
+  {
     id: 'crlf-and-bom',
     description: 'CRLF line endings and a UTF-8 BOM.',
     lines: [
@@ -212,7 +212,7 @@ export const VARIANTS_PART2: readonly VariantSpec[] = [
     expectedClock: '24h',
     expectedSeconds: false,
   },
-{
+  {
     id: 'phone-number-authors',
     description: 'Authors that are bare phone numbers.',
     lines: [
@@ -226,7 +226,7 @@ export const VARIANTS_PART2: readonly VariantSpec[] = [
     expectedClock: '24h',
     expectedSeconds: false,
   },
-{
+  {
     id: 'author-with-colon-in-body',
     description: 'Author split happens at the FIRST colon-space only.',
     lines: [

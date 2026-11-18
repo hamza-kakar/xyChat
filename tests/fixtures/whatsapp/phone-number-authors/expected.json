@@ -88,10 +88,7 @@
       "location": null
     }
   ],
-  "participants": [
-    "+92 300 1234567",
-    "+1 415 555 0100"
-  ],
+  "participants": ["+92 300 1234567", "+1 415 555 0100"],
   "warnings": [],
   "stats": {
     "lines": 2,

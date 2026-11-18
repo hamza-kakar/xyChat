@@ -40,18 +40,19 @@ describe('property: tokenizer never throws and leaves equal fragments (§19.2.6)
       const withoutMarkers = body.replace(/(\*|_|~|`)/gu, '');
       expect(leaf.length).toBeLessThanOrEqual(withoutMarkers.length);
     });
-    expect(() => fc.assert(prop, RUNS)).not.toThrow();
+    expect(() => {
+      fc.assert(prop, RUNS);
+    }).not.toThrow();
   });
 
   it('preserves exact leaves for constructed fragment bodies', () => {
-    const prop = fc.property(
-      fc.array(arbitraryLeaf, { minLength: 1, maxLength: 5 }),
-      (leaves) => {
-        const body = leaves.join('\n');
-        expect(astLeafText(parseText(body))).toBe(body);
-      },
-    );
-    expect(() => fc.assert(prop, RUNS)).not.toThrow();
+    const prop = fc.property(fc.array(arbitraryLeaf, { minLength: 1, maxLength: 5 }), (leaves) => {
+      const body = leaves.join('\n');
+      expect(astLeafText(parseText(body))).toBe(body);
+    });
+    expect(() => {
+      fc.assert(prop, RUNS);
+    }).not.toThrow();
   });
 });
 

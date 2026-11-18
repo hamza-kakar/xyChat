@@ -33,14 +33,58 @@ export function createAuthorMapper(authors: readonly string[]): AuthorMapper {
 
 /** Structural vocabulary that is never anonymized. */
 const MARKER_WORDS = new Set([
-  'created', 'group', 'added', 'removed', 'left', 'changed', 'subject',
-  'from', 'to', 'icon', 'description', 'joined', 'turned', 'on',
-  'Disappearing', 'messages', 'message', 'omitted', 'attached', 'file',
-  'votes', 'vote', 'location', 'POLL', 'OPTION', 'Media', 'image',
-  'video', 'audio', 'sticker', 'GIF', 'document', 'Contact', 'card',
-  'This', 'was', 'You', 'deleted', 'edited', 'Voice', 'Video', 'Missed',
-  'call', 'are', 'and', 'end-to-end', 'encrypted', 'Person',
-  'Messages', 'Tap', 'learn', 'more',
+  'created',
+  'group',
+  'added',
+  'removed',
+  'left',
+  'changed',
+  'subject',
+  'from',
+  'to',
+  'icon',
+  'description',
+  'joined',
+  'turned',
+  'on',
+  'Disappearing',
+  'messages',
+  'message',
+  'omitted',
+  'attached',
+  'file',
+  'votes',
+  'vote',
+  'location',
+  'POLL',
+  'OPTION',
+  'Media',
+  'image',
+  'video',
+  'audio',
+  'sticker',
+  'GIF',
+  'document',
+  'Contact',
+  'card',
+  'This',
+  'was',
+  'You',
+  'deleted',
+  'edited',
+  'Voice',
+  'Video',
+  'Missed',
+  'call',
+  'are',
+  'and',
+  'end-to-end',
+  'encrypted',
+  'Person',
+  'Messages',
+  'Tap',
+  'learn',
+  'more',
 ]);
 
 /** Deterministic small non-negative integer from a string. */
@@ -75,7 +119,11 @@ function pseudoWord(word: string): string {
 }
 
 /** Replaces every author mention in a segment with the Person name. */
-function replaceAuthorMentions(segment: string, names: readonly string[], mapper: AuthorMapper): string {
+function replaceAuthorMentions(
+  segment: string,
+  names: readonly string[],
+  mapper: AuthorMapper,
+): string {
   let out = segment;
   const sorted = [...names].sort((a, b) => b.length - a.length);
   for (const name of sorted) {
@@ -85,7 +133,8 @@ function replaceAuthorMentions(segment: string, names: readonly string[], mapper
 }
 
 /** Media file-name-like tokens (kept verbatim: placeholder files share names). */
-const FILE_NAME_RE = /\S+\.(?:jpg|jpeg|png|webp|gif|mp4|mov|3gp|opus|ogg|m4a|mp3|aac|wav|amr|vcf|pdf|docx?|xlsx?|pptx?|txt|zip)\b/giu;
+const FILE_NAME_RE =
+  /\S+\.(?:jpg|jpeg|png|webp|gif|mp4|mov|3gp|opus|ogg|m4a|mp3|aac|wav|amr|vcf|pdf|docx?|xlsx?|pptx?|txt|zip)\b/giu;
 
 /** Prefix of the boilerplate encrypted notice (contains no personal data). */
 const ENCRYPTED_NOTICE_PREFIX = 'Messages and calls are end-to-end encrypted.';
@@ -102,7 +151,7 @@ function anonymizeText(text: string, names: readonly string[], mapper: AuthorMap
   const kept: string[] = [];
   const carved = withAuthors.replace(FILE_NAME_RE, (token) => {
     kept.push(token);
-    return `\u0000${kept.length - 1}\u0000`;
+    return `\uE000${kept.length - 1}\uE001`;
   });
   let out = '';
   let word = '';
@@ -123,12 +172,16 @@ function anonymizeText(text: string, names: readonly string[], mapper: AuthorMap
   }
   flush();
   // Restore the kept file names.
-  out = out.replace(/\u0000(\d+)\u0000/gu, (m, index) => kept[Number(index)] ?? m);
+  out = out.replace(/\uE000(\d+)\uE001/gu, (m, index) => kept[Number(index)] ?? m);
   return out;
 }
 
 /** Renders a wall-clock timestamp per the export's clock/seconds style. */
-function renderTimestamp(message: ParsedMessage, format: DetectedFormat, dateOrder: 'DMY' | 'MDY'): string {
+function renderTimestamp(
+  message: ParsedMessage,
+  format: DetectedFormat,
+  dateOrder: 'DMY' | 'MDY',
+): string {
   const t = message.timestamp;
   const day = dateOrder === 'DMY' ? t.day : t.month;
   const month = dateOrder === 'DMY' ? t.month : t.day;
@@ -136,9 +189,7 @@ function renderTimestamp(message: ParsedMessage, format: DetectedFormat, dateOrd
   if (format.clock === '24h') {
     const hh = String(t.hour).padStart(2, '0');
     const mm = String(t.minute).padStart(2, '0');
-    time = format.hasSeconds
-      ? `${hh}:${mm}:${String(t.second).padStart(2, '0')}`
-      : `${hh}:${mm}`;
+    time = format.hasSeconds ? `${hh}:${mm}:${String(t.second).padStart(2, '0')}` : `${hh}:${mm}`;
   } else {
     const h12 = t.hour % 12 === 0 ? 12 : t.hour % 12;
     const meridiem = t.hour >= 12 ? 'PM' : 'AM';
@@ -180,11 +231,8 @@ function renderMessageLines(
   mapper: AuthorMapper,
 ): readonly string[] {
   const ts = renderTimestamp(message, format, 'DMY');
-  const dateOrderNote = format.dateOrder === 'MDY' ? undefined : undefined;
-  void dateOrderNote;
   const authorPrefix = message.author === null ? '' : `${mapper.map(message.author)}: `;
-  const header =
-    format.platform === 'ios' ? `[${ts}] ${authorPrefix}` : `${ts} - ${authorPrefix}`;
+  const header = format.platform === 'ios' ? `[${ts}] ${authorPrefix}` : `${ts} - ${authorPrefix}`;
 
   const lines: string[] = [];
   const emit = (firstLine: string, continuation: readonly string[] = []): void => {
@@ -221,8 +269,9 @@ function renderMessageLines(
     }
     case 'poll': {
       const poll = message.poll;
-      const optionLines = (poll?.options ?? []).map((o) =>
-        `OPTION: ${anonymizeText(o.text, names, mapper)} (${o.votes ?? 0} ${o.votes === 1 ? 'vote' : 'votes'})`,
+      const optionLines = (poll?.options ?? []).map(
+        (o) =>
+          `OPTION: ${anonymizeText(o.text, names, mapper)} (${o.votes ?? 0} ${o.votes === 1 ? 'vote' : 'votes'})`,
       );
       emit('POLL:', [poll?.question ?? '', ...optionLines]);
       break;
@@ -232,8 +281,12 @@ function renderMessageLines(
       emit(loc === null ? 'location:' : `location: ${loc.url}`);
       break;
     }
-    default: {
+    case 'call':
+    case 'deleted':
+    case 'system':
+    case 'text': {
       emit(message.body);
+      break;
     }
   }
   return lines;
@@ -277,7 +330,7 @@ function actorCandidates(body: string): readonly string[] {
   const out: string[] = [];
   for (const re of ACTOR_PATTERNS) {
     const m = re.exec(body);
-    if (m !== null && m[1] !== undefined && m[1].trim() !== '') {
+    if (m?.[1] !== undefined && m[1].trim() !== '') {
       out.push(m[1].trim());
     }
   }

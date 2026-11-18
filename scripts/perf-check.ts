@@ -10,7 +10,12 @@ const MESSAGE_COUNT = 100_000;
 
 function build(n: number): string {
   const authors = ['Ali Khan', 'Sara', 'Bob Marley', 'Anna'];
-  const bodies = ['plain text message', 'a *bold* claim', 'https://example.com/x', '\u{1F600} emoji'];
+  const bodies = [
+    'plain text message',
+    'a *bold* claim',
+    'https://example.com/x',
+    '\u{1F600} emoji',
+  ];
   const lines: string[] = [];
   for (let i = 0; i < n; i += 1) {
     const hour = i % 12 === 0 ? 12 : i % 12;

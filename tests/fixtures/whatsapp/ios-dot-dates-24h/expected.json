@@ -88,9 +88,7 @@
       "location": null
     }
   ],
-  "participants": [
-    "Anna"
-  ],
+  "participants": ["Anna"],
   "warnings": [],
   "stats": {
     "lines": 2,

@@ -19,30 +19,27 @@ const RUNS = { numRuns: 1000 };
  * conservatively UNRECOGNIZED per spec). */
 const arbitraryBodyLine = fc
   .stringMatching(/^[^\n]{1,40}$/u)
-  .filter(
-    (s) =>
-      !s.includes(': ') &&
-      s.trim() === s &&
-      s.trim().length > 0 &&
-      !/^[0-9[]/u.test(s),
-  );
+  .filter((s) => !s.includes(': ') && s.trim() === s && s.trim().length > 0 && !/^[0-9[]/u.test(s));
 
 /** Arbitrary author name (letters, digits, spaces, dots). */
 const arbitraryAuthor = fc
   .stringMatching(/^[A-Za-z][A-Za-z .]{0,14}$/u)
   .filter((s) => s.trim().length > 0);
 
+/** Fields for the iOS header renderer. */
+interface HeaderFields {
+  readonly day: number;
+  readonly hour: number;
+  readonly minute: number;
+  readonly meridiem: 'AM' | 'PM';
+  readonly author: string;
+  readonly body: string;
+}
+
 /** Renders one iOS-style header line for given fields. */
-function renderIosHeader(
-  day: number,
-  hour: number,
-  minute: number,
-  meridiem: 'AM' | 'PM',
-  author: string,
-  body: string,
-): string {
-  const h12 = hour % 12 === 0 ? 12 : hour % 12;
-  return `[${day}/11/2026, ${h12}:${String(minute).padStart(2, '0')}:00 ${meridiem}] ${author}: ${body}`;
+function renderIosHeader(f: HeaderFields): string {
+  const h12 = f.hour % 12 === 0 ? 12 : f.hour % 12;
+  return `[${f.day}/11/2026, ${h12}:${String(f.minute).padStart(2, '0')}:00 ${f.meridiem}] ${f.author}: ${f.body}`;
 }
 
 interface GeneratedMessage {
@@ -59,7 +56,7 @@ const arbitraryMessages: fc.Arbitrary<GeneratedMessage[]> = fc.array(
     day: fc.constantFrom(16, 17, 18),
     hour: fc.integer({ min: 8, max: 22 }),
     minute: fc.integer({ min: 0, max: 59 }),
-    meridiem: fc.constantFrom('AM', 'PM') as fc.Arbitrary<'AM' | 'PM'>,
+    meridiem: fc.constantFrom('AM', 'PM'),
     author: arbitraryAuthor,
     body: arbitraryBodyLine,
   }),
@@ -67,7 +64,18 @@ const arbitraryMessages: fc.Arbitrary<GeneratedMessage[]> = fc.array(
 );
 
 function renderAll(messages: readonly GeneratedMessage[]): string {
-  return messages.map((m) => renderIosHeader(m.day, m.hour, m.minute, m.meridiem, m.author, m.body)).join('\n');
+  return messages
+    .map((m) =>
+      renderIosHeader({
+        day: m.day,
+        hour: m.hour,
+        minute: m.minute,
+        meridiem: m.meridiem,
+        author: m.author,
+        body: m.body,
+      }),
+    )
+    .join('\n');
 }
 
 /** Detects and unwraps; throws on generation mistakes, not parser errors. */
@@ -87,7 +95,9 @@ describe('property: parseChat never throws (§19.2.1)', () => {
         parseChat(input, { format: detected.value });
       }
     });
-    expect(() => fc.assert(prop, RUNS)).not.toThrow();
+    expect(() => {
+      fc.assert(prop, RUNS);
+    }).not.toThrow();
   });
 });
 
@@ -99,7 +109,7 @@ describe('property: line accounting (§19.2.2)', () => {
           day: fc.constantFrom(16, 17, 18),
           hour: fc.integer({ min: 8, max: 22 }),
           minute: fc.integer({ min: 0, max: 59 }),
-          meridiem: fc.constantFrom('AM', 'PM') as fc.Arbitrary<'AM' | 'PM'>,
+          meridiem: fc.constantFrom('AM', 'PM'),
           author: arbitraryAuthor,
           bodyLines: fc.array(arbitraryBodyLine, { minLength: 1, maxLength: 3 }),
         }),
@@ -108,7 +118,16 @@ describe('property: line accounting (§19.2.2)', () => {
       (messages) => {
         const lines: string[] = [];
         for (const m of messages) {
-          lines.push(renderIosHeader(m.day, m.hour, m.minute, m.meridiem, m.author, m.bodyLines[0] ?? ''));
+          lines.push(
+            renderIosHeader({
+              day: m.day,
+              hour: m.hour,
+              minute: m.minute,
+              meridiem: m.meridiem,
+              author: m.author,
+              body: m.bodyLines[0] ?? '',
+            }),
+          );
           for (const extra of m.bodyLines.slice(1)) {
             lines.push(extra);
           }
@@ -128,7 +147,9 @@ describe('property: line accounting (§19.2.2)', () => {
         expect(continuations.every((line) => accounted.has(line))).toBe(true);
       },
     );
-    expect(() => fc.assert(prop, RUNS)).not.toThrow();
+    expect(() => {
+      fc.assert(prop, RUNS);
+    }).not.toThrow();
   });
 });
 
@@ -148,13 +169,14 @@ describe('property: generated exports round-trip (§19.2.3)', () => {
         expect(parsedMessage?.body).toBe(m.body);
         expect(parsedMessage?.timestamp.day).toBe(m.day);
         const h12 = m.hour % 12 === 0 ? 12 : m.hour % 12;
-        const h24 =
-          m.meridiem === 'PM' ? (h12 === 12 ? 12 : h12 + 12) : h12 === 12 ? 0 : h12;
+        const h24 = m.meridiem === 'PM' ? (h12 === 12 ? 12 : h12 + 12) : h12 === 12 ? 0 : h12;
         expect(parsedMessage?.timestamp.hour).toBe(h24);
         expect(parsedMessage?.timestamp.minute).toBe(m.minute);
       });
     });
-    expect(() => fc.assert(prop, RUNS)).not.toThrow();
+    expect(() => {
+      fc.assert(prop, RUNS);
+    }).not.toThrow();
   });
 });
 
@@ -190,7 +212,9 @@ describe('property: merge idempotent, order-preserving, lossless (§19.2.5)', ()
       fc.boolean(),
       (existingBodies, incomingBodies, shuffleIncoming) => {
         const existing = existingBodies.map((b, index) => mergeEntry(b, 'e', index));
-        const incomingBodiesMaybeReversed = shuffleIncoming ? [...incomingBodies].reverse() : incomingBodies;
+        const incomingBodiesMaybeReversed = shuffleIncoming
+          ? [...incomingBodies].reverse()
+          : incomingBodies;
         const incoming = incomingBodiesMaybeReversed.map((b, index) => mergeEntry(b, 'i', index));
         const plan = planMerge(existing, incoming);
 
@@ -228,7 +252,9 @@ describe('property: merge idempotent, order-preserving, lossless (§19.2.5)', ()
         expect(again.counts.added).toBe(0);
       },
     );
-    expect(() => fc.assert(prop, MERGE_RUNS)).not.toThrow();
+    expect(() => {
+      fc.assert(prop, MERGE_RUNS);
+    }).not.toThrow();
   });
 });
 
@@ -269,7 +295,9 @@ describe('property: fingerprints deterministic and distinct (§19.2.4)', () => {
           hash,
         );
         const identical =
-          choice.a === choice.b && choice.minuteA === choice.minuteB && choice.bodyA === choice.bodyB;
+          choice.a === choice.b &&
+          choice.minuteA === choice.minuteB &&
+          choice.bodyA === choice.bodyB;
         if (identical) {
           expect(fp1).toBe(fp2);
         } else {
