@@ -18,7 +18,7 @@ export interface Migration {
 export const MIGRATIONS: readonly Migration[] = [
   {
     version: 1,
-    up: (db) => {
+    up: (db: SqliteDatabase): void => {
       db.exec(SQL_0001_INIT);
     },
   },

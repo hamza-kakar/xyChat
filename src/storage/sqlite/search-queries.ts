@@ -36,7 +36,7 @@ function buildSnippet(body: string, query: string): string {
  * Results sort newest-first with keyset pagination.
  */
 export function searchMessages(db: SqliteDatabase, q: SearchQuery): SearchPage {
-/** Full-text or LIKE search with filters and keyset paging (§11). */
+  /** Full-text or LIKE search with filters and keyset paging (§11). */
 
   const conditions: string[] = [];
   const params: (string | number | null)[] = [];
@@ -77,7 +77,7 @@ export function searchMessages(db: SqliteDatabase, q: SearchQuery): SearchPage {
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-  const rows = this.db.selectObjects(
+  const rows = db.selectObjects(
     `SELECT m.*, p.display_name AS author_name
      FROM messages m ${joins} LEFT JOIN participants p ON p.id = m.author_id
      ${where}
@@ -104,8 +104,6 @@ export function searchMessages(db: SqliteDatabase, q: SearchQuery): SearchPage {
       : null;
   return { hits, nextCursor };
 }
-}
-
 
 /** Lists link-bearing text messages with extracted URLs (§12.6). */
 export function listLinks(

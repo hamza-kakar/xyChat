@@ -20,10 +20,7 @@ const INSTANCE_LOCK_NAME = 'wachatback-db';
 
 /** Error codes for database opening. */
 export type OpenErrorCode =
-  | 'LOCK_UNAVAILABLE'
-  | 'OPFS_INIT_FAILED'
-  | 'MIGRATION_FAILED'
-  | 'FTS5_UNAVAILABLE';
+  'LOCK_UNAVAILABLE' | 'OPFS_INIT_FAILED' | 'MIGRATION_FAILED' | 'FTS5_UNAVAILABLE';
 
 /** A structured open failure. */
 export interface OpenError {
@@ -41,7 +38,10 @@ export interface SqliteDatabase {
   /** Executes raw SQL (DDL / pragmas / migrations — never user input). */
   exec(sql: string): void;
   /** Runs a parameterized statement returning rows as objects. */
-  selectObjects(sql: string, params?: readonly (string | number | null)[]): Record<string, unknown>[];
+  selectObjects(
+    sql: string,
+    params?: readonly (string | number | null)[],
+  ): Record<string, unknown>[];
   /** Runs a parameterized statement returning nothing. */
   run(sql: string, params?: readonly (string | number | null)[]): void;
   /** Wraps the callback in BEGIN/COMMIT, rolling back on throw. */
@@ -58,16 +58,19 @@ function wrap(db: Database): SqliteDatabase {
     exec(sql: string): void {
       db.exec(sql);
     },
-    selectObjects(sql: string, params?: readonly (string | number | null)[]): Record<string, unknown>[] {
+    selectObjects(
+      sql: string,
+      params?: readonly (string | number | null)[],
+    ): Record<string, unknown>[] {
       if (params === undefined) {
-        return db.exec({ sql, rowMode: 'object', returnValue: 'exec' }) as Record<string, unknown>[];
+        return db.exec({ sql, rowMode: 'object', returnValue: 'resultRows' });
       }
       return db.exec({
         sql,
         bind: [...params],
         rowMode: 'object',
-        returnValue: 'exec',
-      }) as Record<string, unknown>[];
+        returnValue: 'resultRows',
+      });
     },
     run(sql: string, params?: readonly (string | number | null)[]): void {
       if (params === undefined) {
@@ -88,7 +91,11 @@ function wrap(db: Database): SqliteDatabase {
       }
     },
     lastInsertRowId(): number {
-      const rows = db.exec({ sql: 'SELECT last_insert_rowid() AS id', rowMode: 'object', returnValue: 'exec' }) as Record<string, unknown>[];
+      const rows: Record<string, unknown>[] = db.exec({
+        sql: 'SELECT last_insert_rowid() AS id',
+        rowMode: 'object',
+        returnValue: 'resultRows',
+      });
       const first = rows[0];
       return typeof first?.['id'] === 'number' ? first['id'] : 0;
     },
@@ -101,10 +108,11 @@ function wrap(db: Database): SqliteDatabase {
 /** Internal: perform the actual sahpool-backed open. */
 async function openSahpool(): Promise<SqliteDatabase> {
   const sqlite3: Sqlite3Static = await initSqlite3();
-  // Registers the opfs-sahpool VFS; the returned namespace's DB constructor
-  // defaults to it.
-  const capi = await sqlite3.installOpfsSAHPoolVfs({ directory: SAHPOOL_DIRECTORY });
-  const db = new capi.oo1.DB({ filename: DB_FILENAME, flags: 'ct', vfs: SAHPOOL_VFS_NAME });
+  // Registers the opfs-sahpool VFS; the pool util exposes the VFS-backed
+  // DB constructor directly.
+  const pool = await sqlite3.installOpfsSAHPoolVfs({ directory: SAHPOOL_DIRECTORY });
+  // The VFS's own constructor: (filename) — create-if-missing is implied.
+  const db = new pool.OpfsSAHPoolDb(DB_FILENAME);
   const wrapped = wrap(db);
   // §10.1 pragmas: WAL is unsupported by this VFS.
   wrapped.exec(`
@@ -139,7 +147,7 @@ export function verifyFts5Trigram(db: SqliteDatabase): void {
  */
 export async function openDatabase(): Promise<Result<SqliteDatabase, OpenError>> {
   // Single instance: if the lock is held, fail fast (§10.1).
-  let locked = false;
+  let locked: boolean;
   try {
     locked = await navigator.locks.request(
       INSTANCE_LOCK_NAME,

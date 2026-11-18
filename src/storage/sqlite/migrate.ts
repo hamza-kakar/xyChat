@@ -15,9 +15,7 @@ function getMeta(db: SqliteDatabase, key: string): string | null {
 
 /** Ensures the meta table exists before any migration reads it. */
 function ensureMetaTable(db: SqliteDatabase): void {
-  db.exec(
-    'CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL) STRICT;',
-  );
+  db.exec('CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL) STRICT;');
 }
 
 /** Reads the current schema version (0 for a fresh database). */

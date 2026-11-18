@@ -5,9 +5,18 @@
  */
 import type { ChatId, ParticipantId } from '../../core/ids';
 import { formatLocalDateTime } from './local-date-time-parse';
-import { attachmentFromRow, bookmarkFromRow, chatFromRow, chatSummaryFromRow, importFromRow, messageFromRow, participantFromRow } from './rows';
+import {
+  attachmentFromRow,
+  bookmarkFromRow,
+  chatFromRow,
+  chatSummaryFromRow,
+  importFromRow,
+  messageFromRow,
+  participantFromRow,
+} from './rows';
 import type { SqliteDatabase } from './open';
 import { listLinks, searchMessages } from './search-queries';
+import type { Participant } from '../repository';
 import type {
   Attachment,
   AttachmentPage,
@@ -18,7 +27,6 @@ import type {
   ChatSummary,
   ImportRecord,
   LinkPage,
-  Message,
   MessageWindow,
   SearchPage,
   SearchQuery,
@@ -32,10 +40,9 @@ function attachmentsForMessages(
 ): Map<number, Attachment[]> {
   const byMessage = new Map<number, Attachment[]>();
   for (const rowId of rowIds) {
-    const rows = db.selectObjects(
-      'SELECT * FROM attachments WHERE message_id = ? ORDER BY id',
-      [rowId],
-    );
+    const rows = db.selectObjects('SELECT * FROM attachments WHERE message_id = ? ORDER BY id', [
+      rowId,
+    ]);
     const list = rows.map(attachmentFromRow);
     if (list.length > 0) {
       byMessage.set(rowId, list);
@@ -98,9 +105,16 @@ export class SqliteChatRepository {
       [q.chatId, q.anchorSeq - q.before, q.anchorSeq + q.after],
     );
     const messages = rows.map(messageFromRow);
-    const attachments = attachmentsForMessages(this.db, messages.map((m) => m.rowId));
-    const minSeq = this.db.selectObjects('SELECT MIN(seq) AS s FROM messages WHERE chat_id = ?', [q.chatId]);
-    const maxSeq = this.db.selectObjects('SELECT MAX(seq) AS s FROM messages WHERE chat_id = ?', [q.chatId]);
+    const attachments = attachmentsForMessages(
+      this.db,
+      messages.map((m) => m.rowId),
+    );
+    const minSeq = this.db.selectObjects('SELECT MIN(seq) AS s FROM messages WHERE chat_id = ?', [
+      q.chatId,
+    ]);
+    const maxSeq = this.db.selectObjects('SELECT MAX(seq) AS s FROM messages WHERE chat_id = ?', [
+      q.chatId,
+    ]);
     const hasBefore = Number(minSeq[0]?.['s'] ?? 0) < q.anchorSeq - q.before;
     const hasAfter = Number(maxSeq[0]?.['s'] ?? 0) > q.anchorSeq + q.after;
     return {
@@ -137,19 +151,25 @@ export class SqliteChatRepository {
     cursor: number | null;
     limit: number;
   }): AttachmentPage {
-    const conditions: string[] = ['chat_id = ?', `media_type IN (${q.types.map(() => '?').join(',')})`];
+    const conditions: string[] = [
+      'chat_id = ?',
+      `media_type IN (${q.types.map(() => '?').join(',')})`,
+    ];
     const params: (string | number | null)[] = [q.chatId, ...q.types];
     if (q.cursor !== null) {
-      conditions.push('id < ?');
+      conditions.push('rowid < ?');
       params.push(q.cursor);
     }
     const rows = this.db.selectObjects(
-      `SELECT * FROM attachments WHERE ${conditions.join(' AND ')} ORDER BY id DESC LIMIT ?`,
+      `SELECT rowid AS row_id, * FROM attachments WHERE ${conditions.join(' AND ')} ORDER BY rowid DESC LIMIT ?`,
       [...params, q.limit],
     );
     const attachments = rows.map(attachmentFromRow);
-    const last = attachments.at(-1);
-    return { attachments, nextCursor: rows.length === q.limit && last !== undefined ? last.id : null };
+    const lastRowId = rows.at(-1)?.['row_id'];
+    return {
+      attachments,
+      nextCursor: rows.length === q.limit && typeof lastRowId === 'number' ? lastRowId : null,
+    };
   }
 
   /** Chat-info statistics (§12.7). */
@@ -185,7 +205,10 @@ export class SqliteChatRepository {
       mediaBytes,
       dateRange:
         typeof first === 'string' && typeof last === 'string'
-          ? { first: messageFromRow({ ts_local: first, kind: 'text' }).tsLocal, last: messageFromRow({ ts_local: last, kind: 'text' }).tsLocal }
+          ? {
+              first: messageFromRow({ ts_local: first, kind: 'text' }).tsLocal,
+              last: messageFromRow({ ts_local: last, kind: 'text' }).tsLocal,
+            }
           : null,
     };
   }
@@ -222,13 +245,10 @@ export class SqliteChatRepository {
   /** Adds a bookmark. */
   addBookmark(chatId: ChatId, messageId: number, note: string | null): string {
     const id = crypto.randomUUID();
-    this.db.run('INSERT INTO bookmarks (id, chat_id, message_id, note, created_at) VALUES (?, ?, ?, ?, ?)', [
-      id,
-      chatId,
-      messageId,
-      note,
-      new Date().toISOString().replace(/\.\d{3}Z$/u, 'Z'),
-    ]);
+    this.db.run(
+      'INSERT INTO bookmarks (id, chat_id, message_id, note, created_at) VALUES (?, ?, ?, ?, ?)',
+      [id, chatId, messageId, note, new Date().toISOString().replace(/\.\d{3}Z$/u, 'Z')],
+    );
     return id;
   }
 
@@ -247,7 +267,10 @@ export class SqliteChatRepository {
     const rows =
       chatId === null
         ? this.db.selectObjects('SELECT * FROM bookmarks ORDER BY created_at DESC')
-        : this.db.selectObjects('SELECT * FROM bookmarks WHERE chat_id = ? ORDER BY created_at DESC', [chatId]);
+        : this.db.selectObjects(
+            'SELECT * FROM bookmarks WHERE chat_id = ? ORDER BY created_at DESC',
+            [chatId],
+          );
     return rows.map((row) => {
       const bookmark: Bookmark = bookmarkFromRow(row);
       const messageRows = this.db.selectObjects(
@@ -294,7 +317,8 @@ export class SqliteChatRepository {
     );
     const paths: string[] = [];
     for (const row of rows) {
-      const written: unknown = JSON.parse(String(row['written_paths_json'] ?? '[]'));
+      const raw = row['written_paths_json'];
+      const written: unknown = JSON.parse(typeof raw === 'string' ? raw : '[]');
       if (Array.isArray(written)) {
         paths.push(...written.filter((p): p is string => typeof p === 'string'));
       }
