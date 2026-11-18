@@ -48,7 +48,6 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:coverage
-      - run: pnpm exec vitest run --config vitest.browser-chromium.config.ts --coverage --passWithNoTests
 
   browser:
     name: Browser tests
