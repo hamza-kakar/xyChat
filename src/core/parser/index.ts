@@ -21,6 +21,19 @@ import type { LocalePatterns } from './locale/types';
 import { en } from './locale/en';
 
 export type { FormatError, FormatErrorCode, DateOrderSource } from './detect-format';
+export type {
+  ParsedMessage,
+  MessageKind,
+  MediaType,
+  AttachmentStatus,
+  ParsedAttachmentRef,
+  ParsedPoll,
+  ParsedLocation,
+  SourcePlatform,
+  DateOrder,
+  ClockFormat,
+  LocalDateTime,
+} from '../model';
 export type { ParseWarning, ParseStats, ParseSummary };
 export type ParseEvent = AssembleEvent;
 export { PARSER_VERSION } from './version';

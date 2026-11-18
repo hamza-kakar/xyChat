@@ -77,25 +77,47 @@ interface HeaderEvidence {
   readonly fourDigitFirst: boolean;
 }
 
-/** Counts matches and gathers date/clock evidence for one grammar. */
-function collectEvidence(
-  lines: readonly string[],
-  sampleLimit: number,
-  patternId: HeaderPatternId,
-): HeaderEvidence {
-  const alternation = meridiemAlternation(en.meridiem.am, en.meridiem.pm);
-  const grammar = buildHeaderPatterns(alternation).find((p) => p.id === patternId);
-  /* v8 ignore next 3 -- internal table lookup, ids come from that table */
-  if (grammar === undefined) {
-    throw new Error(`unknown header grammar: ${patternId}`);
-  }
+/** Cached grammar set for detection (rebuilt never; locale is fixed v1). */
+const DETECTION_PATTERNS = buildHeaderPatterns(meridiemAlternation(en.meridiem.am, en.meridiem.pm));
 
-  let matches = 0;
-  let headerLikeLines = 0;
-  let hasMeridiem = false;
-  let hasSeconds = false;
-  const dateTriples: (readonly [number, number, number])[] = [];
-  let fourDigitFirst = false;
+/** Evidence tallies for all four grammars in one pass. */
+interface AllEvidence {
+  readonly perGrammar: Record<HeaderPatternId, MutableEvidence>;
+}
+
+/** Mutable working tally for one grammar. */
+interface MutableEvidence {
+  matches: number;
+  headerLikeLines: number;
+  hasMeridiem: boolean;
+  hasSeconds: boolean;
+  dateTriples: (readonly [number, number, number])[];
+  fourDigitFirst: boolean;
+}
+
+/** Fresh tally for one grammar. */
+function freshEvidence(): MutableEvidence {
+  return {
+    matches: 0,
+    headerLikeLines: 0,
+    hasMeridiem: false,
+    hasSeconds: false,
+    dateTriples: [],
+    fourDigitFirst: false,
+  };
+}
+
+/**
+ * Counts matches and gathers date/clock evidence for all grammars in a
+ * single pass over the lines (order scan included when sampleLimit is ∞).
+ */
+function collectAllEvidence(lines: readonly string[], sampleLimit: number): AllEvidence {
+  const perGrammar: Record<HeaderPatternId, MutableEvidence> = {
+    'ios-bracket': freshEvidence(),
+    'ios-bracket-nocomma': freshEvidence(),
+    'android-dash': freshEvidence(),
+    'android-dash-nocomma': freshEvidence(),
+  };
 
   let nonEmptySeen = 0;
   for (const rawLine of lines) {
@@ -107,34 +129,82 @@ function collectEvidence(
     if (!isHeaderLike(cleaned)) {
       continue;
     }
-    headerLikeLines += 1;
-    const match = grammar.matcher.exec(cleaned);
-    if (match === null) {
-      continue;
-    }
-    matches += 1;
-    const header = extractHeaderMatch(patternId, match, en.meridiem.am);
-    hasMeridiem ||= header.meridiem !== null;
-    hasSeconds ||= header.second !== null;
-    const first = Number(header.date[0]);
-    const second = Number(header.date[1]);
-    const third = Number(header.date[2]);
-    // All three captures are \d-groups, so they are always finite.
-    /* v8 ignore next 3 */
-    if (Number.isFinite(first) && Number.isFinite(second) && Number.isFinite(third)) {
-      dateTriples.push([first, second, third]);
-    }
-    if (/^\d{4}$/u.test(header.date[0])) {
-      fourDigitFirst = true;
+    // Every grammar shares the same candidate denominator.
+    for (const grammar of DETECTION_PATTERNS) {
+      const evidence = perGrammar[grammar.id];
+      evidence.headerLikeLines += 1;
+      const match = grammar.matcher.exec(cleaned);
+      if (match === null) {
+        continue;
+      }
+      evidence.matches += 1;
+      const header = extractHeaderMatch(grammar.id, match, en.meridiem.am);
+      evidence.hasMeridiem ||= header.meridiem !== null;
+      evidence.hasSeconds ||= header.second !== null;
+      const first = Number(header.date[0]);
+      const second = Number(header.date[1]);
+      const third = Number(header.date[2]);
+      // All three captures are \d-groups, so they are always finite.
+      /* v8 ignore next 3 */
+      if (Number.isFinite(first) && Number.isFinite(second) && Number.isFinite(third)) {
+        evidence.dateTriples.push([first, second, third]);
+      }
+      if (/^\d{4}$/u.test(header.date[0])) {
+        evidence.fourDigitFirst = true;
+      }
     }
     if (nonEmptySeen >= sampleLimit) {
       break;
     }
   }
-
-  return { matches, headerLikeLines, hasMeridiem, hasSeconds, dateTriples, fourDigitFirst };
+  return { perGrammar };
 }
 
+/** Evidence for one grammar over the lines, in a single-matcher pass. */
+function collectEvidenceFor(
+  lines: readonly string[],
+  sampleLimit: number,
+  patternId: HeaderPatternId,
+): HeaderEvidence {
+  const grammar = DETECTION_PATTERNS.find((g) => g.id === patternId);
+  if (grammar === undefined) {
+    throw new Error(`unknown header grammar: ${patternId}`);
+  }
+  const evidence = freshEvidence();
+  let nonEmptySeen = 0;
+  for (const rawLine of lines) {
+    if (rawLine.trim() === '') {
+      continue;
+    }
+    nonEmptySeen += 1;
+    const cleaned = cleanHeaderLine(rawLine);
+    if (!isHeaderLike(cleaned)) {
+      continue;
+    }
+    evidence.headerLikeLines += 1;
+    const match = grammar.matcher.exec(cleaned);
+    if (match !== null) {
+      evidence.matches += 1;
+      const header = extractHeaderMatch(grammar.id, match, en.meridiem.am);
+      evidence.hasMeridiem ||= header.meridiem !== null;
+      evidence.hasSeconds ||= header.second !== null;
+      const first = Number(header.date[0]);
+      const second = Number(header.date[1]);
+      const third = Number(header.date[2]);
+      /* v8 ignore next 3 */
+      if (Number.isFinite(first) && Number.isFinite(second) && Number.isFinite(third)) {
+        evidence.dateTriples.push([first, second, third]);
+      }
+      if (/^\d{4}$/u.test(header.date[0])) {
+        evidence.fourDigitFirst = true;
+      }
+    }
+    if (nonEmptySeen >= sampleLimit) {
+      break;
+    }
+  }
+  return evidence;
+}
 /**
  * Resolves the date order from gathered evidence (§8.4 step 4). Conflicting
  * day/month evidence across the file is a hard error rather than a guess.
@@ -200,26 +270,27 @@ export function detectFormatInternal(
 ): Result<DetectedFormat, FormatError> {
   const normalized = normalizeNewlines(stripBom(text));
   const lines = normalized.split('\n');
-  // All grammars see the same header-like candidates, so counting them once
-  // with any grammar yields the shared denominator (§8.4 step 2). Small
-  // files — fewer than 3 header-like lines — need only 1 match (§8.4 step 3).
-  const candidateCount = collectEvidence(lines, SAMPLE_LINE_COUNT, 'ios-bracket').headerLikeLines;
-  const minMatches = candidateCount < MIN_MATCHES_LARGE ? MIN_MATCHES_SMALL : MIN_MATCHES_LARGE;
-
+  // One pass samples the first 1000 non-empty lines for the grammar vote; a
+  // second pass scans everything for the date order (§8.4 steps 2 and 4).
+  // Small files — fewer than 3 header-like lines — need only 1 match.
+  const sampleEvidence = collectAllEvidence(lines, SAMPLE_LINE_COUNT);
   const candidates = (
     ['ios-bracket', 'ios-bracket-nocomma', 'android-dash', 'android-dash-nocomma'] as const
   )
-    .map((id) => ({ id, evidence: collectEvidence(lines, SAMPLE_LINE_COUNT, id) }))
+    .map((id) => ({ id, evidence: sampleEvidence.perGrammar[id] }))
     // Tie-break is table order (§8.4 step 2): stable sort by count desc.
     .sort((a, b) => b.evidence.matches - a.evidence.matches);
 
   const best = candidates[0];
+  const candidateCount = best === undefined ? 0 : best.evidence.headerLikeLines;
+  const minMatches = candidateCount < MIN_MATCHES_LARGE ? MIN_MATCHES_SMALL : MIN_MATCHES_LARGE;
   if (best === undefined || best.evidence.matches < minMatches) {
     return err({ code: 'UNRECOGNIZED_FORMAT' });
   }
 
-  // Date order scans all header lines in the file (§8.4 step 4).
-  const fullEvidence = collectEvidence(lines, FULL_SCAN, best.id);
+  // Date order scans all header lines in the file (§8.4 step 4) with the
+  // winning grammar only — the vote is already settled.
+  const fullEvidence = collectEvidenceFor(lines, FULL_SCAN, best.id);
   const order = resolveDateOrder(fullEvidence, options.localeHint);
   if (!order.ok) {
     return order;

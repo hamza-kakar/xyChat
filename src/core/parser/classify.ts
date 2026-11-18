@@ -14,6 +14,7 @@ import type {
 import { mediaTypeForFileName } from './attachments';
 import { LRM, cleanBodyLine, stripMarksBeforeMarker } from './normalize';
 import type { LocalePatterns } from './locale/types';
+import { en } from './locale/en';
 
 /** The classification outcome for one message's body. */
 export interface ClassifiedBody {
@@ -30,6 +31,18 @@ export interface ClassifiedBody {
 function joinBody(lines: readonly string[]): string {
   return lines.join('\n').trimEnd();
 }
+
+/*
+ * Combined fast-path matchers: one anchored test per message short-circuits
+ * the per-pattern loops (100k-message exports make the constant factor
+ * matter). Alternation order is irrelevant here — these answer match /
+ * no-match; the specific pattern is resolved only on a hit.
+ */
+const SYSTEM_ANY = new RegExp(en.system.map((re) => `(?:${re.source})`).join('|'), 'u');
+const DELETED_ANY = new RegExp(en.deleted.map((re) => `(?:${re.source})`).join('|'), 'u');
+const EDITED_ANY = new RegExp(en.edited.map((re) => `(?:${re.source})`).join('|'), 'u');
+const OMITTED_ANY = new RegExp(en.omitted.map((o) => `(?:${o.re.source})`).join('|'), 'u');
+const CALLS_ANY = new RegExp(en.calls.map((re) => `(?:${re.source})`).join('|'), 'u');
 
 /** Drops a leading LRM or RLM from a chunk split out of a line. */
 function stripLeadingMarks(text: string): string {
@@ -100,6 +113,9 @@ function tryClassifySystem(
   author: string | null,
   locale: LocalePatterns,
 ): ClassifiedBody | null {
+  if (!SYSTEM_ANY.test(lines[0] ?? '')) {
+    return null;
+  }
   if (matchesAny(lines, locale.system)) {
     return systemBody({ author, lines, isEdited: false });
   }
@@ -126,6 +142,9 @@ function splitAuthor(rest: string): AuthorSplit | null {
 
 /** Tries the edited marker, returning the core with the flag set. */
 function tryStripEdited(lines: readonly string[], locale: LocalePatterns): BodyCore | null {
+  if (!EDITED_ANY.test(lines.at(-1) ?? '')) {
+    return null;
+  }
   if (matchesAny([lines.at(-1) ?? ''], locale.edited)) {
     return { author: null, lines: stripEditedMarker(lines, locale), isEdited: true };
   }
@@ -177,6 +196,9 @@ function tryReferencedAttachment(
 /** Tries the omitted-media placeholders. */
 function tryOmittedMedia(core: BodyCore, locale: LocalePatterns): ClassifiedBody | null {
   const first = core.lines[0] ?? '';
+  if (!OMITTED_ANY.test(first)) {
+    return null;
+  }
   for (const { re, mediaType } of locale.omitted) {
     if (re.test(first)) {
       return makeBody(core, 'media', {
@@ -245,6 +267,9 @@ function tryPoll(core: BodyCore, locale: LocalePatterns): ClassifiedBody | null 
 
 /** Tries the exact call bodies from the locale table. */
 function tryCall(core: BodyCore, locale: LocalePatterns): ClassifiedBody | null {
+  if (!CALLS_ANY.test(core.lines[0] ?? '')) {
+    return null;
+  }
   if (matchesAny(core.lines, locale.calls)) {
     return makeBody(core, 'call', {
       body: joinBody([stripMarksBeforeMarker(core.lines[0] ?? '')]),
@@ -259,7 +284,10 @@ function classifyKind(
   locale: LocalePatterns,
   platform: SourcePlatform,
 ): ClassifiedBody {
-  if (matchesAny(core.lines, locale.deleted)) {
+  const firstLine = core.lines[0] ?? '';
+  if (!DELETED_ANY.test(firstLine)) {
+    // not deleted
+  } else if (matchesAny(core.lines, locale.deleted)) {
     return makeBody(core, 'deleted', {
       body: joinBody([stripMarksBeforeMarker(core.lines[0] ?? '')]),
     });
