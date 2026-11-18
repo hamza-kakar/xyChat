@@ -48,6 +48,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:coverage
+      - run: pnpm exec vitest run --config vitest.browser-chromium.config.ts --coverage --passWithNoTests
 
   browser:
     name: Browser tests
@@ -65,7 +66,7 @@ jobs:
       # Coverage is per engine config: v8 for Chromium (vitest forbids v8
       # coverage on non-Chromium instances); WebKit runs without it — see
       # ADR 0007 for the M2 decision this leaves open.
-      - run: pnpm exec vitest run --config vitest.browser-chromium.config.ts --passWithNoTests
+      - run: pnpm exec vitest run --config vitest.browser-chromium.config.ts --coverage --passWithNoTests
       - run: pnpm exec vitest run --config vitest.browser-webkit.config.ts --passWithNoTests
 
   build:
