@@ -344,11 +344,7 @@ export function classifyBody(
   }
 
   const authoredLines = [split.bodyFirst, ...continuationLines.map(cleanBodyLine)];
-  const iosSystem = tryClassifySystem(
-    split.bodyFirst,
-    continuationLines.map(cleanBodyLine),
-    locale,
-  );
+  const iosSystem = tryClassifySystem(split.bodyFirst, continuationLines.map(cleanBodyLine));
   if (iosSystem !== null) {
     return iosSystem;
   }

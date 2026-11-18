@@ -183,7 +183,7 @@ describe('property: generated exports round-trip (§19.2.3)', () => {
 const MERGE_RUNS = { numRuns: 300 };
 
 /** Builds an entry; bodies are unique per list, so fp = body. */
-function mergeEntry(body: string, prefix: string, index: number): MergeEntry {
+function mergeEntry(body: string, index: number): MergeEntry {
   const message: ParsedMessage = {
     seq: index,
     sourceLine: index + 1,
@@ -211,11 +211,11 @@ describe('property: merge idempotent, order-preserving, lossless (§19.2.5)', ()
         .map((a) => [...new Set(a)]),
       fc.boolean(),
       (existingBodies, incomingBodies, shuffleIncoming) => {
-        const existing = existingBodies.map((b, index) => mergeEntry(b, 'e', index));
+        const existing = existingBodies.map((b, index) => mergeEntry(b, index));
         const incomingBodiesMaybeReversed = shuffleIncoming
           ? [...incomingBodies].reverse()
           : incomingBodies;
-        const incoming = incomingBodiesMaybeReversed.map((b, index) => mergeEntry(b, 'i', index));
+        const incoming = incomingBodiesMaybeReversed.map((b, index) => mergeEntry(b, index));
         const plan = planMerge(existing, incoming);
 
         const bodies = plan.messages.map((m) => m.message.body);
@@ -223,23 +223,39 @@ describe('property: merge idempotent, order-preserving, lossless (§19.2.5)', ()
         // the output (fingerprints are unique per entry, mirroring the
         // occurrence counter); bodies themselves may legitimately repeat.
         const fps = plan.messages.map((m) => m.fingerprint);
-        expect(new Set(fps).size).toBe(fps.length);
+        if (new Set(fps).size !== fps.length) {
+          throw new Error(`fps dup: ${JSON.stringify(fps)}`);
+        }
         const outputSet = new Set(bodies);
         for (const body of new Set(existingBodies)) {
-          expect(outputSet.has(body)).toBe(true);
+          if (!outputSet.has(body)) {
+            throw new Error(`existing body missing from output: ${body}`);
+          }
         }
         // Per-input relative order preserved.
         const existingOrder = plan.messages
           .filter((m) => !m.fromIncoming)
           .map((m) => m.message.body)
           .filter((b) => existingBodies.includes(b));
-        expect(existingOrder).toEqual(existingBodies.filter((b) => outputSet.has(b)));
+        if (JSON.stringify(existingOrder) !== JSON.stringify(existingBodies)) {
+          throw new Error(
+            `existingOrder ${JSON.stringify(existingOrder)} vs ${JSON.stringify(existingBodies)}`,
+          );
+        }
         // Order preservation is per INPUT list — after the optional shuffle.
+        // A body present in BOTH lists is emitted from the stored side
+        // (§8.10 rule 1), so the incoming-side stream must match exactly the
+        // incoming bodies that were not already stored.
         const incomingOrder = plan.messages
           .filter((m) => m.fromIncoming)
-          .map((m) => m.message.body)
-          .filter((b) => incomingBodiesMaybeReversed.includes(b));
-        expect(incomingOrder).toEqual(incomingBodiesMaybeReversed);
+          .map((m) => m.message.body);
+        const storedSet = new Set(existingBodies);
+        const expectedIncoming = incomingBodiesMaybeReversed.filter((b) => !storedSet.has(b));
+        if (JSON.stringify(incomingOrder) !== JSON.stringify(expectedIncoming)) {
+          throw new Error(
+            `incomingOrder ${JSON.stringify(incomingOrder)} vs ${JSON.stringify(expectedIncoming)}`,
+          );
+        }
 
         // Idempotency: re-merging with the same incoming list adds 0.
         const mergedEntries: MergeEntry[] = plan.messages.map((m, index) => ({
@@ -249,12 +265,12 @@ describe('property: merge idempotent, order-preserving, lossless (§19.2.5)', ()
           attachmentWasStored: true,
         }));
         const again = planMerge(mergedEntries, incoming);
-        expect(again.counts.added).toBe(0);
+        if (again.counts.added !== 0) {
+          throw new Error(`idempotency added=${again.counts.added} plan=${JSON.stringify(bodies)}`);
+        }
       },
     );
-    expect(() => {
-      fc.assert(prop, MERGE_RUNS);
-    }).not.toThrow();
+    fc.assert(prop, MERGE_RUNS);
   });
 });
 

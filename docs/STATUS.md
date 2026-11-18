@@ -4,9 +4,33 @@ Progress tracker for waChatBack. Updated in every PR.
 
 ## Current milestone
 
-**M0 — Scaffold, tooling, CI, deploy** (round 1 review addressed; awaiting re-review)
+**M1 — Core: parser, dates, fingerprint, merge, text-format** (complete; PR opened)
 
-## What's done
+## What's done (M1)
+
+- `core/` complete per §6–§8: Result, branded ids, domain model,
+  LocalDateTime (UTC-trick formatting, canonical form, tsKey), the four
+  header grammars with locale tables (en), detectFormat (evidence-based
+  grammar vote, date-order resolution with conflict detection, preview
+  sample), line assembly (continuations, orphan/invalid-date/
+  out-of-order warnings, progress events), classification (system-before-
+  split, attachments, omitted placeholders, locations, polls, calls,
+  deleted/edited), attachment media typing + static MIME table,
+  fingerprinting (injected SHA-256, pure-TS UTF-8), planMerge (§8.10
+  rules 1–3), chat metadata, WhatsApp text-format tokenizer.
+- 29 golden fixtures (§19.2) generated with an expectation-guarded
+  script; fixture runner pins parser output to committed expected.json.
+- Property tests (§19.2): never-throws, line accounting, round-trip,
+  fingerprint determinism, merge idempotency/order/losslessness, tokenizer
+  leaf preservation, locale-regex timing budget.
+- Perf gate: 100k-message parse in ~1.2–1.4 s (budget 2 s) via
+  scripts/perf-check.ts in the CI perf job.
+- Anonymizer (§19.3): parse-rebuild approach, Person A/B mapping
+  (including system-event actors), same-length pseudo-words, marker
+  vocabulary and file names preserved; CLI + unit tests.
+- docs/EXPORT-FORMATS.md evidence log.
+
+## Previously (M0)
 
 - Repository initialized; spec (`AGENTS.md`) committed at the repo root and
   adopted as the source of truth.
@@ -51,11 +75,21 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
 
 ## What's next
 
-- Awaiting M0 re-review. Per owner decision (2026-11-18): the agent merges
-  milestone PRs once CI is green and review approves; M1 (`m1-parser`, WIP
-  committed) rebases onto the approved M0 before continuing. `.zcode/`
-  stays untracked; FTS5 deferral (ADR 0008) and the M2 WebKit question
-  (ADR 0007) are ratified as written.
+- M2 — storage and db.worker (§10): sqlite-wasm + opfs-sahpool, migrations,
+  repository, Comlink API, browser-mode contract tests; the FTS5 boot probe
+  (ADR 0008) and the WebKit browser-coverage decision (ADR 0007) land here.
+
+## Verified results (M1)
+
+- Unit (node): **250 passed** — parser, dates, merge, fingerprint,
+  text-format, chat-meta, fixtures (58 assertions across 29 variants),
+  anonymizer.
+- Core coverage: **lines 100% / branches 91.1%** (§19.4 thresholds 95/90);
+  structurally-unreachable defensive branches carry v8-ignore with reasons.
+- Perf: parse 100k **1.2–1.4 s** (budget 2.0 s) on the CI-style runtime.
+- Property suites run 1,000 cases (300 for merge/fingerprint) per run;
+  merge property asserts per-input order preservation, cross-list duplicate
+  emission from the stored side, and idempotency.
 
 ## Known issues
 
