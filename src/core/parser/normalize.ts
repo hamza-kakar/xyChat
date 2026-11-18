@@ -30,6 +30,16 @@ const NO_BREAK_SPACE = '\u00A0';
 /** Bidirectional control characters removed from header lines (§8.3). */
 const HEADER_BIDI_CHARS = '\u200E\u200F\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069';
 
+/** Precompiled leading-bidi stripper (hot path: once per input line). */
+const LEADING_BIDI_RE = new RegExp(`^[${HEADER_BIDI_CHARS}]+`, 'u');
+/** Precompiled narrow/no-break space normalizer (hot path). */
+const NBSP_RE = new RegExp(`[${NARROW_NO_BREAK_SPACE}${NO_BREAK_SPACE}]`, 'gu');
+/** Precompiled mark-before-marker stripper. */
+const MARK_BEFORE_MARKER_RE = new RegExp(
+  `[${LRM}${RLM}]+(<|image|video|audio|sticker|GIF|document|Contact|Media|This|Voice|Video|Missed)`,
+  'u',
+);
+
 /**
  * Produces the header-matching form of a line: leading bidirectional marks
  * removed and non-breaking spaces replaced by plain spaces. Never mutates

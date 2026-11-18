@@ -141,5 +141,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # Parser/merge benchmarks arrive with milestone M1.
+      # Budget gate (100k parse ≤ 2s) in the bare runtime; detailed
+      # benchmarks via vitest bench (§17).
+      - run: pnpm exec tsx scripts/perf-check.ts
       - run: pnpm exec vitest bench --passWithNoTests

@@ -9,6 +9,8 @@ import type { ParsedMessage } from './model';
 
 /** One message in the merge output, tagged with its origin. */
 export interface MergedMessage {
+  /** The entry's fingerprint, carried so re-merges stay aligned. */
+  readonly fingerprint: string;
   readonly message: ParsedMessage;
   /** True when this entry came from the incoming export. */
   readonly fromIncoming: boolean;
@@ -51,7 +53,7 @@ interface MergePlanBuilder {
 
 /** Emits a stored entry in the output, marking its fingerprint as present. */
 function emitExisting(plan: MergePlanBuilder, entry: MergeEntry): void {
-  plan.messages.push({ message: entry.message, fromIncoming: false });
+  plan.messages.push({ fingerprint: entry.fingerprint, message: entry.message, fromIncoming: false });
   plan.emitted.add(entry.fingerprint);
 }
 
@@ -120,7 +122,11 @@ export function planMerge(
       if (plan.emitted.has(incomingEntry.fingerprint)) {
         plan.duplicates += 1;
       } else {
-        plan.messages.push({ message: incomingEntry.message, fromIncoming: true });
+        plan.messages.push({
+          fingerprint: incomingEntry.fingerprint,
+          message: incomingEntry.message,
+          fromIncoming: true,
+        });
         plan.added += 1;
         plan.emitted.add(incomingEntry.fingerprint);
       }
@@ -145,7 +151,11 @@ export function planMerge(
       emitExisting(plan, existingEntry);
       i += 1;
     } else {
-      plan.messages.push({ message: incomingEntry.message, fromIncoming: true });
+      plan.messages.push({
+        fingerprint: incomingEntry.fingerprint,
+        message: incomingEntry.message,
+        fromIncoming: true,
+      });
       plan.added += 1;
       plan.emitted.add(incomingEntry.fingerprint);
       j += 1;
