@@ -40,9 +40,14 @@ export async function writeMediaFile(path: string, bytes: Uint8Array): Promise<M
     }
     const fileHandle = await dir.getFileHandle(fileName, { create: true });
     const access = await fileHandle.createSyncAccessHandle();
-    access.write(bytes);
-    access.flush();
-    access.close();
+    try {
+      access.write(bytes);
+      access.flush();
+    } finally {
+      // The sync handle must close even when write/flush fails — a leaked
+      // handle keeps the OPFS file locked for the rest of the session.
+      access.close();
+    }
     return { ok: true, path, bytes: bytes.byteLength };
   } catch (error) {
     return { ok: false as const, reason: String(error).slice(0, 200) };

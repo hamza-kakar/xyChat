@@ -36,3 +36,12 @@ continue to use `crypto.randomUUID()` via the `core/ids.ts` constructors, per
   boundary that minted the value), not `rows.ts` — rows read these ids as
   plain strings via the Valibot schema.
 - Documented as a §6.2 deviation per §0.6 (this ADR).
+
+## Addendum (M2 audit round 2 — RPC boundary minting)
+
+The worker RPC boundary (`workers/rpc-validate.ts`) validates every incoming
+id with Valibot and then mints branded values via the `core/ids.ts` casts
+(`asChatId`, `asParticipantId`). Like `rows.ts`, it is a sanctioned minting
+point: data is fully validated immediately before the cast, and the
+validator is unit-tested (`rpc-validate.test.ts`). All other modules remain
+forbidden from casting raw strings (§6.2).

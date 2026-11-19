@@ -1,5 +1,5 @@
 # Production deploy: builds waChatBack and publishes to GitHub Pages.
-# Triggered by pushes to main AND by successful CI runs (gated, §20.4).
+# Triggered ONLY by a successful CI run on main (§20.4).
 name: Deploy to GitHub Pages
 
 on:
@@ -22,7 +22,7 @@ jobs:
   build:
     name: Build site
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - uses: pnpm/action-setup@f3d73ada1fa6e5c0c19973ff70a3f5cabf225cc5 # v6.0.0

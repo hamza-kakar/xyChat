@@ -44,7 +44,7 @@ const arbitraryAuthor = fc
   .stringMatching(/^[A-Za-z][A-Za-z .]{0,14}$/u)
   .filter((s) => s.trim().length > 0);
 
-/** Fields for the iOS header renderer. */
+/** Fields for the header renderers. */
 interface HeaderFields {
   readonly day: number;
   readonly hour: number;
@@ -54,10 +54,15 @@ interface HeaderFields {
   readonly body: string;
 }
 
-/** Renders one iOS-style header line for given fields. */
+/** Renders one iOS-style header line (12h with seconds, §24). */
 function renderIosHeader(f: HeaderFields): string {
   const h12 = f.hour % 12 === 0 ? 12 : f.hour % 12;
   return `[${f.day}/11/2026, ${h12}:${String(f.minute).padStart(2, '0')}:00 ${f.meridiem}] ${f.author}: ${f.body}`;
+}
+
+/** Renders one Android-style header line (24h, dash separator, §24). */
+function renderAndroidHeader(f: HeaderFields): string {
+  return `${f.day}/11/2026, ${String(f.hour).padStart(2, '0')}:${String(f.minute).padStart(2, '0')} - ${f.author}: ${f.body}`;
 }
 
 interface GeneratedMessage {
@@ -69,6 +74,18 @@ interface GeneratedMessage {
   readonly body: string;
 }
 
+/** Canonical marker bodies the generator may emit, with the kind the
+ * classifier must recover (§19.2.3 asserts kinds on generated data). */
+function expectedKind(body: string): 'text' | 'deleted' | 'call' {
+  if (body === 'This message was deleted.' || body === 'You deleted this message') {
+    return 'deleted';
+  }
+  if (body === 'Missed voice call') {
+    return 'call';
+  }
+  return 'text';
+}
+
 const arbitraryMessages: fc.Arbitrary<GeneratedMessage[]> = fc.array(
   fc.record({
     day: fc.constantFrom(16, 17, 18),
@@ -76,15 +93,32 @@ const arbitraryMessages: fc.Arbitrary<GeneratedMessage[]> = fc.array(
     minute: fc.integer({ min: 0, max: 59 }),
     meridiem: fc.constantFrom('AM', 'PM'),
     author: arbitraryAuthor,
-    body: fc.oneof(arbitraryBodyLine, arbitraryMarkerishBody),
+    body: fc.oneof(
+      arbitraryBodyLine,
+      fc.constant('This message was deleted.'),
+      fc.constant('Missed voice call'),
+    ),
   }),
   { minLength: 1, maxLength: 10 },
 );
 
-function renderAll(messages: readonly GeneratedMessage[]): string {
-  return messages
+/** A generated export: one platform per FILE (mixed headers would parse as
+ * one dominant grammar with continuations, §8.5). */
+interface GeneratedExport {
+  readonly platform: 'ios' | 'android';
+  readonly messages: readonly GeneratedMessage[];
+}
+
+const arbitraryExports: fc.Arbitrary<GeneratedExport> = fc.record({
+  platform: fc.constantFrom('ios' as const, 'android' as const),
+  messages: arbitraryMessages,
+});
+
+function renderAll(exported: GeneratedExport): string {
+  const render = exported.platform === 'ios' ? renderIosHeader : renderAndroidHeader;
+  return exported.messages
     .map((m) =>
-      renderIosHeader({
+      render({
         day: m.day,
         hour: m.hour,
         minute: m.minute,
@@ -175,22 +209,29 @@ describe('property: line accounting (§19.2.2)', () => {
 });
 
 describe('property: generated exports round-trip (§19.2.3)', () => {
-  it('recovers authors, times and bodies exactly', () => {
-    const prop = fc.property(arbitraryMessages, (messages) => {
-      const text = renderAll(messages);
+  it('recovers authors, kinds, times and bodies exactly on both platforms', () => {
+    const prop = fc.property(arbitraryExports, (exported) => {
+      const text = renderAll(exported);
       const format = detectOrThrow(text);
+      expect(format.platform).toBe(exported.platform);
       const parsed = parseChat(text, { format });
       if (!parsed.ok) {
         throw new Error('generation must parse');
       }
-      expect(parsed.value.messages).toHaveLength(messages.length);
-      messages.forEach((m, index) => {
+      expect(parsed.value.messages).toHaveLength(exported.messages.length);
+      exported.messages.forEach((m, index) => {
         const parsedMessage = parsed.value.messages[index];
         expect(parsedMessage?.author).toBe(m.author);
+        expect(parsedMessage?.kind).toBe(expectedKind(m.body));
         expect(parsedMessage?.body).toBe(m.body);
         expect(parsedMessage?.timestamp.day).toBe(m.day);
-        const h12 = m.hour % 12 === 0 ? 12 : m.hour % 12;
-        const h24 = m.meridiem === 'PM' ? (h12 === 12 ? 12 : h12 + 12) : h12 === 12 ? 0 : h12;
+        const h24 =
+          exported.platform === 'android'
+            ? m.hour
+            : (() => {
+                const h12 = m.hour % 12 === 0 ? 12 : m.hour % 12;
+                return m.meridiem === 'PM' ? (h12 === 12 ? 12 : h12 + 12) : h12 === 12 ? 0 : h12;
+              })();
         expect(parsedMessage?.timestamp.hour).toBe(h24);
         expect(parsedMessage?.timestamp.minute).toBe(m.minute);
       });
