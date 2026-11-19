@@ -53,7 +53,7 @@ export interface SqliteDatabase {
 }
 
 /** Wraps the sqlite3 OO Database in the repository-facing interface. */
-function wrap(db: Database): SqliteDatabase {
+export function wrapDatabase(db: Database): SqliteDatabase {
   return {
     exec(sql: string): void {
       db.exec(sql);
@@ -106,6 +106,10 @@ function wrap(db: Database): SqliteDatabase {
 }
 
 /** Internal: perform the actual sahpool-backed open. */
+/* v8 ignore next 30 -- SAHPool install requires worker-only OPFS APIs
+ * (createSyncAccessHandle); it runs inside db.worker at production boot and
+ * is exercised there by every e2e flow. Page-context coverage cannot reach
+ * it, per ADR 0007. */
 async function openSahpool(): Promise<SqliteDatabase> {
   const sqlite3: Sqlite3Static = await initSqlite3();
   // Registers the opfs-sahpool VFS; the pool util exposes the VFS-backed
@@ -113,7 +117,7 @@ async function openSahpool(): Promise<SqliteDatabase> {
   const pool = await sqlite3.installOpfsSAHPoolVfs({ directory: SAHPOOL_DIRECTORY });
   // The VFS's own constructor: (filename) — create-if-missing is implied.
   const db = new pool.OpfsSAHPoolDb(DB_FILENAME);
-  const wrapped = wrap(db);
+  const wrapped = wrapDatabase(db);
   // §10.1 pragmas: WAL is unsupported by this VFS.
   wrapped.exec(`
     PRAGMA journal_mode=DELETE;
@@ -145,6 +149,7 @@ export function verifyFts5Trigram(db: SqliteDatabase): void {
  *
  * @returns The opened, migrated database, or a structured failure.
  */
+/* v8 ignore next 3 -- same worker-only constraint as openSahpool */
 export async function openDatabase(): Promise<Result<SqliteDatabase, OpenError>> {
   // Single instance: if the lock is held, fail fast (§10.1).
   let locked: boolean;

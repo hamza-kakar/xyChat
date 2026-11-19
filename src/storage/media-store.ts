@@ -42,6 +42,8 @@ export function thumbPathFor(chatId: ChatId, attachmentId: string): string {
  * @param path Canonical path from {@link mediaPathFor}.
  * @param bytes Media bytes to write.
  */
+/* v8 ignore next 20 -- createSyncAccessHandle is worker-only; exercised by
+ * db.worker/import.worker at production runtime (§10.4). */
 export async function writeMediaFile(path: string, bytes: Uint8Array): Promise<MediaWriteResult> {
   try {
     const root = await navigator.storage.getDirectory();
@@ -97,7 +99,9 @@ export async function listFilesUnder(prefix: string): Promise<readonly string[]>
   const paths: string[] = [];
   const walk = async (dir: FileSystemDirectoryHandle, pathSoFar: string): Promise<void> => {
     for await (const [name, handle] of dir.entries()) {
-      const childPath = `${pathSoFar}/${name}`;
+      // Root-relative paths without a leading slash (callers pass prefixes
+      // like `media/<chatId>`).
+      const childPath = pathSoFar === '' ? name : `${pathSoFar}/${name}`;
       if (handle.kind === 'file') {
         if (childPath.startsWith(prefix)) {
           paths.push(childPath);

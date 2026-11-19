@@ -24,7 +24,12 @@ export default defineConfig({
         test: {
           name: 'node',
           environment: 'node',
-          include: ['src/core/**/*.test.ts', 'tests/fixtures/**/*.test.ts', 'scripts/**/*.test.ts'],
+          include: [
+            'src/core/**/*.test.ts',
+            'tests/fixtures/**/*.test.ts',
+            'scripts/**/*.test.ts',
+            'src/storage/sqlite/migrate.test.ts',
+          ],
         },
       },
       {

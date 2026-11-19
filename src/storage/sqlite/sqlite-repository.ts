@@ -4,7 +4,7 @@
  * validation. Runs inside db.worker — never on the main thread.
  */
 import type { ChatId, ParticipantId } from '../../core/ids';
-import { formatLocalDateTime } from './local-date-time-parse';
+import { formatLocalDateTime, parseLocalDateTime } from './local-date-time-parse';
 import {
   attachmentFromRow,
   bookmarkFromRow,
@@ -205,10 +205,7 @@ export class SqliteChatRepository {
       mediaBytes,
       dateRange:
         typeof first === 'string' && typeof last === 'string'
-          ? {
-              first: messageFromRow({ ts_local: first, kind: 'text' }).tsLocal,
-              last: messageFromRow({ ts_local: last, kind: 'text' }).tsLocal,
-            }
+          ? { first: parseLocalDateTime(first), last: parseLocalDateTime(last) }
           : null,
     };
   }
