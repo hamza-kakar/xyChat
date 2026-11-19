@@ -72,16 +72,24 @@ export function searchMessages(db: SqliteDatabase, q: SearchQuery): SearchPage {
     conditions.push('messages_fts MATCH ?');
     params.push(ftsPhrase(q.query));
   } else {
-    conditions.push("m.body LIKE ? ESCAPE '\\'");
-    params.push(`%${escapeLike(q.query)}%`);
+    // §11: 1–2 char queries skip FTS and use LIKE, in-chat only, capped
+    // at 500 results.
+    if (q.chatId === null || q.limit > 500) {
+      conditions.push('1 = 0');
+    } else {
+      conditions.push("m.body LIKE ? ESCAPE '\\'");
+      params.push(`%${escapeLike(q.query)}%`);
+    }
   }
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  // §11: global search sorts newest-first; in-chat search sorts by seq.
+  const orderBy = q.chatId !== null ? 'm.seq ASC' : 'm.ts_key DESC, m.id DESC';
   const rows = db.selectObjects(
     `SELECT m.*, p.display_name AS author_name
      FROM messages m ${joins} LEFT JOIN participants p ON p.id = m.author_id
      ${where}
-     ORDER BY m.ts_key DESC, m.id DESC
+     ORDER BY ${orderBy}
      LIMIT ?`,
     [...params, q.limit],
   );
