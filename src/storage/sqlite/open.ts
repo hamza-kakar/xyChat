@@ -54,7 +54,7 @@ async function openSahpool(): Promise<SqliteDatabase> {
  * @returns The opened, migrated database, or a structured failure.
  */
 /* v8 ignore next 4 -- same worker-only constraint as openSahpool; the
- * lifetime-lock semantics are unit-tested in opener.test.ts (Major 5). */
+ * lifetime-lock semantics are unit-tested in opener.test.ts. */
 export function openDatabase(): Promise<Result<SqliteDatabase, OpenError>> {
   // Built per call so importing this module never touches `navigator`
   // (unit tests import the factory with injected fakes).

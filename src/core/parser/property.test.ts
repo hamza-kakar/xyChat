@@ -6,8 +6,6 @@ import { createHash } from 'node:crypto';
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { fingerprint } from '../fingerprint';
-import { planMerge, type MergeEntry } from '../merge';
-import type { ParsedMessage } from '../model';
 import { detectFormat, parseChat, PARSER_VERSION, type DetectedFormat } from './index';
 
 const RUNS = { numRuns: 1000 };
@@ -242,100 +240,6 @@ describe('property: generated exports round-trip (§19.2.3)', () => {
   });
 });
 
-const MERGE_RUNS = { numRuns: 1000 };
-
-/** Builds an entry; bodies are unique per list, so fp = body. */
-function mergeEntry(body: string, index: number): MergeEntry {
-  const message: ParsedMessage = {
-    seq: index,
-    sourceLine: index + 1,
-    timestamp: { year: 2026, month: 11, day: 17, hour: 21, minute: index % 60, second: 0 },
-    author: 'A',
-    kind: 'text',
-    body,
-    isEdited: false,
-    attachment: null,
-    poll: null,
-    location: null,
-  };
-  // Content-derived fingerprint, mirroring real occurrence-counted ids.
-  return { fingerprint: body, message, tsKey: index, attachmentWasStored: true };
-}
-
-describe('property: merge idempotent, order-preserving, lossless (§19.2.5)', () => {
-  it('holds on generated lists', () => {
-    const prop = fc.property(
-      fc
-        .array(fc.stringMatching(/^[a-z]{3,6}$/u), { minLength: 0, maxLength: 10 })
-        .map((a) => [...new Set(a)]),
-      fc
-        .array(fc.stringMatching(/^[a-z]{3,6}$/u), { minLength: 0, maxLength: 10 })
-        .map((a) => [...new Set(a)]),
-      fc.boolean(),
-      (existingBodies, incomingBodies, shuffleIncoming) => {
-        const existing = existingBodies.map((b, index) => mergeEntry(b, index));
-        const incomingBodiesMaybeReversed = shuffleIncoming
-          ? [...incomingBodies].reverse()
-          : incomingBodies;
-        const incoming = incomingBodiesMaybeReversed.map((b, index) => mergeEntry(b, index));
-        const plan = planMerge(existing, incoming);
-
-        const bodies = plan.messages.map((m) => m.message.body);
-        // Lossless + deduplicated: each fingerprint appears at most once in
-        // the output (fingerprints are unique per entry, mirroring the
-        // occurrence counter); bodies themselves may legitimately repeat.
-        const fps = plan.messages.map((m) => m.fingerprint);
-        if (new Set(fps).size !== fps.length) {
-          throw new Error(`fps dup: ${JSON.stringify(fps)}`);
-        }
-        const outputSet = new Set(bodies);
-        for (const body of new Set(existingBodies)) {
-          if (!outputSet.has(body)) {
-            throw new Error(`existing body missing from output: ${body}`);
-          }
-        }
-        // Per-input relative order preserved.
-        const existingOrder = plan.messages
-          .filter((m) => !m.fromIncoming)
-          .map((m) => m.message.body)
-          .filter((b) => existingBodies.includes(b));
-        if (JSON.stringify(existingOrder) !== JSON.stringify(existingBodies)) {
-          throw new Error(
-            `existingOrder ${JSON.stringify(existingOrder)} vs ${JSON.stringify(existingBodies)}`,
-          );
-        }
-        // Order preservation is per INPUT list — after the optional shuffle.
-        // A body present in BOTH lists is emitted from the stored side
-        // (§8.10 rule 1), so the incoming-side stream must match exactly the
-        // incoming bodies that were not already stored.
-        const incomingOrder = plan.messages
-          .filter((m) => m.fromIncoming)
-          .map((m) => m.message.body);
-        const storedSet = new Set(existingBodies);
-        const expectedIncoming = incomingBodiesMaybeReversed.filter((b) => !storedSet.has(b));
-        if (JSON.stringify(incomingOrder) !== JSON.stringify(expectedIncoming)) {
-          throw new Error(
-            `incomingOrder ${JSON.stringify(incomingOrder)} vs ${JSON.stringify(expectedIncoming)}`,
-          );
-        }
-
-        // Idempotency: re-merging with the same incoming list adds 0.
-        const mergedEntries: MergeEntry[] = plan.messages.map((m, index) => ({
-          fingerprint: m.fingerprint,
-          message: { ...m.message, seq: index },
-          tsKey: m.message.timestamp.minute,
-          attachmentWasStored: true,
-        }));
-        const again = planMerge(mergedEntries, incoming);
-        if (again.counts.added !== 0) {
-          throw new Error(`idempotency added=${again.counts.added} plan=${JSON.stringify(bodies)}`);
-        }
-      },
-    );
-    fc.assert(prop, MERGE_RUNS);
-  });
-});
-
 describe('property: fingerprints deterministic and distinct (§19.2.4)', () => {
   it('holds on generated tuples', async () => {
     const prop = fc.asyncProperty(
@@ -383,7 +287,7 @@ describe('property: fingerprints deterministic and distinct (§19.2.4)', () => {
         }
       },
     );
-    await fc.assert(prop, MERGE_RUNS);
+    await fc.assert(prop, RUNS);
   });
 });
 

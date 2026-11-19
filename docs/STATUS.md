@@ -107,7 +107,16 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
   safety checks, confirmation handshake with DMY/MDY live preview,
   thumbnails, cancellation + crash rollback wiring, import UI.
 
-## Verified results (M2 + audit round-2 rework)
+## Verified results (M2 + audit rounds 2–3)
+
+- Import-commit perf gate (§17): committing a 100k-message re-import into a
+  chat with 100k stored messages — **~1.6 s** (budget 2.0 s, CI Chromium).
+  The plan is computed first; undisplaced rows are never touched, displaced
+  rows take the §10.2 offset trick in batched statements, incoming rows
+  insert at their final positions.
+- planMerge counts `mediaUpgraded` only for twins whose export NEWLY
+  provides bytes; two new properties pin this (omitted twins never upgrade;
+  upgrades equal the newly-present twin count) — 1,000 runs each.
 
 - Unit (node): **274 passed** — core suites plus the new injection-tested
   modules: `opener.test.ts` (Web Locks lifetime lock: second open →

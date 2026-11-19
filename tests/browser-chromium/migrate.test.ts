@@ -25,6 +25,10 @@ function fakeDb(): SqliteDatabase & { readonly log: string[] } {
       }
       return [];
     },
+    selectArrays(sql: string): unknown[][] {
+      log.push(`selectArrays:${sql.slice(0, 40)}`);
+      return [];
+    },
     run(sql: string, params?: readonly (string | number | null)[]): void {
       log.push(`run:${sql.slice(0, 40)}:${JSON.stringify(params ?? [])}`);
       if (sql.includes('INSERT INTO meta')) {

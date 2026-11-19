@@ -15,7 +15,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
       reportsDirectory: 'coverage-browser-chromium',
-      // Worker coverage strategy (review Major 8): page-context browser
+      // Worker coverage strategy (ADR 0007 addendum): page-context browser
       // tests measure the storage layer against the real sqlite-wasm stack.
       // opener.ts (Web Locks lifetime lock) is unit-tested with injected
       // fake lock managers in the node project (opener.test.ts); db.worker /
@@ -24,7 +24,7 @@ export default defineConfig({
       // thresholds in the unit project.
       include: ['src/storage/**'],
       exclude: ['src/storage/repository.ts', 'src/storage/sqlite/opener.ts', '**/*.test.ts'],
-      // §19.4: storage ≥ 85% lines, CI-enforced (audit blocker 4).
+      // §19.4: storage ≥ 85% lines, CI-enforced.
       thresholds: {
         'src/storage/**': { lines: 85 },
       },

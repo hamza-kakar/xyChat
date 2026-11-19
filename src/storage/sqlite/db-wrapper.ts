@@ -13,6 +13,12 @@ export interface SqliteDatabase {
     sql: string,
     params?: readonly (string | number | null)[],
   ): Record<string, unknown>[];
+  /**
+   * Runs a parameterized statement returning rows as positional arrays —
+   * the cheap row shape for large scans (§17: object rows cost a key
+   * mapping per cell on the wasm bridge).
+   */
+  selectArrays(sql: string, params?: readonly (string | number | null)[]): unknown[][];
   /** Runs a parameterized statement returning nothing. */
   run(sql: string, params?: readonly (string | number | null)[]): void;
   /** Wraps the callback in BEGIN/COMMIT, rolling back on throw. */
@@ -40,6 +46,17 @@ export function wrapDatabase(db: Database): SqliteDatabase {
         sql,
         bind: [...params],
         rowMode: 'object',
+        returnValue: 'resultRows',
+      });
+    },
+    selectArrays(sql: string, params?: readonly (string | number | null)[]): unknown[][] {
+      if (params === undefined) {
+        return db.exec({ sql, rowMode: 'array', returnValue: 'resultRows' });
+      }
+      return db.exec({
+        sql,
+        bind: [...params],
+        rowMode: 'array',
         returnValue: 'resultRows',
       });
     },

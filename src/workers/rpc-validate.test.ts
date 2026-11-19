@@ -1,5 +1,5 @@
 /**
- * RPC input validation tests (§18.5, review Major 9): every validator
+ * RPC input validation tests (§18.5): every validator
  * rejects malformed worker input with RpcValidationError and passes fully
  * valid data through unchanged.
  */
@@ -53,7 +53,7 @@ function firstMessageOf(input: Record<string, unknown>): {
   return first;
 }
 
-describe('RPC validation: commitImport input (§18.5, review Major 9)', () => {
+describe('RPC validation: commitImport input (§18.5)', () => {
   it('rejects non-hex fingerprints', () => {
     expect(() =>
       rpcInput.commitImport('commitImport', validCommitInput({ fingerprint: 'zz' })),
@@ -90,7 +90,7 @@ describe('RPC validation: commitImport input (§18.5, review Major 9)', () => {
   });
 });
 
-describe('RPC validation: search input (§18.5, review Major 9)', () => {
+describe('RPC validation: search input (§18.5)', () => {
   it('rejects bad search queries and clamps nothing silently', () => {
     const base = {
       chatId: null,
@@ -112,7 +112,7 @@ describe('RPC validation: search input (§18.5, review Major 9)', () => {
   });
 });
 
-describe('RPC validation: ids, windows and records (§18.5, review Major 9)', () => {
+describe('RPC validation: ids, windows and records (§18.5)', () => {
   it('brands ids only after length validation', () => {
     expect(rpcInput.chatId('getChat', 'chat-123')).toBe('chat-123');
     expect(() => rpcInput.chatId('getChat', '')).toThrow(RpcValidationError);

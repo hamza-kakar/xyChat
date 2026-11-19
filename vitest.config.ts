@@ -47,7 +47,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
       reportsDirectory: 'coverage',
-      // Worker coverage strategy (review Major 8): the testable worker-side
+      // Worker coverage strategy (ADR 0007 addendum): the testable worker-side
       // logic lives in page modules — rpc-validate.ts (validation) and
       // rpc-call.ts (client timeout regime) — and is unit-tested here with
       // §19.4 thresholds. The worker entry shells (db.worker.ts,

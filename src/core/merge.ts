@@ -41,8 +41,12 @@ export interface MergeEntry {
   readonly message: ParsedMessage;
   /** Timestamp key for tie-breaking (wall-clock as UTC seconds). */
   readonly tsKey: number;
-  /** True when the stored entry already has its media bytes stored. */
-  readonly attachmentWasStored: boolean;
+  /**
+   * True when the entry carries its media bytes: for a stored entry, the
+   * bytes are already in OPFS; for an incoming entry, the file is present
+   * in the export (§8.6 status 'referenced' that will be written).
+   */
+  readonly attachmentStored: boolean;
 }
 
 /** Mutable walk state, local to one planMerge run. */
@@ -156,10 +160,12 @@ export function planMerge(
     }
 
     if (existingEntry.fingerprint === incomingEntry.fingerprint) {
-      // Rule 1: emit once from the stored side, advance BOTH; media that the
-      // export newly provides upgrades a stored omitted/missing attachment.
+      // Rule 1: emit once from the stored side, advance BOTH. Media counts
+      // as upgraded only when the export NEWLY provides bytes (§8.10): the
+      // stored entry has none and the incoming twin has them. An omitted
+      // twin never turns a placeholder into present media.
       plan.duplicates += 1;
-      if (!existingEntry.attachmentWasStored && incomingEntry.message.attachment !== null) {
+      if (!existingEntry.attachmentStored && incomingEntry.attachmentStored) {
         plan.mediaUpgraded += 1;
       }
       emitExisting(plan, existingEntry, incomingEntry.fingerprint);

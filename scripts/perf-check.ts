@@ -89,7 +89,7 @@ for (let i = 0; i < MESSAGE_COUNT; i += 1) {
         message.timestamp.minute,
         message.timestamp.second,
       ) / 1000,
-    attachmentWasStored: false,
+    attachmentStored: false,
   });
 }
 planMerge([], entries);

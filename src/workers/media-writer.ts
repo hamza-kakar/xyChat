@@ -2,8 +2,9 @@
  * Worker-only media writer (AGENTS.md §10.4): sync access handles are
  * available only in dedicated workers, so this module is imported by
  * import.worker (M3). Main-thread reads live in storage/media-store.ts.
- * Failures return the shared Result type (§6.1) with a diagnostic reason
- * (logger-only, §18.7) — expected failures never throw.
+ * Failures return the shared Result type (§6.1) with a typed code union —
+ * user-facing text is mapped from codes in i18n (§18.7), and expected
+ * failures never throw.
  */
 import { err, ok, type Result } from '../core/result';
 
@@ -13,7 +14,22 @@ export interface MediaWriteOk {
   readonly bytes: number;
 }
 
-type MediaWrite = Result<MediaWriteOk, string>;
+/** Failure codes for a media write. */
+export type MediaWriteErrorCode = 'EMPTY_NAME' | 'QUOTA' | 'IO';
+
+/** A structured write failure (§18.7: logger-only detail, never user-facing). */
+export interface MediaWriteError {
+  readonly code: MediaWriteErrorCode;
+  /** Engine-provided diagnostic text; contains no user content. */
+  readonly detail: string;
+}
+
+type MediaWrite = Result<MediaWriteOk, MediaWriteError>;
+
+/** Maps an unexpected write error onto the typed failure codes. */
+function classify(error: unknown): MediaWriteErrorCode {
+  return error instanceof Error && error.name === 'QuotaExceededError' ? 'QUOTA' : 'IO';
+}
 
 /**
  * Writes media bytes into OPFS via a sync access handle (worker-only, §10.4).
@@ -22,7 +38,7 @@ type MediaWrite = Result<MediaWriteOk, string>;
  *
  * @param path Canonical path from {@link mediaPathFor}.
  * @param bytes Media bytes to write.
- * @returns The written path and byte count, or a diagnostic reason.
+ * @returns The written path and byte count, or a typed failure.
  */
 export async function writeMediaFile(path: string, bytes: Uint8Array): Promise<MediaWrite> {
   try {
@@ -30,7 +46,7 @@ export async function writeMediaFile(path: string, bytes: Uint8Array): Promise<M
     const segments = path.split('/');
     const fileName = segments.pop();
     if (fileName === undefined || fileName === '') {
-      return err('empty file name');
+      return err({ code: 'EMPTY_NAME', detail: path });
     }
     let dir = root;
     for (const segment of segments) {
@@ -46,6 +62,6 @@ export async function writeMediaFile(path: string, bytes: Uint8Array): Promise<M
     }
     return ok({ path, bytes: bytes.byteLength });
   } catch (error) {
-    return err(String(error).slice(0, 200));
+    return err({ code: classify(error), detail: String(error).slice(0, 200) });
   }
 }

@@ -1,5 +1,5 @@
 /**
- * Single-instance lock tests (§10.1, review Major 5): the opener is
+ * Single-instance lock tests (§10.1): the opener is
  * dependency-injected, so the lifetime-lock semantics run in Node against a
  * fake Web Locks manager — second open fails with LOCK_UNAVAILABLE until the
  * first connection is closed.
@@ -45,6 +45,7 @@ function stubDb(failExec: boolean): SqliteDatabase & { readonly closed: () => bo
       }
     },
     selectObjects: () => [],
+    selectArrays: () => [],
     run: () => undefined,
     transaction: <T>(fn: () => T): T => fn(),
     lastInsertRowId: () => 0,
