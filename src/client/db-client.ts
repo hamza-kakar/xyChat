@@ -36,15 +36,40 @@ export function ensureDbReady(): Promise<boolean> {
   return readyPromise;
 }
 
-/** Forwards a call to the worker; INTERNAL failures become thrown errors. */
-async function call<T>(fn: (api: DbApi) => Promise<T>): Promise<T> {
+const RPC_TIMEOUT_MS = 10_000;
+const RPC_TIMEOUT_EXEMPT = new Set(['commitImport']);
+
+let diagnosticCounter = 0;
+
+/** Forwards a call to the worker with a timeout (§18.8) and diagnostic id
+ * (§18.7): timeouts and INTERNAL failures carry a stable id the user can
+ * quote from the Diagnostics screen. */
+async function call<T>(fn: (api: DbApi) => Promise<T>, method = 'unknown'): Promise<T> {
   const ok = await ensureDbReady();
   if (!ok) {
     throw new Error('INTERNAL: database unavailable (unsupported browser or open failure)');
   }
-  // INTERNAL failures carry their code in the message; the caller maps
-  // them to user-facing errors via i18n.
-  return fn(remote());
+  const diagnosticId = `${Date.now().toString(36)}-${(diagnosticCounter += 1).toString(36)}`;
+  if (RPC_TIMEOUT_EXEMPT.has(method)) {
+    // Long-running import commits are exempt from the RPC timeout (§18.8).
+    try {
+      return await fn(remote());
+    } catch (error) {
+      // §3.1: no app imports here — the caller logs the diagnostic id.
+      throw new Error(
+        `INTERNAL: ${method} failed (id ${diagnosticId}): ${String(error).slice(0, 120)}`,
+        { cause: error },
+      );
+    }
+  }
+  return Promise.race([
+    fn(remote()),
+    new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`TIMEOUT: ${method} exceeded ${RPC_TIMEOUT_MS}ms (id ${diagnosticId})`));
+      }, RPC_TIMEOUT_MS);
+    }),
+  ]);
 }
 
 /** The main-thread-facing db client. */
