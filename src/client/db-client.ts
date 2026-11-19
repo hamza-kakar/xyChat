@@ -30,8 +30,7 @@ function remote(): Comlink.Remote<DbApi> {
 export function ensureDbReady(): Promise<boolean> {
   readyPromise ??= (async (): Promise<boolean> => {
     const result = await remote().ready();
-    // The caller (CapabilityGate) logs and renders the failure; the client
-    // stays layer-clean (§3.1 — no app imports).
+    // §9.3 boot rollback (incl. file deletion) completed in the worker.
     return result.ok;
   })();
   return readyPromise;
@@ -56,8 +55,10 @@ export const dbClient = {
     call((a) => a.getParticipants(chatId)),
   getMessageWindow: (q: Parameters<DbApi['getMessageWindow']>[0]) =>
     call((a) => a.getMessageWindow(q)),
-  findSeqByDate: (chatId: Parameters<DbApi['findSeqByDate']>[0], tsKey: number) =>
-    call((a) => a.findSeqByDate(chatId, tsKey)),
+  findSeqByDate: (
+    chatId: Parameters<DbApi['findSeqByDate']>[0],
+    date: Parameters<DbApi['findSeqByDate']>[1],
+  ) => call((a) => a.findSeqByDate(chatId, date)),
   search: (q: Parameters<DbApi['search']>[0]) => call((a) => a.search(q)),
   listAttachments: (q: Parameters<DbApi['listAttachments']>[0]) =>
     call((a) => a.listAttachments(q)),

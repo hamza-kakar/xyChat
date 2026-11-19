@@ -153,7 +153,7 @@ export function verifyFts5Trigram(db: SqliteDatabase): void {
 export async function openDatabase(): Promise<Result<SqliteDatabase, OpenError>> {
   // §10.1: the lock is held for the CONNECTION lifetime — the callback opens
   // the DB and only resolves when the caller closes it (via the released
- // promise below), so a second tab fails fast with LOCK_UNAVAILABLE.
+  // promise below), so a second tab fails fast with LOCK_UNAVAILABLE.
   try {
     return await navigator.locks.request(
       INSTANCE_LOCK_NAME,

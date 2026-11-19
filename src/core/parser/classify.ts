@@ -13,8 +13,8 @@ import type {
 } from '../model';
 import { mediaTypeForFileName } from './attachments';
 import { LRM, cleanBodyLine, stripMarksBeforeMarker } from './normalize';
+import { matchersFor } from './matchers';
 import type { LocalePatterns } from './locale/types';
-import { en } from './locale/en';
 
 /** The classification outcome for one message's body. */
 export interface ClassifiedBody {
@@ -30,43 +30,6 @@ export interface ClassifiedBody {
 /** Joins first line and continuations with LF, trimming trailing whitespace. */
 function joinBody(lines: readonly string[]): string {
   return lines.join('\n').trimEnd();
-}
-
-/**
- * Combined fast-path matchers, built per locale table (§8.7: adding a
- * language is a table file plus fixtures, no logic changes). Cached per
- * locale id — the tables are immutable.
- */
-const matcherCache = new Map<string, LocaleMatchers>();
-
-/** The union matchers for one locale, derived from its tables. */
-interface LocaleMatchers {
-  readonly system: RegExp;
-  readonly deleted: RegExp;
-  readonly edited: RegExp;
-  readonly omitted: RegExp;
-  readonly calls: RegExp;
-}
-
-/** Builds the union matchers for a locale table. */
-function buildMatchers(locale: LocalePatterns): LocaleMatchers {
-  return {
-    system: new RegExp(locale.system.map((re) => `(?:${re.source})`).join('|'), 'u'),
-    deleted: new RegExp(locale.deleted.map((re) => `(?:${re.source})`).join('|'), 'u'),
-    edited: new RegExp(locale.edited.map((re) => `(?:${re.source})`).join('|'), 'u'),
-    omitted: new RegExp(locale.omitted.map((o) => `(?:${o.re.source})`).join('|'), 'u'),
-    calls: new RegExp(locale.calls.map((re) => `(?:${re.source})`).join('|'), 'u'),
-  };
-}
-
-/** Returns the cached matchers for a locale, building them on first use. */
-function matchersFor(locale: LocalePatterns): LocaleMatchers {
-  let matchers = matcherCache.get(locale.id);
-  if (matchers === undefined) {
-    matchers = buildMatchers(locale);
-    matcherCache.set(locale.id, matchers);
-  }
-  return matchers;
 }
 
 /** Drops a leading LRM or RLM from a chunk split out of a line. */

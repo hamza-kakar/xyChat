@@ -139,11 +139,36 @@ describe('repository contract: queries', () => {
   });
 
   it('finds seq by date', () => {
-    const tsKey0 = Date.UTC(2026, 10, 17, 21, 0, 0) / 1000;
-    const tsKey1 = Date.UTC(2026, 10, 17, 21, 1, 0) / 1000;
-    expect(repo.findSeqByDate(chatId, tsKey0)).toBe(0);
-    expect(repo.findSeqByDate(chatId, tsKey1)).toBe(1);
-    expect(repo.findSeqByDate(chatId, tsKey1 + 10_000)).toBeNull();
+    expect(
+      repo.findSeqByDate(chatId, {
+        year: 2026,
+        month: 11,
+        day: 17,
+        hour: 21,
+        minute: 0,
+        second: 0,
+      }),
+    ).toBe(0);
+    expect(
+      repo.findSeqByDate(chatId, {
+        year: 2026,
+        month: 11,
+        day: 17,
+        hour: 21,
+        minute: 1,
+        second: 0,
+      }),
+    ).toBe(1);
+    expect(
+      repo.findSeqByDate(chatId, {
+        year: 2026,
+        month: 11,
+        day: 17,
+        hour: 22,
+        minute: 1,
+        second: 0,
+      }),
+    ).toBeNull();
   });
 
   it('searches with filters and snippets', () => {
@@ -173,6 +198,14 @@ describe('repository contract: queries', () => {
       cursor: null,
     });
     expect(byKind.hits).toHaveLength(1);
+  });
+});
+
+describe('repository contract: attachments, links, stats', () => {
+  beforeEach(() => {
+    createImportRecord(db, recordInput('imp-al'));
+    const result = commitImport(db, commitInput('imp-al', null));
+    chatId = asChatId(result.chatId);
   });
 
   it('lists attachments, links and stats', () => {

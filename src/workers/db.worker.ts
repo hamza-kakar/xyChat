@@ -8,7 +8,9 @@ import { openDatabase } from '../storage/sqlite/open';
 import { SqliteChatRepository } from '../storage/sqlite/sqlite-repository';
 import { commitImport, type ImportCommitInput } from '../storage/sqlite/import-commit';
 import { createImportRecord, type ImportRecordInput } from '../storage/sqlite/import-record';
+import { deleteMediaFile } from '../storage/media-store';
 import type { ChatId } from '../core/ids';
+import type { LocalDateTime } from '../core/model';
 import type { DbApi, WorkerError } from './db-api';
 import { attachmentFromRow } from '../storage/sqlite/rows';
 
@@ -49,9 +51,14 @@ const api: DbApi = {
         };
       }
       repository = new SqliteChatRepository(opened.value);
-      // §9.3 boot rollback: mark in_progress imports rolled_back (the client
-      // logs the returned path count from the RPC result).
-      void repository.rollbackInProgressImports();
+      // §9.3 boot rollback: mark in_progress imports rolled_back and return
+      // their written OPFS paths — the client deletes the files.
+      const orphanPaths = repository.rollbackInProgressImports();
+      // §9.3: the worker deletes the crashed import's files itself (workers
+      // may import storage per §3.1); the client only logs the count.
+      for (const path of orphanPaths) {
+        await deleteMediaFile(path);
+      }
       return { ok: true as const };
     } catch (error) {
       return { ok: false as const, error: toWorkerError(error) };
@@ -62,7 +69,8 @@ const api: DbApi = {
   getChat: (id) => wrap(() => repo().getChat(id)),
   getParticipants: (chatId) => wrap(() => repo().getParticipants(chatId)),
   getMessageWindow: (q) => wrap(() => repo().getMessageWindow(q)),
-  findSeqByDate: (chatId: ChatId, tsKey: number) => wrap(() => repo().findSeqByDate(chatId, tsKey)),
+  findSeqByDate: (chatId: ChatId, date: LocalDateTime) =>
+    wrap(() => repo().findSeqByDate(chatId, date)),
   search: (q) => wrap(() => repo().search(q)),
   listAttachments: (q) => wrap(() => repo().listAttachments(q)),
   listLinks: (q) => wrap(() => repo().listLinks(q)),

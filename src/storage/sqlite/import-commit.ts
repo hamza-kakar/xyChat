@@ -9,6 +9,7 @@
 import type { ParsedMessage, SourcePlatform } from '../../core/model';
 import { planMerge, type MergeEntry } from '../../core/merge';
 import { formatLocalDateTime } from './local-date-time-parse';
+import { tsLocalToKey } from './ts-key';
 import type { SqliteDatabase } from './open';
 import { upsertParticipant } from './participant-upsert';
 
@@ -110,18 +111,6 @@ function loadStoredEntries(db: SqliteDatabase, chatId: string): readonly StoredE
     tsKey: Number(row['ts_key']),
     attachmentWasStored: Number(row['stored']) === 1,
   }));
-}
-
-/** Wall-clock-as-UTC seconds (§10.2 ts_key). */
-function tsLocalToKey(t: {
-  readonly year: number;
-  readonly month: number;
-  readonly day: number;
-  readonly hour: number;
-  readonly minute: number;
-  readonly second: number;
-}): number {
-  return Date.UTC(t.year, t.month - 1, t.day, t.hour, t.minute, t.second) / 1000;
 }
 
 /** Context shared by the plan-application helpers. */

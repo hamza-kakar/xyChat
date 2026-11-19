@@ -22,6 +22,7 @@ import type {
 import type { ImportCommitInput, ImportCommitResult } from '../storage/sqlite/import-commit';
 import type { ImportRecordInput } from '../storage/sqlite/import-record';
 import type { ChatId, ParticipantId } from '../core/ids';
+import type { LocalDateTime } from '../core/model';
 
 /** A serialized worker error (§18.7). */
 export interface WorkerError {
@@ -42,7 +43,7 @@ export interface DbApi {
     before: number;
     after: number;
   }): Promise<MessageWindow>;
-  findSeqByDate(chatId: ChatId, tsKey: number): Promise<number | null>;
+  findSeqByDate(chatId: ChatId, date: LocalDateTime): Promise<number | null>;
   search(q: SearchQuery): Promise<SearchPage>;
   listAttachments(q: {
     chatId: ChatId;

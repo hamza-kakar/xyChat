@@ -31,12 +31,8 @@ function seedRows(repo: SqliteChatRepository, chatId: string): void {
       const body = bodies[j % bodies.length] ?? '';
       const tsLocal = `2026-11-17T${String(8 + (j % 12)).padStart(2, '0')}:${String(j % 60).padStart(2, '0')}:00`;
       const tsKey = Date.UTC(2026, 10, 17, 8 + (j % 12), j % 60, 0) / 1000;
-      const offset = j - i;
-      values.push(
-        `(NULL, ?, ?, ?, ?, ?, NULL, 'text', ?, 0, NULL, 'perf-import')`,
-      );
+      values.push(`(NULL, ?, ?, ?, ?, ?, NULL, 'text', ?, 0, NULL, 'perf-import')`);
       params.push(chatId, `perf-fp-${j}`, j, tsLocal, tsKey, body);
-      void offset;
     }
     repo.database.run(
       `INSERT INTO messages (id, chat_id, fingerprint, seq, ts_local, ts_key, author_id, kind, body, is_edited, extra_json, import_id)
