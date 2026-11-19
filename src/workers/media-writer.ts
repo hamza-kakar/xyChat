@@ -2,29 +2,27 @@
  * Worker-only media writer (AGENTS.md §10.4): sync access handles are
  * available only in dedicated workers, so this module is imported by
  * import.worker (M3). Main-thread reads live in storage/media-store.ts.
+ * Failures return the shared Result type (§6.1) with a diagnostic reason
+ * (logger-only, §18.7) — expected failures never throw.
  */
+import { err, ok, type Result } from '../core/result';
 
-/** Result of a media write. */
-export interface MediaWriteResult {
-  readonly ok: true;
+/** Successful write: the canonical path written and the byte count. */
+export interface MediaWriteOk {
   readonly path: string;
   readonly bytes: number;
 }
 
-/** Write failure with a diagnostic reason (logger-only, §18.7). */
-export interface MediaWriteError {
-  readonly ok: false;
-  readonly reason: string;
-}
-
-type MediaWrite = MediaWriteResult | MediaWriteError;
+type MediaWrite = Result<MediaWriteOk, string>;
 
 /**
- * Writes media bytes into OPFS via a sync access handle. Worker-only:
- * §10.4). Creates the chat directory as needed.
+ * Writes media bytes into OPFS via a sync access handle (worker-only, §10.4).
+ * Creates the chat directory as needed; closes the handle even when
+ * write/flush fails — a leaked handle keeps the file locked for the session.
  *
  * @param path Canonical path from {@link mediaPathFor}.
  * @param bytes Media bytes to write.
+ * @returns The written path and byte count, or a diagnostic reason.
  */
 export async function writeMediaFile(path: string, bytes: Uint8Array): Promise<MediaWrite> {
   try {
@@ -32,7 +30,7 @@ export async function writeMediaFile(path: string, bytes: Uint8Array): Promise<M
     const segments = path.split('/');
     const fileName = segments.pop();
     if (fileName === undefined || fileName === '') {
-      return { ok: false as const, reason: 'empty file name' };
+      return err('empty file name');
     }
     let dir = root;
     for (const segment of segments) {
@@ -44,12 +42,10 @@ export async function writeMediaFile(path: string, bytes: Uint8Array): Promise<M
       access.write(bytes);
       access.flush();
     } finally {
-      // The sync handle must close even when write/flush fails — a leaked
-      // handle keeps the OPFS file locked for the rest of the session.
       access.close();
     }
-    return { ok: true, path, bytes: bytes.byteLength };
+    return ok({ path, bytes: bytes.byteLength });
   } catch (error) {
-    return { ok: false as const, reason: String(error).slice(0, 200) };
+    return err(String(error).slice(0, 200));
   }
 }
