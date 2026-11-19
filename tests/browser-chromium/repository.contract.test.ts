@@ -124,10 +124,10 @@ describe('repository contract: import commit', () => {
     expect(first.messagesInserted).toBe(3);
 
     createImportRecord(db, recordInput('imp-dup-2'));
-    const second = commitImport(db, commitInput('imp-dup-2', first.chatId as ChatId));
+    const second = commitImport(db, commitInput('imp-dup-2', asChatId(first.chatId)));
     expect(second.messagesInserted).toBe(0);
     expect(second.duplicatesSkipped).toBe(3);
-    expect(repo.getChat(first.chatId as ChatId)?.messageCount).toBe(3);
+    expect(repo.getChat(asChatId(first.chatId))?.messageCount).toBe(3);
   });
 });
 
