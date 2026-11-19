@@ -67,7 +67,8 @@ describe('media-store page-context functions', () => {
 
     const blob = await readMediaFile(mediaPathFor(CHAT, 'seed', 'jpg'));
     expect(blob).not.toBeNull();
-    expect(await blob!.arrayBuffer()).toEqual(new Uint8Array([1, 2, 3, 4]).buffer);
+    const bytes = blob === null ? null : new Uint8Array(await blob.arrayBuffer());
+    expect(bytes).toEqual(new Uint8Array([1, 2, 3, 4]));
 
     const paths = await listFilesUnder(`media/${CHAT}`);
     expect(paths).toContain(`media/${CHAT}/seed.jpg`);

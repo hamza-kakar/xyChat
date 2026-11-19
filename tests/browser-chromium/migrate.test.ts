@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { migrate } from '../../src/storage/sqlite/migrate';
-import type { SqliteDatabase } from './open';
+import type { SqliteDatabase } from '../../src/storage/sqlite/open';
 
 function fakeDb(): SqliteDatabase & { readonly log: string[] } {
   const log: string[] = [];
@@ -20,7 +20,7 @@ function fakeDb(): SqliteDatabase & { readonly log: string[] } {
     ): Record<string, unknown>[] {
       log.push(`select:${sql.slice(0, 40)}:${JSON.stringify(params ?? [])}`);
       if (sql.includes('FROM meta')) {
-        const key = (params?.[0] as string) ?? '';
+        const key = typeof params?.[0] === 'string' ? params[0] : '';
         return store.has(key) ? [{ value: store.get(key) }] : [];
       }
       return [];
@@ -47,7 +47,9 @@ function fakeDb(): SqliteDatabase & { readonly log: string[] } {
     lastInsertRowId(): number {
       return 0;
     },
-    close(): void {},
+    close(): void {
+      // Nothing to close for the fake.
+    },
   };
 }
 
@@ -55,8 +57,10 @@ describe('migrate', () => {
   it('refuses a database written by a newer app version', () => {
     const db = fakeDb();
     // Simulate a future schema_version.
-    db.selectObjects = (() => [{ value: '999' }]) as never as SqliteDatabase['selectObjects'];
-    expect(() => migrate(db)).toThrow(/newer than the app/);
+    db.selectObjects = (): Record<string, unknown>[] => [{ value: '999' }];
+    expect(() => {
+      migrate(db);
+    }).toThrow(/newer than the app/);
   });
 
   it('applies pending migrations in a transaction and records the version', () => {
