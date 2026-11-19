@@ -42,6 +42,15 @@ function msg(
   return { fingerprint: `${seq}-${body}`, message };
 }
 
+function recordInput(importId: string): {
+  importId: string;
+  fileName: string;
+  fileBytes: number;
+  parserVersion: string;
+} {
+  return { importId, fileName: 'contract.txt', fileBytes: 100, parserVersion: '1.0.0' };
+}
+
 function commitInput(importId: string): ImportCommitInput {
   return {
     importId,
@@ -75,7 +84,9 @@ describe('repository contract (real sqlite-wasm + OPFS)', () => {
       return;
     }
     expect(await ensureDbReady()).toBe(true);
-    const result = await dbClient.commitImport(commitInput('22222222-2222-4222-8222-222222222222'));
+    const importId = '22222222-2222-4222-8222-222222222222';
+    await dbClient.createImportRecord(recordInput(importId));
+    const result = await dbClient.commitImport(commitInput(importId));
     expect(result.messagesInserted).toBe(3);
     expect(result.duplicatesSkipped).toBe(0);
 
@@ -118,6 +129,7 @@ describe('repository contract (real sqlite-wasm + OPFS)', () => {
       return;
     }
     expect(await ensureDbReady()).toBe(true);
+    await dbClient.createImportRecord(recordInput('33333333-3333-4333-8333-333333333333'));
     const first = await dbClient.commitImport(commitInput('33333333-3333-4333-8333-333333333333'));
     expect(first.messagesInserted).toBe(3);
     const second = await dbClient.commitImport({

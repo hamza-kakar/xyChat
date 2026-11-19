@@ -19,7 +19,11 @@ import type {
   StorageUsage,
   Participant,
 } from '../storage/repository';
-import type { ImportCommitInput, ImportCommitResult } from '../storage/sqlite/import-commit';
+import type {
+  ImportCommitInput,
+  ImportCommitResult,
+  ImportRecordInput,
+} from '../storage/sqlite/import-commit';
 import type { ChatId, ParticipantId } from '../core/ids';
 
 /** A serialized worker error (§18.7). */
@@ -61,6 +65,8 @@ export interface DbApi {
   listBookmarks(chatId: ChatId | null): Promise<readonly BookmarkView[]>;
   listImports(chatId: ChatId): Promise<readonly ImportRecord[]>;
   storageUsage(): Promise<StorageUsage>;
+  /** Creates the in_progress import row (§9.3: before media writes). */
+  createImportRecord(input: ImportRecordInput): Promise<void>;
   /** Transactional import commit (§9.2 step 10). */
   commitImport(input: ImportCommitInput): Promise<ImportCommitResult>;
   /** Registers OPFS paths against the import row for crash rollback. */

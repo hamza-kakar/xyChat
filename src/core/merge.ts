@@ -58,13 +58,29 @@ interface MergePlanBuilder {
 }
 
 /** Emits a stored entry in the output, marking its fingerprint as present. */
-function emitExisting(plan: MergePlanBuilder, entry: MergeEntry, twinFingerprint: string | null = null): void {
+function emitExisting(
+  plan: MergePlanBuilder,
+  entry: MergeEntry,
+  twinFingerprint: string | null = null,
+): void {
   plan.messages.push({
     fingerprint: entry.fingerprint,
     message: entry.message,
     fromIncoming: false,
     fingerprintOfIncomingTwin: twinFingerprint,
   });
+  plan.emitted.add(entry.fingerprint);
+}
+
+/** Emits an incoming-only entry as newly added. */
+function emitNewIncoming(plan: MergePlanBuilder, entry: MergeEntry): void {
+  plan.messages.push({
+    fingerprint: entry.fingerprint,
+    message: entry.message,
+    fromIncoming: true,
+    fingerprintOfIncomingTwin: null,
+  });
+  plan.added += 1;
   plan.emitted.add(entry.fingerprint);
 }
 
@@ -133,14 +149,7 @@ export function planMerge(
       if (plan.emitted.has(incomingEntry.fingerprint)) {
         plan.duplicates += 1;
       } else {
-        plan.messages.push({
-          fingerprint: incomingEntry.fingerprint,
-          message: incomingEntry.message,
-          fromIncoming: true,
-          fingerprintOfIncomingTwin: null,
-        });
-        plan.added += 1;
-        plan.emitted.add(incomingEntry.fingerprint);
+        emitNewIncoming(plan, incomingEntry);
       }
       j += 1;
       continue;
@@ -149,11 +158,11 @@ export function planMerge(
     if (existingEntry.fingerprint === incomingEntry.fingerprint) {
       // Rule 1: emit once from the stored side, advance BOTH; media that the
       // export newly provides upgrades a stored omitted/missing attachment.
-      emitExisting(plan, existingEntry, incomingEntry.fingerprint);
       plan.duplicates += 1;
       if (!existingEntry.attachmentWasStored && incomingEntry.message.attachment !== null) {
         plan.mediaUpgraded += 1;
       }
+      emitExisting(plan, existingEntry, incomingEntry.fingerprint);
       i += 1;
       j += 1;
       continue;
@@ -163,14 +172,7 @@ export function planMerge(
       emitExisting(plan, existingEntry);
       i += 1;
     } else {
-      plan.messages.push({
-        fingerprint: incomingEntry.fingerprint,
-        message: incomingEntry.message,
-        fromIncoming: true,
-        fingerprintOfIncomingTwin: null,
-      });
-      plan.added += 1;
-      plan.emitted.add(incomingEntry.fingerprint);
+      emitNewIncoming(plan, incomingEntry);
       j += 1;
     }
   }

@@ -82,6 +82,8 @@ export const dbClient = {
     call((a) => a.listBookmarks(chatId)),
   listImports: (chatId: Parameters<DbApi['listImports']>[0]) => call((a) => a.listImports(chatId)),
   storageUsage: () => call((a) => a.storageUsage()),
+  createImportRecord: (input: Parameters<DbApi['createImportRecord']>[0]) =>
+    call((a) => a.createImportRecord(input)),
   commitImport: (input: Parameters<DbApi['commitImport']>[0]) => call((a) => a.commitImport(input)),
   recordWrittenPaths: (importId: string, paths: readonly string[]) =>
     call((a) => a.recordWrittenPaths(importId, paths)),
