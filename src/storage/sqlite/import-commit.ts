@@ -124,16 +124,10 @@ interface ApplyContext {
 /** Neutral message placeholder for stored entries (plan reads only keys). */
 function placeholderStoredMessage(): ParsedMessage {
   return {
-    seq: 0,
-    sourceLine: 0,
+    seq: 0, sourceLine: 0,
     timestamp: { year: 1970, month: 1, day: 1, hour: 0, minute: 0, second: 0 },
-    author: null,
-    kind: 'text',
-    body: '',
-    isEdited: false,
-    attachment: null,
-    poll: null,
-    location: null,
+    author: null, kind: 'text', body: '', isEdited: false,
+    attachment: null, poll: null, location: null,
   };
 }
 
@@ -183,11 +177,16 @@ function applyPlan(
   }
   const ctx: ApplyContext = { db, chatId, importId: input.importId, attachmentByFingerprint };
 
+  const storedByFingerprint = new Map<string, StoredEntry>();
+  for (const entry of stored) {
+    storedByFingerprint.set(entry.fingerprint, entry);
+  }
+
   let messagesInserted = 0;
   let mediaUpgraded = 0;
   plan.messages.forEach((merged, finalSeq) => {
-    const storedSource = stored.find((s) => s.fingerprint === merged.fingerprint);
-    if (storedSource !== undefined && !merged.fromIncoming) {
+    const storedSource = storedByFingerprint.get(merged.fingerprint);
+        if (storedSource !== undefined && !merged.fromIncoming) {
       applyStoredRow(ctx, merged, finalSeq, storedSource.rowId);
       if (countUpgrade(merged, storedSource, attachmentByFingerprint)) {
         mediaUpgraded += 1;
@@ -210,7 +209,9 @@ function applyPlan(
   };
 }
 
-/** Moves a stored row to its final seq, applying a media upgrade if any. */
+/** Moves a stored row to its final seq, applying a media upgrade if the
+ * incoming twin has newly *present* media (§8.10 rule 1: attach only when
+ * newly present — an omitted twin never turns a placeholder into present). */
 function applyStoredRow(
   ctx: ApplyContext,
   merged: { readonly fingerprintOfIncomingTwin: string | null },
@@ -223,16 +224,29 @@ function applyStoredRow(
     return;
   }
   const upgrade = ctx.attachmentByFingerprint.get(twinFp);
-  if (upgrade !== undefined) {
-    ctx.db.run(
-      `UPDATE attachments SET status = 'present', opfs_path = ?, mime = ?, byte_size = ?
-       WHERE message_id = ? AND status IN ('omitted', 'missing')`,
-      [upgrade.opfsPath, upgrade.mime, upgrade.byteSize, storedRowId],
-    );
+  if (upgrade?.status !== 'present') {
+    return;
   }
+  // Copy the full set of file fields so the stored record is complete.
+  ctx.db.run(
+    `UPDATE attachments SET status = 'present', opfs_path = ?, thumb_path = ?,
+            mime = ?, byte_size = ?, width = ?, height = ?, file_name = ?
+     WHERE message_id = ? AND status IN ('omitted', 'missing')`,
+    [
+      upgrade.opfsPath,
+      upgrade.thumbPath,
+      upgrade.mime,
+      upgrade.byteSize,
+      upgrade.width,
+      upgrade.height,
+      upgrade.fileName,
+      storedRowId,
+    ],
+  );
 }
 
-/** Counts whether a rule-1 merge performed a media upgrade. */
+/** Counts whether a rule-1 merge performed a media upgrade — the incoming
+ * twin must have newly *present* media (§8.10: an omitted twin is a no-op). */
 function countUpgrade(
   merged: { readonly fingerprintOfIncomingTwin: string | null },
   storedSource: StoredEntry,
@@ -242,7 +256,7 @@ function countUpgrade(
     return false;
   }
   const upgrade = attachmentByFingerprint.get(merged.fingerprintOfIncomingTwin);
-  return upgrade !== undefined && upgrade.status !== 'omitted';
+  return upgrade?.status === 'present';
 }
 
 /** Inserts an incoming-only message (and its attachment record). */
