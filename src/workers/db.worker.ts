@@ -23,9 +23,7 @@ function toWorkerError(error: unknown, code: WorkerError['code'] = 'INTERNAL'): 
     code,
     message: String(error).slice(0, 200),
     stack:
-      error instanceof Error && typeof error.stack === 'string'
-        ? error.stack.slice(0, 800)
-        : null,
+      error instanceof Error && typeof error.stack === 'string' ? error.stack.slice(0, 800) : null,
   };
 }
 
@@ -48,9 +46,7 @@ function wrap<T>(fn: () => T): Promise<T> {
       const code = error instanceof RpcValidationError ? 'INVALID_INPUT' : 'INTERNAL';
       const workerError = toWorkerError(error, code);
       const frames =
-        workerError.stack !== null
-          ? workerError.stack.split('\n').slice(0, 4).join(' | ')
-          : '';
+        workerError.stack !== null ? workerError.stack.split('\n').slice(0, 4).join(' | ') : '';
       const detail = frames === '' ? workerError.message : `${workerError.message} | ${frames}`;
       return Promise.reject(new Error(`${workerError.code}: ${detail}`));
     });
@@ -98,21 +94,8 @@ const api: DbApi = {
     }),
   search: (q) => wrap(() => repo().search(rpcInput.search('search', q))),
   listAttachments: (q) =>
-    wrap(() => {
-      const chatId = rpcInput.chatId('listAttachments', q.chatId);
-      const types = rpcInput.attachmentTypes('listAttachments', q.types);
-      const cursor =
-        q.cursor === null ? null : rpcInput.nonNegativeInt('listAttachments', q.cursor);
-      const limit = rpcInput.nonNegativeInt('listAttachments', q.limit);
-      return repo().listAttachments({ chatId, types, cursor, limit });
-    }),
-  listLinks: (q) =>
-    wrap(() => {
-      const chatId = rpcInput.chatId('listLinks', q.chatId);
-      const cursor = q.cursor === null ? null : rpcInput.nonNegativeInt('listLinks', q.cursor);
-      const limit = rpcInput.nonNegativeInt('listLinks', q.limit);
-      return repo().listLinks({ chatId, cursor, limit });
-    }),
+    wrap(() => repo().listAttachments(rpcInput.attachments('listAttachments', q))),
+  listLinks: (q) => wrap(() => repo().listLinks(rpcInput.links('listLinks', q))),
   getChatStats: (chatId) =>
     wrap(() => repo().getChatStats(rpcInput.chatId('getChatStats', chatId))),
   setSelf: (chatId, participantId) =>
@@ -166,8 +149,7 @@ const api: DbApi = {
       const id = chatId === null ? null : rpcInput.chatId('listBookmarks', chatId);
       return repo().listBookmarks(id);
     }),
-  listImports: (chatId) =>
-    wrap(() => repo().listImports(rpcInput.chatId('listImports', chatId))),
+  listImports: (chatId) => wrap(() => repo().listImports(rpcInput.chatId('listImports', chatId))),
   storageUsage: () => wrap(() => repo().storageUsage()),
   createImportRecord: (input) =>
     wrap(() => {

@@ -54,7 +54,14 @@ export default defineConfig({
       // import-api.ts, media-writer.ts) run only inside real worker
       // contexts, outside v8 instrumentation; they are exercised end-to-end
       // by every e2e flow (ADR 0007).
-      include: ['src/core/**', 'src/app/**', 'src/platform/**', 'src/workers/rpc-validate.ts', 'src/client/rpc-call.ts', 'src/storage/sqlite/opener.ts'],
+      include: [
+        'src/core/**',
+        'src/app/**',
+        'src/platform/**',
+        'src/workers/rpc-validate.ts',
+        'src/client/rpc-call.ts',
+        'src/storage/sqlite/opener.ts',
+      ],
       // Type-only modules and re-export barrels contain no runtime code
       // (same convention as excluding *.d.ts).
       exclude: [

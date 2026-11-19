@@ -37,18 +37,24 @@ export class RpcValidationError extends Error {}
 const NON_NEGATIVE_INT = pipe(number(), integer(), minValue(0), maxValue(Number.MAX_SAFE_INTEGER));
 /** Identifier strings (UUIDs, fingerprints keys, import ids). */
 const ID_STRING = pipe(string(), minLength(1), maxLength(64));
+/** Renders the dotted path of a Valibot issue ('' for root issues). Root
+ * issues may carry no path, so the parameter stays tolerant (§18.5). */
+function issuePath(path: readonly { readonly key: unknown }[] | undefined): string {
+  return (path ?? []).map((item) => String(item.key)).join('.');
+}
+
+function invalid(method: string, detail: string): RpcValidationError {
+  return new RpcValidationError(`${method}: ${detail}`);
+}
+
 /** Branded id after validation — the worker RPC boundary is a sanctioned
  * minting point, like rows.ts (ADR 0010). */
 function parseId(method: string, input: unknown): string {
   const result = safeParse(ID_STRING, input);
   if (!result.success) {
-    throw invalid(method, result.issues[0]?.message ?? 'invalid id');
+    throw invalid(method, result.issues[0].message);
   }
   return result.output;
-}
-
-function invalid(method: string, detail: string): RpcValidationError {
-  return new RpcValidationError(`${method}: ${detail}`);
 }
 
 /** Parses `input` against `schema`, failing with a method-tagged error. */
@@ -59,8 +65,8 @@ function withSchema<S extends GenericSchema>(
 ): InferOutput<S> {
   const result = safeParse(schema, input);
   if (!result.success) {
-    const path = result.issues[0]?.path?.map((item) => String(item.key)).join('.');
-    throw invalid(method, `${path ?? '(root)'}: ${result.issues[0]?.message ?? 'invalid'}`);
+    const issue = result.issues[0];
+    throw invalid(method, `${issuePath(issue.path)}: ${issue.message}`);
   }
   return result.output;
 }
@@ -75,11 +81,26 @@ const LOCAL_DATE_TIME = object({
 });
 
 const MESSAGE_KIND = picklist([
-  'text', 'media', 'system', 'deleted', 'call', 'location', 'contact', 'poll',
+  'text',
+  'media',
+  'system',
+  'deleted',
+  'call',
+  'location',
+  'contact',
+  'poll',
 ] as const);
 
 const MEDIA_TYPE = picklist([
-  'image', 'video', 'audio', 'voice', 'sticker', 'gif', 'document', 'contact-card', 'other',
+  'image',
+  'video',
+  'audio',
+  'voice',
+  'sticker',
+  'gif',
+  'document',
+  'contact-card',
+  'other',
 ] as const);
 
 const MESSAGE_KINDS = pipe(array(MESSAGE_KIND), maxLength(8));
@@ -247,7 +268,12 @@ export const rpcInput = {
   },
   messageWindow(method: string, input: unknown): MessageWindowInput {
     const parsed = withSchema(method, MESSAGE_WINDOW_QUERY, input);
-    return { chatId: asChatId(parsed.chatId), anchorSeq: parsed.anchorSeq, before: parsed.before, after: parsed.after };
+    return {
+      chatId: asChatId(parsed.chatId),
+      anchorSeq: parsed.anchorSeq,
+      before: parsed.before,
+      after: parsed.after,
+    };
   },
   search(method: string, input: unknown): SearchQuery {
     const parsed = withSchema(method, SEARCH_QUERY, input);
@@ -262,8 +288,29 @@ export const rpcInput = {
       cursor: parsed.cursor,
     };
   },
-  attachmentTypes(method: string, input: unknown): AttachmentTypes {
-    return withSchema(method, pipe(array(MEDIA_TYPE), maxLength(9)), input);
+  attachments(
+    method: string,
+    input: unknown,
+  ): {
+    readonly chatId: ChatId;
+    readonly types: AttachmentTypes;
+    readonly cursor: number | null;
+    readonly limit: number;
+  } {
+    const parsed = withSchema(method, ATTACHMENTS_QUERY, input);
+    return {
+      chatId: asChatId(parsed.chatId),
+      types: parsed.types,
+      cursor: parsed.cursor,
+      limit: parsed.limit,
+    };
+  },
+  links(
+    method: string,
+    input: unknown,
+  ): { readonly chatId: ChatId; readonly cursor: number | null; readonly limit: number } {
+    const parsed = withSchema(method, LINKS_QUERY, input);
+    return { chatId: asChatId(parsed.chatId), cursor: parsed.cursor, limit: parsed.limit };
   },
   nonNegativeInt(method: string, input: unknown): number {
     return withSchema(method, NON_NEGATIVE_INT, input);

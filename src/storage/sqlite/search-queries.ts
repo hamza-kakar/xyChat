@@ -34,12 +34,17 @@ function buildSnippet(body: string, query: string): string {
   return `${prefix}${body.slice(start, end)}${suffix}`;
 }
 
-/**
- * Runs a search: FTS MATCH for 3+ char queries, LIKE fallback below (§11).
- * Global results sort newest-first; in-chat results sort by seq — each with
- * its own keyset pagination.
- */
-export function searchMessages(db: SqliteDatabase, q: SearchQuery): SearchPage {
+/** WHERE fragments + parameters for one search (§11 filters, keyset, mode). */
+interface SearchConditions {
+  readonly conditions: readonly string[];
+  readonly params: readonly (string | number | null)[];
+  readonly joins: string;
+  readonly effectiveLimit: number;
+}
+
+/** Builds the WHERE conditions for a search: filters first, then the
+ * keyset cursor (matching the ordering), then the FTS/LIKE mode. */
+function searchConditions(q: SearchQuery): SearchConditions {
   const conditions: string[] = [];
   const params: (string | number | null)[] = [];
   let joins = '';
@@ -91,13 +96,23 @@ export function searchMessages(db: SqliteDatabase, q: SearchQuery): SearchPage {
     }
   }
 
-  const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-  // §11: global search sorts newest-first; in-chat search sorts by seq.
-  const orderBy = inChat ? 'm.seq ASC, m.id ASC' : 'm.ts_key DESC, m.id DESC';
   // §11: the LIKE fallback is limited to 500 results — cap the limit rather
   // than refusing the query.
   const effectiveLimit =
     inChat && q.query.length < 3 ? Math.min(q.limit, LIKE_RESULT_CAP) : q.limit;
+  return { conditions, params, joins, effectiveLimit };
+}
+
+/**
+ * Runs a search: FTS MATCH for 3+ char queries, LIKE fallback below (§11).
+ * Global results sort newest-first; in-chat results sort by seq — each with
+ * its own keyset pagination.
+ */
+export function searchMessages(db: SqliteDatabase, q: SearchQuery): SearchPage {
+  const { conditions, params, joins, effectiveLimit } = searchConditions(q);
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  // §11: global search sorts newest-first; in-chat search sorts by seq.
+  const orderBy = q.chatId !== null ? 'm.seq ASC, m.id ASC' : 'm.ts_key DESC, m.id DESC';
   const rows = db.selectObjects(
     `SELECT m.*, p.display_name AS author_name
      FROM messages m ${joins} LEFT JOIN participants p ON p.id = m.author_id

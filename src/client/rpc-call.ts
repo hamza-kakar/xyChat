@@ -62,9 +62,7 @@ export function createRpcCaller(deps: RpcCallerDeps): RpcCaller {
   const withTimeout = <T>(promise: Promise<T>, method: string, diagnosticId: string): Promise<T> =>
     new Promise<T>((resolve, reject) => {
       const timer = setTimeout(() => {
-        const error = new Error(
-          `TIMEOUT: ${method} exceeded ${timeoutMs}ms (id ${diagnosticId})`,
-        );
+        const error = new Error(`TIMEOUT: ${method} exceeded ${timeoutMs}ms (id ${diagnosticId})`);
         report('TIMEOUT', method, diagnosticId, error.message);
         reject(error);
       }, timeoutMs);
@@ -75,7 +73,7 @@ export function createRpcCaller(deps: RpcCallerDeps): RpcCaller {
         },
         (error: unknown) => {
           clearTimeout(timer);
-          reject(error);
+          reject(error instanceof Error ? error : new Error(String(error)));
         },
       );
     });
@@ -86,7 +84,9 @@ export function createRpcCaller(deps: RpcCallerDeps): RpcCaller {
       if (!ready) {
         const diagnosticId = 'n/a';
         report('DB_UNAVAILABLE', method, diagnosticId, 'database unavailable');
-        throw new Error('DB_UNAVAILABLE: database unavailable (unsupported browser or open failure)');
+        throw new Error(
+          'DB_UNAVAILABLE: database unavailable (unsupported browser or open failure)',
+        );
       }
       const diagnosticId = `${Date.now().toString(36)}-${(diagnosticCounter += 1).toString(36)}`;
       const pending = exempt.has(method) ? fn() : withTimeout(fn(), method, diagnosticId);

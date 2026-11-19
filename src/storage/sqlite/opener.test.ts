@@ -14,24 +14,23 @@ class FakeLockManager implements InstanceLockManager {
 
   request<T>(
     name: string,
-    options: { readonly ifAvailable: true },
+    _options: { readonly ifAvailable: true },
     callback: (lock: { readonly name: string } | null) => Promise<T>,
   ): Promise<T> {
     const existing = this.held.get(name);
     if (existing !== undefined) {
-      if (options.ifAvailable) {
-        // §10.1: ifAvailable resolves the callback with null (no lock).
-        return Promise.resolve(callback(null));
-      }
-      return new Promise<T>(() => {});
+      // §10.1: ifAvailable resolves the callback with null (no lock).
+      return Promise.resolve(callback(null));
     }
     const result = callback({ name });
     this.held.set(name, result);
-    void result.catch(() => {}).then(() => {
-      if (this.held.get(name) === result) {
-        this.held.delete(name);
-      }
-    });
+    void result
+      .catch(() => undefined)
+      .then(() => {
+        if (this.held.get(name) === result) {
+          this.held.delete(name);
+        }
+      });
     return result;
   }
 }
@@ -46,8 +45,8 @@ function stubDb(failExec: boolean): SqliteDatabase & { readonly closed: () => bo
       }
     },
     selectObjects: () => [],
-    run: () => {},
-    transaction: <T,>(fn: () => T): T => fn(),
+    run: () => undefined,
+    transaction: <T>(fn: () => T): T => fn(),
     lastInsertRowId: () => 0,
     close: () => {
       closed = true;
