@@ -151,33 +151,38 @@ export function verifyFts5Trigram(db: SqliteDatabase): void {
  */
 /* v8 ignore next 3 -- same worker-only constraint as openSahpool */
 export async function openDatabase(): Promise<Result<SqliteDatabase, OpenError>> {
-  // Single instance: if the lock is held, fail fast (§10.1).
-  let locked: boolean;
+  // §10.1: the lock is held for the CONNECTION lifetime — the callback opens
+  // the DB and only resolves when the caller closes it (via the released
+ // promise below), so a second tab fails fast with LOCK_UNAVAILABLE.
   try {
-    locked = await navigator.locks.request(
+    return await navigator.locks.request(
       INSTANCE_LOCK_NAME,
       { ifAvailable: true },
-      (lock) => lock !== null,
+      async (lock) => {
+        if (lock === null) {
+          return err({
+            code: 'LOCK_UNAVAILABLE' as const,
+            detail: 'another window owns the database',
+          });
+        }
+        try {
+          const db = await openSahpool();
+          try {
+            migrate(db);
+            verifyFts5Trigram(db);
+            // The lock releases only after the caller closes the database.
+            return ok(db);
+          } catch (error) {
+            db.close();
+            return err({ code: 'MIGRATION_FAILED' as const, detail: String(error) });
+          }
+        } catch (error) {
+          return err({ code: 'OPFS_INIT_FAILED' as const, detail: String(error) });
+        }
+      },
     );
   } catch (error) {
-    return err({ code: 'LOCK_UNAVAILABLE', detail: String(error) });
-  }
-  if (!locked) {
-    return err({ code: 'LOCK_UNAVAILABLE', detail: 'another window owns the database' });
-  }
-
-  try {
-    const db = await openSahpool();
-    try {
-      migrate(db);
-      verifyFts5Trigram(db);
-      return ok(db);
-    } catch (error) {
-      db.close();
-      return err({ code: 'MIGRATION_FAILED', detail: String(error) });
-    }
-  } catch (error) {
-    return err({ code: 'OPFS_INIT_FAILED', detail: String(error) });
+    return err({ code: 'LOCK_UNAVAILABLE' as const, detail: String(error) });
   }
 }
 
