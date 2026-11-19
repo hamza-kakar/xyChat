@@ -133,6 +133,7 @@ export const VARIANTS_PART2: readonly VariantSpec[] = [
     description: 'Deleted placeholders and edited markers.',
     lines: [
       '[17/11/2026, 21:19] Sara: \u200EThis message was deleted.',
+      'stray continuation after deletion',
       '[17/11/2026, 21:20] Ali Khan: You deleted this message',
       '[17/11/2026, 21:21] Sara: See you soon \u200E<This message was edited>',
     ],
@@ -148,6 +149,7 @@ export const VARIANTS_PART2: readonly VariantSpec[] = [
     description: 'iOS call events.',
     lines: [
       '[17/11/2026, 21:19] Sara: \u200EVoice call',
+      'followed by a note line',
       '[17/11/2026, 21:20] Sara: \u200EMissed video call',
     ],
     expectedPlatform: 'ios',
@@ -218,6 +220,25 @@ export const VARIANTS_PART2: readonly VariantSpec[] = [
     lines: [
       '17/11/2026, 21:19 - +92 300 1234567: pinging from a new number',
       '17/11/2026, 21:20 - +1 415 555 0100: got it',
+    ],
+    expectedPlatform: 'android',
+    expectedPatternId: 'android-dash',
+    expectedOrder: 'DMY',
+    expectedOrderSource: 'unambiguous',
+    expectedClock: '24h',
+    expectedSeconds: false,
+  },
+  {
+    id: 'ordinary-text-with-system-keywords',
+    description:
+      'Ordinary messages whose bodies contain system keywords (added/removed/left/joined/Disappearing) — they must stay authored text, not system events.',
+    lines: [
+      '17/11/2026, 21:21 - Sara: I added sugar to the tea',
+      '17/11/2026, 21:22 - Ali Khan: ok we left',
+      '17/11/2026, 21:23 - Sara: Bob removed the stain',
+      '17/11/2026, 21:24 - Ali Khan: Disappearing messages are cool',
+      '17/11/2026, 21:25 - Sara: I joined the group yesterday',
+      '17/11/2026, 21:26 - Ali Khan: Tap to learn more about it',
     ],
     expectedPlatform: 'android',
     expectedPatternId: 'android-dash',

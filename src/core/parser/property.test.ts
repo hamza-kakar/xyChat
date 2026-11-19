@@ -21,6 +21,24 @@ const arbitraryBodyLine = fc
   .stringMatching(/^[^\n]{1,40}$/u)
   .filter((s) => !s.includes(': ') && s.trim() === s && s.trim().length > 0 && !/^[0-9[]/u.test(s));
 
+/**
+ * Bodies that COLLIDE with the §8.6 marker vocabulary (system keywords,
+ * deleted, calls). Round-trip and line-accounting generators include these
+ * on purpose: authored messages containing marker text must stay authored
+ * text (regression coverage for the actor-pattern tightening).
+ */
+const arbitraryMarkerishBody = fc.constantFrom(
+  'I added sugar to the tea',
+  'ok we left',
+  'Bob removed the stain',
+  'Disappearing messages are cool',
+  'I joined the group yesterday',
+  'This message was deleted.',
+  'Missed voice call',
+  'You deleted this message',
+  'Tap to learn more about it',
+);
+
 /** Arbitrary author name (letters, digits, spaces, dots). */
 const arbitraryAuthor = fc
   .stringMatching(/^[A-Za-z][A-Za-z .]{0,14}$/u)
@@ -58,7 +76,7 @@ const arbitraryMessages: fc.Arbitrary<GeneratedMessage[]> = fc.array(
     minute: fc.integer({ min: 0, max: 59 }),
     meridiem: fc.constantFrom('AM', 'PM'),
     author: arbitraryAuthor,
-    body: arbitraryBodyLine,
+    body: fc.oneof(arbitraryBodyLine, arbitraryMarkerishBody),
   }),
   { minLength: 1, maxLength: 10 },
 );
@@ -111,7 +129,10 @@ describe('property: line accounting (§19.2.2)', () => {
           minute: fc.integer({ min: 0, max: 59 }),
           meridiem: fc.constantFrom('AM', 'PM'),
           author: arbitraryAuthor,
-          bodyLines: fc.array(arbitraryBodyLine, { minLength: 1, maxLength: 3 }),
+          bodyLines: fc.array(fc.oneof(arbitraryBodyLine, arbitraryMarkerishBody), {
+            minLength: 1,
+            maxLength: 3,
+          }),
         }),
         { minLength: 1, maxLength: 8 },
       ),
@@ -180,7 +201,7 @@ describe('property: generated exports round-trip (§19.2.3)', () => {
   });
 });
 
-const MERGE_RUNS = { numRuns: 300 };
+const MERGE_RUNS = { numRuns: 1000 };
 
 /** Builds an entry; bodies are unique per list, so fp = body. */
 function mergeEntry(body: string, index: number): MergeEntry {

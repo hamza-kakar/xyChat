@@ -21,7 +21,7 @@
         },
         "author": "Sara",
         "kind": "call",
-        "body": "Voice call",
+        "body": "Voice call\nfollowed by a note line",
         "isEdited": false,
         "attachment": null,
         "poll": null,
@@ -29,7 +29,7 @@
       },
       {
         "seq": 1,
-        "sourceLine": 2,
+        "sourceLine": 3,
         "timestamp": {
           "year": 2026,
           "month": 11,
@@ -62,7 +62,7 @@
       },
       "author": "Sara",
       "kind": "call",
-      "body": "Voice call",
+      "body": "Voice call\nfollowed by a note line",
       "isEdited": false,
       "attachment": null,
       "poll": null,
@@ -70,7 +70,7 @@
     },
     {
       "seq": 1,
-      "sourceLine": 2,
+      "sourceLine": 3,
       "timestamp": {
         "year": 2026,
         "month": 11,
@@ -91,7 +91,7 @@
   "participants": ["Sara"],
   "warnings": [],
   "stats": {
-    "lines": 2,
+    "lines": 3,
     "messages": 2,
     "system": 0,
     "media": 0

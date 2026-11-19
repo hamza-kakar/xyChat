@@ -268,9 +268,10 @@ function tryPoll(core: BodyCore, locale: LocalePatterns): ClassifiedBody | null 
 /** Tries the exact call bodies from the locale table. */
 function tryCall(core: BodyCore): ClassifiedBody | null {
   // CALLS_ANY is the union of locale.calls, so one test decides.
+  // Continuation lines after the call marker are kept (§8.1: no silent loss).
   if (CALLS_ANY.test(core.firstLine)) {
     return makeBody(core, 'call', {
-      body: joinBody([stripMarksBeforeMarker(core.firstLine)]),
+      body: joinBody([stripMarksBeforeMarker(core.firstLine), ...core.lines.slice(1)]),
     });
   }
   return null;
@@ -283,9 +284,10 @@ function classifyKind(
   platform: SourcePlatform,
 ): ClassifiedBody {
   // DELETED_ANY is the union of locale.deleted, so one test decides.
+  // Continuation lines after the marker are kept (§8.1: no silent loss).
   if (DELETED_ANY.test(core.firstLine)) {
     return makeBody(core, 'deleted', {
-      body: joinBody([stripMarksBeforeMarker(core.firstLine)]),
+      body: joinBody([stripMarksBeforeMarker(core.firstLine), ...core.lines.slice(1)]),
     });
   }
   const chained: readonly ((c: BodyCore) => ClassifiedBody | null)[] = [
@@ -343,11 +345,25 @@ export function classifyBody(
     };
   }
 
-  const authoredLines = [split.bodyFirst, ...continuationLines.map(cleanBodyLine)];
-  const iosSystem = tryClassifySystem(split.bodyFirst, continuationLines.map(cleanBodyLine));
-  if (iosSystem !== null) {
-    return iosSystem;
+  // §8.6.2 iOS special case, restricted to the iOS form: the group/contact
+  // name is followed by a LRM-prefixed system text. Without the LRM shape
+  // and platform check, ordinary Android/iOS messages whose bodies happen to
+  // contain system keywords would lose their author. rawAfterColon keeps the
+  // original characters so the LRM is detectable before cleaning.
+  const rawAfterColon = rest.slice(rest.indexOf(': ') + 2);
+  if (platform === 'ios' && rawAfterColon.startsWith(LRM)) {
+    const cleanedCandidate = cleanBodyLine(rawAfterColon);
+    if (SYSTEM_ANY.test(cleanedCandidate)) {
+      return systemBody({
+        author: null,
+        firstLine: cleanedCandidate,
+        lines: [cleanedCandidate, ...continuationLines.map(cleanBodyLine)],
+        isEdited: false,
+      });
+    }
   }
+
+  const authoredLines = [split.bodyFirst, ...continuationLines.map(cleanBodyLine)];
 
   // 4. Body-kind classification; edited marker first (§8.6.4).
   const edited = tryStripEdited(authoredLines, locale);
