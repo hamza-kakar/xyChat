@@ -32,17 +32,42 @@ function joinBody(lines: readonly string[]): string {
   return lines.join('\n').trimEnd();
 }
 
-/*
- * Combined fast-path matchers: one anchored test per message short-circuits
- * the per-pattern loops (100k-message exports make the constant factor
- * matter). Alternation order is irrelevant here — these answer match /
- * no-match; the specific pattern is resolved only on a hit.
+/**
+ * Combined fast-path matchers, built per locale table (§8.7: adding a
+ * language is a table file plus fixtures, no logic changes). Cached per
+ * locale id — the tables are immutable.
  */
-const SYSTEM_ANY = new RegExp(en.system.map((re) => `(?:${re.source})`).join('|'), 'u');
-const DELETED_ANY = new RegExp(en.deleted.map((re) => `(?:${re.source})`).join('|'), 'u');
-const EDITED_ANY = new RegExp(en.edited.map((re) => `(?:${re.source})`).join('|'), 'u');
-const OMITTED_ANY = new RegExp(en.omitted.map((o) => `(?:${o.re.source})`).join('|'), 'u');
-const CALLS_ANY = new RegExp(en.calls.map((re) => `(?:${re.source})`).join('|'), 'u');
+const matcherCache = new Map<string, LocaleMatchers>();
+
+/** The union matchers for one locale, derived from its tables. */
+interface LocaleMatchers {
+  readonly system: RegExp;
+  readonly deleted: RegExp;
+  readonly edited: RegExp;
+  readonly omitted: RegExp;
+  readonly calls: RegExp;
+}
+
+/** Builds the union matchers for a locale table. */
+function buildMatchers(locale: LocalePatterns): LocaleMatchers {
+  return {
+    system: new RegExp(locale.system.map((re) => `(?:${re.source})`).join('|'), 'u'),
+    deleted: new RegExp(locale.deleted.map((re) => `(?:${re.source})`).join('|'), 'u'),
+    edited: new RegExp(locale.edited.map((re) => `(?:${re.source})`).join('|'), 'u'),
+    omitted: new RegExp(locale.omitted.map((o) => `(?:${o.re.source})`).join('|'), 'u'),
+    calls: new RegExp(locale.calls.map((re) => `(?:${re.source})`).join('|'), 'u'),
+  };
+}
+
+/** Returns the cached matchers for a locale, building them on first use. */
+function matchersFor(locale: LocalePatterns): LocaleMatchers {
+  let matchers = matcherCache.get(locale.id);
+  if (matchers === undefined) {
+    matchers = buildMatchers(locale);
+    matcherCache.set(locale.id, matchers);
+  }
+  return matchers;
+}
 
 /** Drops a leading LRM or RLM from a chunk split out of a line. */
 function stripLeadingMarks(text: string): string {
@@ -60,7 +85,7 @@ function stripEditedMarker(lines: readonly string[], locale: LocalePatterns): re
       copy[copy.length - 1] = last.slice(0, m.index).trimEnd();
       return copy;
     }
-    /* v8 ignore next 2 -- the EDITED_ANY gate already matched one pattern */
+    /* v8 ignore next 2 -- the union gate already matched one pattern */
   }
   return lines;
 }
@@ -105,9 +130,10 @@ function systemBody(core: BodyCore): ClassifiedBody {
 function tryClassifySystem(
   firstLine: string,
   continuation: readonly string[],
+  locale: LocalePatterns,
 ): ClassifiedBody | null {
-  // SYSTEM_ANY is the union of locale.system, so one test decides.
-  if (SYSTEM_ANY.test(firstLine)) {
+  // The union matcher decides in one test (§8.7 table-driven).
+  if (matchersFor(locale).system.test(firstLine)) {
     return systemBody({
       author: null,
       firstLine,
@@ -141,9 +167,9 @@ function tryStripEdited(
   lines: readonly string[],
   locale: LocalePatterns,
 ): { readonly lines: readonly string[]; readonly isEdited: boolean } {
-  // EDITED_ANY is the union of locale.edited, so one test decides.
+  // The union matcher decides in one test (§8.7 table-driven).
   /* v8 ignore next -- lines always has at least the first body line */
-  if (EDITED_ANY.test(lines.at(-1) ?? '')) {
+  if (matchersFor(locale).edited.test(lines.at(-1) ?? '')) {
     return { lines: stripEditedMarker(lines, locale), isEdited: true };
   }
   return { lines, isEdited: false };
@@ -195,15 +221,16 @@ function tryReferencedAttachment(
 /** Tries the omitted-media placeholders. */
 function tryOmittedMedia(core: BodyCore, locale: LocalePatterns): ClassifiedBody | null {
   const first = core.firstLine;
-  if (!OMITTED_ANY.test(first)) {
-    return null;
-  }
-  for (const { re, mediaType } of locale.omitted) {
-    if (re.test(first)) {
-      return makeBody(core, 'media', {
-        body: joinBody(core.lines.slice(1)),
-        attachment: { fileName: null, mediaType, status: 'omitted' },
-      });
+  // The union matcher decides in one test (§8.7 table-driven); the loop
+  // resolves which media type the matched pattern implies.
+  if (matchersFor(locale).omitted.test(first)) {
+    for (const { re, mediaType } of locale.omitted) {
+      if (re.test(first)) {
+        return makeBody(core, 'media', {
+          body: joinBody(core.lines.slice(1)),
+          attachment: { fileName: null, mediaType, status: 'omitted' },
+        });
+      }
     }
   }
   return null;
@@ -266,10 +293,10 @@ function tryPoll(core: BodyCore, locale: LocalePatterns): ClassifiedBody | null 
 }
 
 /** Tries the exact call bodies from the locale table. */
-function tryCall(core: BodyCore): ClassifiedBody | null {
-  // CALLS_ANY is the union of locale.calls, so one test decides.
+function tryCall(core: BodyCore, locale: LocalePatterns): ClassifiedBody | null {
+  // The union matcher decides in one test (§8.7 table-driven).
   // Continuation lines after the call marker are kept (§8.1: no silent loss).
-  if (CALLS_ANY.test(core.firstLine)) {
+  if (matchersFor(locale).calls.test(core.firstLine)) {
     return makeBody(core, 'call', {
       body: joinBody([stripMarksBeforeMarker(core.firstLine), ...core.lines.slice(1)]),
     });
@@ -283,9 +310,9 @@ function classifyKind(
   locale: LocalePatterns,
   platform: SourcePlatform,
 ): ClassifiedBody {
-  // DELETED_ANY is the union of locale.deleted, so one test decides.
+  // The union matcher decides in one test (§8.7 table-driven).
   // Continuation lines after the marker are kept (§8.1: no silent loss).
-  if (DELETED_ANY.test(core.firstLine)) {
+  if (matchersFor(locale).deleted.test(core.firstLine)) {
     return makeBody(core, 'deleted', {
       body: joinBody([stripMarksBeforeMarker(core.firstLine), ...core.lines.slice(1)]),
     });
@@ -295,7 +322,7 @@ function classifyKind(
     (c) => tryOmittedMedia(c, locale),
     (c) => tryLocation(c, locale),
     (c) => tryPoll(c, locale),
-    (c) => tryCall(c),
+    (c) => tryCall(c, locale),
   ];
   for (const step of chained) {
     const outcome = step(core);
@@ -326,7 +353,7 @@ export function classifyBody(
   const firstLine = cleanBodyLine(rest);
 
   // 1. System check on the whole REST, before any author split (§8.6.1).
-  const wholeRestSystem = tryClassifySystem(firstLine, continuationLines);
+  const wholeRestSystem = tryClassifySystem(firstLine, continuationLines, locale);
   if (wholeRestSystem !== null) {
     return wholeRestSystem;
   }
@@ -353,7 +380,7 @@ export function classifyBody(
   const rawAfterColon = rest.slice(rest.indexOf(': ') + 2);
   if (platform === 'ios' && rawAfterColon.startsWith(LRM)) {
     const cleanedCandidate = cleanBodyLine(rawAfterColon);
-    if (SYSTEM_ANY.test(cleanedCandidate)) {
+    if (matchersFor(locale).system.test(cleanedCandidate)) {
       return systemBody({
         author: null,
         firstLine: cleanedCandidate,

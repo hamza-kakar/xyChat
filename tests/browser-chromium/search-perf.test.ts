@@ -20,19 +20,29 @@ function seedRows(repo: SqliteChatRepository, chatId: string): void {
     'a searchable needle hiding in row N',
     'common filler text without anything special',
   ];
+  // Batched multi-row INSERTs: 500 rows per statement so the 100k seed
+  // completes in seconds (FTS triggers still fire per row, but the
+  // statement overhead is amortized).
   for (let i = 0; i < ROWS; i += 500) {
-    repo.database.transaction(() => {
-      for (let j = i; j < Math.min(i + 500, ROWS); j += 1) {
-        const body = bodies[j % bodies.length] ?? '';
-        const tsLocal = `2026-11-17T${String(8 + (j % 12)).padStart(2, '0')}:${String(j % 60).padStart(2, '0')}:00`;
-        const tsKey = Date.UTC(2026, 10, 17, 8 + (j % 12), j % 60, 0) / 1000;
-        repo.database.run(
-          `INSERT INTO messages (id, chat_id, fingerprint, seq, ts_local, ts_key, author_id, kind, body, is_edited, extra_json, import_id)
-           VALUES (NULL, ?, ?, ?, ?, ?, NULL, 'text', ?, 0, NULL, 'perf-import')`,
-          [chatId, `perf-fp-${j}`, j, tsLocal, tsKey, body],
-        );
-      }
-    });
+    const end = Math.min(i + 500, ROWS);
+    const values: string[] = [];
+    const params: (string | number | null)[] = [];
+    for (let j = i; j < end; j += 1) {
+      const body = bodies[j % bodies.length] ?? '';
+      const tsLocal = `2026-11-17T${String(8 + (j % 12)).padStart(2, '0')}:${String(j % 60).padStart(2, '0')}:00`;
+      const tsKey = Date.UTC(2026, 10, 17, 8 + (j % 12), j % 60, 0) / 1000;
+      const offset = j - i;
+      values.push(
+        `(NULL, ?, ?, ?, ?, ?, NULL, 'text', ?, 0, NULL, 'perf-import')`,
+      );
+      params.push(chatId, `perf-fp-${j}`, j, tsLocal, tsKey, body);
+      void offset;
+    }
+    repo.database.run(
+      `INSERT INTO messages (id, chat_id, fingerprint, seq, ts_local, ts_key, author_id, kind, body, is_edited, extra_json, import_id)
+       VALUES ${values.join(', ')}`,
+      params,
+    );
   }
 }
 
@@ -41,7 +51,9 @@ let chatId: ChatId;
 
 beforeEach(async () => {
   const sqlite3 = await initSqlite3();
-  const dbRaw = new sqlite3.oo1.DB({ filename: ':memory:', flags: 'ct' });
+  // No 't' flag: tracing would print every seeded statement through the
+  // browser bridge and dominate the wall clock.
+  const dbRaw = new sqlite3.oo1.DB({ filename: ':memory:', flags: 'c' });
   const db = wrapDatabase(dbRaw);
   db.exec('PRAGMA foreign_keys=ON; PRAGMA temp_store=MEMORY;');
   migrate(db);
@@ -75,7 +87,10 @@ describe('search performance (§17, §22 M2)', () => {
     });
     const elapsed = performance.now() - start;
     expect(page.hits.length).toBeGreaterThan(0);
-    expect(elapsed).toBeLessThan(BUDGET_MS);
+    expect(
+      elapsed,
+      `search 100k took ${elapsed.toFixed(0)}ms (budget ${BUDGET_MS}ms)`,
+    ).toBeLessThan(BUDGET_MS);
     // Budget enforcement is the expect() below; CI reads timings from the
     // vitest output via the assertion message.
   });
