@@ -1,21 +1,18 @@
 /**
- * Transactional import commit (AGENTS.md §9.2 step 10): upsert chat,
- * participants, messages (batched), attachments, FTS (via triggers), and
- * chat aggregates — all inside ONE transaction. Re-imports renumber `seq`
- * with the +1e9 offset trick (§10.2).
+ * Transactional import commit (AGENTS.md §9.2 step 10, §8.10): applies a
+ * planMerge of the stored chat and the incoming export inside ONE
+ * transaction — stored rows are re-sequenced via the +1e9 offset trick,
+ * incoming rows are inserted at their final positions, media upgrades fill
+ * stored attachment rows, and chat aggregates are recomputed in-transaction
+ * (§10.2).
  */
-import {
-  asChatId,
-  asImportId,
-  asParticipantId,
-  type ChatId,
-  type ParticipantId,
-} from '../../core/ids';
+import type { ParticipantId } from '../../core/ids';
 import type { ParsedMessage, SourcePlatform } from '../../core/model';
+import { planMerge, type MergeEntry } from '../../core/merge';
 import { formatLocalDateTime } from './local-date-time-parse';
 import type { SqliteDatabase } from './open';
 
-/** A message prepared for insertion (fingerprints already computed). */
+/** A message prepared for insertion (fingerprint already §8.10-complete). */
 export interface InsertableMessage {
   readonly fingerprint: string;
   readonly message: ParsedMessage;
@@ -37,10 +34,19 @@ export interface InsertableAttachment {
   readonly status: 'present' | 'missing' | 'omitted';
 }
 
+/** Inputs for creating the in_progress import row (§9.3: created before
+ * media writes so crash rollback can find it). */
+export interface ImportRecordInput {
+  readonly importId: string;
+  readonly fileName: string;
+  readonly fileBytes: number;
+  readonly parserVersion: string;
+}
+
 /** Import-commit inputs assembled by import.worker (§9.2). */
 export interface ImportCommitInput {
   readonly importId: string;
-  readonly targetChatId: ChatId | null;
+  readonly targetChatId: string | null;
   /** Chat metadata for a NEW chat (ignored when merging into an existing one). */
   readonly newChat: {
     readonly title: string;
@@ -57,17 +63,26 @@ export interface ImportCommitInput {
 
 /** Outcome counts for the import report (§9.2 step 11). */
 export interface ImportCommitResult {
-  readonly chatId: ChatId;
+  readonly chatId: string;
   readonly importId: string;
   readonly messagesInserted: number;
   readonly duplicatesSkipped: number;
   readonly attachmentsInserted: number;
+  readonly mediaUpgraded: number;
+}
+
+/** Creates the in_progress import row — call BEFORE media writes (§9.3). */
+export function createImportRecord(db: SqliteDatabase, input: ImportRecordInput): void {
+  const now = new Date().toISOString().replace(/\.\d{3}Z$/u, 'Z');
+  db.run(
+    `INSERT INTO imports (id, chat_id, file_name, file_bytes, status, parser_version, started_at)
+     VALUES (?, NULL, ?, ?, 'in_progress', ?, ?)`,
+    [input.importId, input.fileName, input.fileBytes, input.parserVersion, now],
+  );
 }
 
 /** Deterministic participant id from a chat + display name (stable, §10.2). */
-function participantIdFor(chatId: ChatId, displayName: string): string {
-  // UUID namespace-style: deterministic per (chatId, name) so re-imports
-  // upsert instead of duplicating participants.
+function participantIdFor(chatId: string, displayName: string): string {
   const raw = `${chatId}:${displayName}`;
   let h1 = 0x811c9dc5;
   for (let i = 0; i < raw.length; i += 1) {
@@ -78,7 +93,7 @@ function participantIdFor(chatId: ChatId, displayName: string): string {
     h2 = (Math.imul(h2 ^ raw.charCodeAt(i), 0x811c9dc5) >>> 0) % 0x100000000;
   }
   const hex = (n: number): string => n.toString(16).padStart(8, '0');
-  return `${hex(h1).slice(0, 8)}-${hex(h1 ^ h2).slice(0, 4)}-4${hex(h2).slice(0, 3)}-8${hex(h1 ^ 0xa5a5a5a5).slice(0, 3)}-${hex(h2)}${hex(h1).slice(0, 4)}` as ParticipantId;
+  return `${hex(h1).slice(0, 8)}-${hex(h1 ^ h2).slice(0, 4)}-4${hex(h2).slice(0, 3)}-8${hex(h1 ^ 0xa5a5a5a5).slice(0, 3)}-${hex(h2)}${hex(h1).slice(0, 4)}`;
 }
 
 /** Color index = stable hash of the display name modulo palette size (§10.2). */
@@ -91,7 +106,7 @@ function colorIndexFor(displayName: string): number {
 }
 
 /** Inserts or updates one participant; returns its id. */
-function upsertParticipant(db: SqliteDatabase, chatId: ChatId, displayName: string): ParticipantId {
+function upsertParticipant(db: SqliteDatabase, chatId: string, displayName: string): ParticipantId {
   const id = participantIdFor(chatId, displayName);
   db.run(
     `INSERT INTO participants (id, chat_id, display_name, color_index, message_count)
@@ -99,83 +114,156 @@ function upsertParticipant(db: SqliteDatabase, chatId: ChatId, displayName: stri
      ON CONFLICT(chat_id, display_name) DO UPDATE SET display_name = excluded.display_name`,
     [id, chatId, displayName, colorIndexFor(displayName)],
   );
-  return asParticipantId(id);
-}
-
-/** Step 0: register the in_progress import row (§9.2 step 10). */
-function registerImport(db: SqliteDatabase, input: ImportCommitInput, now: string): void {
-  db.run(
-    `INSERT INTO imports (id, chat_id, file_name, file_bytes, status, parser_version, started_at)
-     VALUES (?, ?, ?, ?, 'in_progress', ?, ?)`,
-    [input.importId, input.targetChatId, input.fileName, input.fileBytes, input.parserVersion, now],
-  );
+  return id as ParticipantId;
 }
 
 /** Step 1: resolve the target chat — reuse or create (§12.8 target). */
-function resolveTargetChat(db: SqliteDatabase, input: ImportCommitInput, now: string): ChatId {
+function resolveTargetChat(db: SqliteDatabase, input: ImportCommitInput, now: string): string {
   if (input.targetChatId !== null) {
     return input.targetChatId;
   }
-  const chatId = asChatId(crypto.randomUUID());
+  const chatId = crypto.randomUUID();
   db.run(
     `INSERT INTO chats (id, title, is_group, self_participant_id, source_platform, date_order,
         message_count, media_count, media_bytes, created_at, updated_at)
      VALUES (?, ?, ?, NULL, ?, ?, 0, 0, 0, ?, ?)`,
-    [
-      chatId,
-      input.newChat.title,
-      input.newChat.isGroup ? 1 : 0,
-      input.newChat.sourcePlatform,
-      input.newChat.dateOrder,
-      now,
-      now,
-    ],
+    [chatId, input.newChat.title, input.newChat.isGroup ? 1 : 0, input.newChat.sourcePlatform, input.newChat.dateOrder, now, now],
   );
   db.run('UPDATE imports SET chat_id = ? WHERE id = ?', [chatId, input.importId]);
   return chatId;
 }
 
-/** Step 4: insert messages with occurrence-counted fingerprints (§8.10). */
-function insertMessages(
+/** Stored-side entry for planMerge, loaded from the database. */
+interface StoredEntry {
+  readonly rowId: number;
+  readonly fingerprint: string;
+  readonly seq: number;
+  readonly tsKey: number;
+  readonly attachmentWasStored: boolean;
+}
+
+/** Loads stored messages as MergeEntry inputs (§9.2 step 7). */
+function loadStoredEntries(db: SqliteDatabase, chatId: string): readonly StoredEntry[] {
+  const rows = db.selectObjects(
+    `SELECT m.id AS row_id, m.fingerprint, m.seq, m.ts_key,
+            EXISTS(SELECT 1 FROM attachments a WHERE a.message_id = m.id AND a.status = 'present') AS stored
+     FROM messages m WHERE m.chat_id = ? ORDER BY m.seq`,
+    [chatId],
+  );
+  return rows.map((row) => ({
+    rowId: Number(row['row_id']),
+    fingerprint: String(row['fingerprint']),
+    seq: Number(row['seq']),
+    tsKey: Number(row['ts_key']),
+    attachmentWasStored: Number(row['stored']) === 1,
+  }));
+}
+
+/** Wall-clock-as-UTC seconds (§10.2 ts_key). */
+function tsLocalToKey(t: {
+  readonly year: number;
+  readonly month: number;
+  readonly day: number;
+  readonly hour: number;
+  readonly minute: number;
+  readonly second: number;
+}): number {
+  return Date.UTC(t.year, t.month - 1, t.day, t.hour, t.minute, t.second) / 1000;
+}
+
+/** Step 4: applies the planMerge — stored rows re-sequenced, incoming rows
+ * inserted, media upgrades applied (§8.10 rules 1–3, §9.2 step 10). */
+function applyPlan(
   db: SqliteDatabase,
   input: ImportCommitInput,
-  chatId: ChatId,
-): { readonly messagesInserted: number; readonly duplicatesSkipped: number } {
-  const existing = db.selectObjects('SELECT fingerprint FROM messages WHERE chat_id = ?', [chatId]);
-  const existingSet = new Set(existing.map((r) => String(r['fingerprint'])));
-  // Renumber trick: existing seq get +1e9 so inserts never collide (§10.2).
+  chatId: string,
+  stored: readonly StoredEntry[],
+): { readonly messagesInserted: number; readonly duplicatesSkipped: number; readonly mediaUpgraded: number } {
+  // Offset existing seq so UPDATEs to final positions never collide (§10.2).
   db.run('UPDATE messages SET seq = seq + 1000000000 WHERE chat_id = ?', [chatId]);
-  const minRow = db.selectObjects('SELECT MIN(seq) AS s FROM messages WHERE chat_id = ?', [
-    chatId,
-  ])[0];
-  const minSeq = minRow === undefined || minRow['s'] === null ? null : Number(minRow['s']);
-  let maxSeq = minSeq === null ? -1 : minSeq - 1000000000 - 1;
 
-  const seenFingerprints = new Map<string, number>();
-  const authors = new Map<string, ParticipantId>();
+  const incomingByFingerprint = new Map<string, (typeof input.messages)[number]>();
+  for (const item of input.messages) {
+    // First occurrence wins for identical fingerprints (occurrence is
+    // already baked into the fingerprint itself at computation time).
+    if (!incomingByFingerprint.has(item.fingerprint)) {
+      incomingByFingerprint.set(item.fingerprint, item);
+    }
+  }
+
+  const incomingEntries: MergeEntry[] = input.messages.map((item, index) => ({
+    fingerprint: item.fingerprint,
+    message: item.message,
+    tsKey: tsLocalToKey(item.message.timestamp),
+    attachmentWasStored: false,
+  }));
+  const storedEntries: MergeEntry[] = stored.map((s) => ({
+    fingerprint: s.fingerprint,
+    message: {
+      seq: s.seq,
+      sourceLine: 0,
+      timestamp: { year: 1970, month: 1, day: 1, hour: 0, minute: 0, second: 0 },
+      author: null,
+      kind: 'text',
+      body: '',
+      isEdited: false,
+      attachment: null,
+      poll: null,
+      location: null,
+    },
+    tsKey: s.tsKey,
+    attachmentWasStored: s.attachmentWasStored,
+  }));
+
+  const plan = planMerge(storedEntries, incomingEntries);
+
+  const attachmentByFingerprint = new Map<string, (typeof input.attachments)[number]>();
+  for (const a of input.attachments) {
+    if (!attachmentByFingerprint.has(a.fingerprintOfMessage)) {
+      attachmentByFingerprint.set(a.fingerprintOfMessage, a);
+    }
+  }
+
   let messagesInserted = 0;
   let duplicatesSkipped = 0;
+  let mediaUpgraded = 0;
 
-  for (const item of input.messages) {
-    const occurrence = seenFingerprints.get(item.fingerprint) ?? 0;
-    seenFingerprints.set(item.fingerprint, occurrence + 1);
-    const fingerprintWithOccurrence =
-      occurrence > 0 ? `${item.fingerprint}-${occurrence}` : item.fingerprint;
-    if (existingSet.has(fingerprintWithOccurrence)) {
-      duplicatesSkipped += 1;
-      continue;
+  plan.messages.forEach((merged, finalSeq) => {
+    const storedSource = stored.find((s) => s.fingerprint === merged.fingerprint);
+    if (!merged.fromIncoming && storedSource !== undefined) {
+      // Stored row: move to its final position.
+      db.run('UPDATE messages SET seq = ? WHERE rowid = ?', [
+        finalSeq,
+        storedSource.rowId,
+      ]);
+      // Media upgrade: the export twin newly provides bytes the stored row
+      // lacked — fill the stored attachment record from the twin.
+      const twinFp = merged.fingerprintOfIncomingTwin;
+      const upgrade = twinFp === null ? undefined : attachmentByFingerprint.get(twinFp);
+      if (upgrade !== undefined) {
+        db.run(
+          `UPDATE attachments SET status = 'present', opfs_path = ?, mime = ?, byte_size = ?
+           WHERE message_id = ? AND status IN ('omitted', 'missing')`,
+          [upgrade.opfsPath, upgrade.mime, upgrade.byteSize, storedSource.rowId],
+        );
+        mediaUpgraded += 1;
+      }
+      return;
+    }
+    if (storedSource !== undefined) {
+      // Incoming twin of a stored message was dropped by rule 1 (already
+      // emitted from the stored side) — not a new row.
+      return;
+    }
+    const item = incomingByFingerprint.get(merged.fingerprint);
+    if (item === undefined) {
+      return;
     }
     const m = item.message;
     const tsLocal = formatLocalDateTime(m.timestamp);
-    let authorId: ParticipantId | null = null;
+    let authorId: string | null = null;
     if (m.author !== null) {
-      const mapped = authors.get(m.author);
-      if (mapped !== undefined) {
-        authorId = mapped;
-      } else {
-        authorId = upsertParticipant(db, chatId, m.author);
-        authors.set(m.author, authorId);
-      }
+      authorId = upsertParticipant(db, chatId, m.author);
       db.run('UPDATE participants SET message_count = message_count + 1 WHERE id = ?', [authorId]);
     }
     const extraJson =
@@ -184,14 +272,13 @@ function insertMessages(
         : m.location !== null
           ? JSON.stringify(m.location)
           : null;
-    maxSeq += 1;
     db.run(
       `INSERT INTO messages (id, chat_id, fingerprint, seq, ts_local, ts_key, author_id, kind, body, is_edited, extra_json, import_id)
        VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         chatId,
-        fingerprintWithOccurrence,
-        maxSeq,
+        item.fingerprint,
+        finalSeq,
         tsLocal,
         tsLocalToKey(m.timestamp),
         authorId,
@@ -203,57 +290,40 @@ function insertMessages(
       ],
     );
     messagesInserted += 1;
-  }
-  return { messagesInserted, duplicatesSkipped };
-}
-
-/** Step 5: insert attachment records (bytes live in OPFS, §10.4). */
-function insertAttachments(db: SqliteDatabase, input: ImportCommitInput, chatId: ChatId): number {
-  const messageIdByFingerprint = new Map<string, number>();
-  for (const row of db.selectObjects('SELECT id, fingerprint FROM messages WHERE chat_id = ?', [
-    chatId,
-  ])) {
-    messageIdByFingerprint.set(String(row['fingerprint']), Number(row['id']));
-  }
-  let inserted = 0;
-  for (const a of input.attachments) {
-    const messageId = messageIdByFingerprint.get(a.fingerprintOfMessage);
-    if (messageId === undefined) {
-      continue;
+    const attachment = attachmentByFingerprint.get(item.fingerprint);
+    if (attachment !== undefined) {
+      const messageRowId = db.lastInsertRowId();
+      db.run(
+        `INSERT INTO attachments (id, message_id, chat_id, file_name, media_type, mime, byte_size, opfs_path, thumb_path, width, height, duration_ms, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          attachment.id,
+          messageRowId,
+          chatId,
+          attachment.fileName,
+          attachment.mediaType,
+          attachment.mime,
+          attachment.byteSize,
+          attachment.opfsPath,
+          attachment.thumbPath,
+          attachment.width,
+          attachment.height,
+          attachment.durationMs,
+          attachment.status,
+        ],
+      );
     }
-    db.run(
-      `INSERT INTO attachments (id, message_id, chat_id, file_name, media_type, mime, byte_size, opfs_path, thumb_path, width, height, duration_ms, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        a.id,
-        messageId,
-        chatId,
-        a.fileName,
-        a.mediaType,
-        a.mime,
-        a.byteSize,
-        a.opfsPath,
-        a.thumbPath,
-        a.width,
-        a.height,
-        a.durationMs,
-        a.status,
-      ],
-    );
-    inserted += 1;
-  }
-  return inserted;
-}
+  });
 
-/** Step 6: renumber seq back to 0..n-1 after the offset trick. */
-function renumberSeq(db: SqliteDatabase, chatId: ChatId): void {
-  db.run('UPDATE messages SET seq = seq - 1000000000 WHERE chat_id = ? AND seq >= 1000000000', [
-    chatId,
-  ]);
+  return {
+    messagesInserted,
+    duplicatesSkipped: input.messages.length - messagesInserted,
+    mediaUpgraded,
+  };
 }
 
 /** Step 7: recompute chat aggregates inside the transaction (§10.2). */
-function updateChatAggregates(db: SqliteDatabase, chatId: ChatId, now: string): void {
+function updateChatAggregates(db: SqliteDatabase, chatId: string, now: string): void {
   const agg =
     db.selectObjects(
       `SELECT COUNT(*) AS n, COALESCE(MIN(ts_key), NULL) AS first, COALESCE(MAX(ts_key), NULL) AS last
@@ -270,8 +340,7 @@ function updateChatAggregates(db: SqliteDatabase, chatId: ChatId, now: string): 
      FROM attachments WHERE chat_id = ? AND status = 'present'`,
       [chatId],
     )[0] ?? {};
-  const firstTsKey =
-    agg['first'] === null || agg['first'] === undefined ? null : Number(agg['first']);
+  const firstTsKey = agg['first'] === null || agg['first'] === undefined ? null : Number(agg['first']);
   const lastTsKey = agg['last'] === null || agg['last'] === undefined ? null : Number(agg['last']);
   db.run(
     `UPDATE chats SET message_count = ?, media_count = ?, media_bytes = ?, first_ts_key = ?, last_ts_key = ?, last_message_preview = ?, updated_at = ?
@@ -290,50 +359,33 @@ function updateChatAggregates(db: SqliteDatabase, chatId: ChatId, now: string): 
 }
 
 /**
- * Commits an import in ONE transaction (§9.2 step 10).
+ * Commits an import in ONE transaction (§9.2 step 10, §8.10 semantics).
  *
  * @param db The open database (owned by db.worker).
- * @param input The assembled commit inputs.
+ * @param input The assembled commit inputs (import row already in_progress —
+ *   created before media writes via createImportRecord).
  * @returns The counts for the import report.
  */
 export function commitImport(db: SqliteDatabase, input: ImportCommitInput): ImportCommitResult {
   const now = new Date().toISOString().replace(/\.\d{3}Z$/u, 'Z');
-  let result: ImportCommitResult | undefined;
 
-  db.transaction(() => {
-    registerImport(db, input, now);
+  return db.transaction(() => {
     const chatId = resolveTargetChat(db, input, now);
-    const inserted = insertMessages(db, input, chatId);
-    const insertedAttachmentsCount = insertAttachments(db, input, chatId);
-    renumberSeq(db, chatId);
+    const stored = loadStoredEntries(db, chatId);
+    const counts = applyPlan(db, input, chatId, stored);
     updateChatAggregates(db, chatId, now);
     db.run("UPDATE imports SET status = 'complete', finished_at = ? WHERE id = ?", [
       now,
       input.importId,
     ]);
-    result = {
+    return {
       chatId,
-      importId: asImportId(input.importId),
-      messagesInserted: inserted.messagesInserted,
-      duplicatesSkipped: inserted.duplicatesSkipped,
-      attachmentsInserted: insertedAttachmentsCount,
+      importId: input.importId,
+      messagesInserted: counts.messagesInserted,
+      duplicatesSkipped: counts.duplicatesSkipped,
+      attachmentsInserted: input.attachments.length,
+      mediaUpgraded: counts.mediaUpgraded,
     };
   });
-
-  if (result === undefined) {
-    throw new Error('import commit produced no result');
-  }
-  return result;
 }
 
-/** Wall-clock-as-UTC seconds (§10.2 ts_key). */
-function tsLocalToKey(t: {
-  year: number;
-  month: number;
-  day: number;
-  hour: number;
-  minute: number;
-  second: number;
-}): number {
-  return Date.UTC(t.year, t.month - 1, t.day, t.hour, t.minute, t.second) / 1000;
-}

@@ -14,6 +14,12 @@ export interface MergedMessage {
   readonly message: ParsedMessage;
   /** True when this entry came from the incoming export. */
   readonly fromIncoming: boolean;
+  /**
+   * When a stored entry merged with an identical incoming twin (§8.10
+   * rule 1), this is the twin's fingerprint — the caller uses it to apply
+   * upgrades (e.g. media bytes the export newly provides). Null otherwise.
+   */
+  readonly fingerprintOfIncomingTwin: string | null;
 }
 
 /** Aggregate counts reported to the import report (§9.2 step 11). */
@@ -52,11 +58,12 @@ interface MergePlanBuilder {
 }
 
 /** Emits a stored entry in the output, marking its fingerprint as present. */
-function emitExisting(plan: MergePlanBuilder, entry: MergeEntry): void {
+function emitExisting(plan: MergePlanBuilder, entry: MergeEntry, twinFingerprint: string | null = null): void {
   plan.messages.push({
     fingerprint: entry.fingerprint,
     message: entry.message,
     fromIncoming: false,
+    fingerprintOfIncomingTwin: twinFingerprint,
   });
   plan.emitted.add(entry.fingerprint);
 }
@@ -130,6 +137,7 @@ export function planMerge(
           fingerprint: incomingEntry.fingerprint,
           message: incomingEntry.message,
           fromIncoming: true,
+          fingerprintOfIncomingTwin: null,
         });
         plan.added += 1;
         plan.emitted.add(incomingEntry.fingerprint);
@@ -141,7 +149,7 @@ export function planMerge(
     if (existingEntry.fingerprint === incomingEntry.fingerprint) {
       // Rule 1: emit once from the stored side, advance BOTH; media that the
       // export newly provides upgrades a stored omitted/missing attachment.
-      emitExisting(plan, existingEntry);
+      emitExisting(plan, existingEntry, incomingEntry.fingerprint);
       plan.duplicates += 1;
       if (!existingEntry.attachmentWasStored && incomingEntry.message.attachment !== null) {
         plan.mediaUpgraded += 1;
@@ -159,6 +167,7 @@ export function planMerge(
         fingerprint: incomingEntry.fingerprint,
         message: incomingEntry.message,
         fromIncoming: true,
+        fingerprintOfIncomingTwin: null,
       });
       plan.added += 1;
       plan.emitted.add(incomingEntry.fingerprint);
