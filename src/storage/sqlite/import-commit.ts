@@ -11,7 +11,6 @@ import { planMerge, type MergeEntry } from '../../core/merge';
 import { formatLocalDateTime } from './local-date-time-parse';
 import type { SqliteDatabase } from './open';
 import { upsertParticipant } from './participant-upsert';
-import { createImportRecord, type ImportRecordInput } from './import-record';
 
 /** A message prepared for insertion (fingerprint already §8.10-complete). */
 export interface InsertableMessage {

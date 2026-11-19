@@ -19,11 +19,8 @@ import type {
   StorageUsage,
   Participant,
 } from '../storage/repository';
-import type {
-  ImportCommitInput,
-  ImportCommitResult,
-  ImportRecordInput,
-} from '../storage/sqlite/import-commit';
+import type { ImportCommitInput, ImportCommitResult } from '../storage/sqlite/import-commit';
+import type { ImportRecordInput } from '../storage/sqlite/import-record';
 import type { ChatId, ParticipantId } from '../core/ids';
 
 /** A serialized worker error (§18.7). */

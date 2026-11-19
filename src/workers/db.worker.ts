@@ -6,12 +6,8 @@
 import * as Comlink from 'comlink';
 import { openDatabase } from '../storage/sqlite/open';
 import { SqliteChatRepository } from '../storage/sqlite/sqlite-repository';
-import {
-  commitImport,
-  createImportRecord,
-  type ImportCommitInput,
-  type ImportRecordInput,
-} from '../storage/sqlite/import-commit';
+import { commitImport, type ImportCommitInput } from '../storage/sqlite/import-commit';
+import { createImportRecord, type ImportRecordInput } from '../storage/sqlite/import-record';
 import type { ChatId } from '../core/ids';
 import type { DbApi, WorkerError } from './db-api';
 import { attachmentFromRow } from '../storage/sqlite/rows';
