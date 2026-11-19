@@ -204,13 +204,78 @@ describe('repository contract: queries', () => {
     expect(byKind.hits).toHaveLength(1);
   });
 
+  it('paginates in-chat search forward by seq (§11 keyset)', () => {
+    // Seed 5 like-named messages; page size 2 must walk them in seq order
+    // with no overlap between pages.
+    const rows: string[] = [];
+    const params: (string | number | null)[] = [];
+    for (let i = 0; i < 5; i += 1) {
+      rows.push(`(NULL, ?, ?, ?, ?, ?, NULL, 'text', ?, 0, NULL, 'imp-q')`);
+      const tsKey = Date.UTC(2026, 10, 17, 22, i, 0) / 1000;
+      params.push(chatId, `pg-fp-${i}`, 10 + i, `2026-11-17T22:${String(i).padStart(2, '0')}:00`, tsKey, `paged match ${i}`);
+    }
+    db.run(
+      `INSERT INTO messages (id, chat_id, fingerprint, seq, ts_local, ts_key, author_id, kind, body, is_edited, extra_json, import_id)
+       VALUES ${rows.join(', ')}`,
+      params,
+    );
+    const base = { chatId, query: 'paged', authorId: null as null, kinds: null as null, dateFromTsKey: null as null, dateToTsKey: null as null };
+    const page1 = repo.search({ ...base, limit: 2, cursor: null });
+    expect(page1.hits.map((h) => h.seq)).toEqual([10, 11]);
+    expect(page1.nextCursor).not.toBeNull();
+    const page2 = repo.search({ ...base, limit: 2, cursor: page1.nextCursor });
+    expect(page2.hits.map((h) => h.seq)).toEqual([12, 13]);
+    const page3 = repo.search({ ...base, limit: 2, cursor: page2.nextCursor });
+    expect(page3.hits.map((h) => h.seq)).toEqual([14]);
+    expect(page3.nextCursor).toBeNull();
+  });
+
+  it('caps the 1–2 char LIKE fallback at 500 results (§11)', () => {
+    const rows: string[] = [];
+    const params: (string | number | null)[] = [];
+    for (let i = 0; i < 501; i += 1) {
+      rows.push(`(NULL, ?, ?, ?, ?, ?, NULL, 'text', ?, 0, NULL, 'imp-q')`);
+      const tsKey = Date.UTC(2026, 10, 17, 23, Math.floor(i / 60), i % 60) / 1000;
+      params.push(chatId, `like-fp-${i}`, 100 + i, `2026-11-17T23:${String(Math.floor(i / 60)).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}`, tsKey, `ab hit ${i}`);
+    }
+    db.run(
+      `INSERT INTO messages (id, chat_id, fingerprint, seq, ts_local, ts_key, author_id, kind, body, is_edited, extra_json, import_id)
+       VALUES ${rows.join(', ')}`,
+      params,
+    );
+    // Requested limit above the cap: the LIKE path clamps to 500 instead of
+    // returning nothing.
+    const page = repo.search({ chatId, query: 'ab', authorId: null, kinds: null, dateFromTsKey: null, dateToTsKey: null, limit: 1000, cursor: null });
+    expect(page.hits).toHaveLength(500);
+    expect(page.nextCursor).not.toBeNull();
+    // Global (chatId null) with a 1–2 char query stays empty (§11: in-chat only).
+    const global = repo.search({ chatId: null, query: 'ab', authorId: null, kinds: null, dateFromTsKey: null, dateToTsKey: null, limit: 50, cursor: null });
+    expect(global.hits).toHaveLength(0);
+  });
+
   it('lists attachments, links and stats', () => {
-    expect(repo.listLinks({ chatId, cursor: null, limit: 50 }).links).toHaveLength(0);
     expect(repo.listAttachments({ chatId, types: ['image'], cursor: null, limit: 50 }).attachments).toHaveLength(0);
     const stats = repo.getChatStats(chatId);
     expect(stats.totalsByKind.text).toBe(3);
     expect(stats.dateRange?.first.minute).toBe(0);
     expect(stats.dateRange?.last.minute).toBe(2);
+  });
+
+  it('extracts links from text messages with snippets (§12.6)', () => {
+    db.run(
+      `INSERT INTO messages (id, chat_id, fingerprint, seq, ts_local, ts_key, author_id, kind, body, is_edited, extra_json, import_id)
+       VALUES (NULL, ?, 'link-fp-0', 50, '2026-11-17T23:00:00', ?, NULL, 'text', 'see https://example.com/docs?page=1 for details', 0, NULL, 'imp-q')`,
+      [chatId, Date.UTC(2026, 10, 17, 23, 0, 0) / 1000],
+    );
+    const page = repo.listLinks({ chatId, cursor: null, limit: 50 });
+    expect(page.links).toHaveLength(1);
+    expect(page.links[0]?.url).toBe('https://example.com/docs?page=1');
+    expect(page.links[0]?.snippet).toContain('example.com');
+    expect(page.nextCursor).toBeNull();
+    // Keyset paging: a full page yields the last rowid as the cursor.
+    const limited = repo.listLinks({ chatId, cursor: null, limit: 1 });
+    expect(limited.links).toHaveLength(1);
+    expect(limited.nextCursor).not.toBeNull();
   });
 });
 

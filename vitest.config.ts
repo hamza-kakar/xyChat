@@ -28,7 +28,9 @@ export default defineConfig({
             'src/core/**/*.test.ts',
             'tests/fixtures/**/*.test.ts',
             'scripts/**/*.test.ts',
-            'src/storage/sqlite/migrate.test.ts',
+            'src/storage/sqlite/*.test.ts',
+            'src/client/*.test.ts',
+            'src/workers/*.test.ts',
           ],
         },
       },
@@ -45,7 +47,14 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
       reportsDirectory: 'coverage',
-      include: ['src/core/**', 'src/app/**', 'src/platform/**'],
+      // Worker coverage strategy (review Major 8): the testable worker-side
+      // logic lives in page modules — rpc-validate.ts (validation) and
+      // rpc-call.ts (client timeout regime) — and is unit-tested here with
+      // §19.4 thresholds. The worker entry shells (db.worker.ts,
+      // import-api.ts, media-writer.ts) run only inside real worker
+      // contexts, outside v8 instrumentation; they are exercised end-to-end
+      // by every e2e flow (ADR 0007).
+      include: ['src/core/**', 'src/app/**', 'src/platform/**', 'src/workers/rpc-validate.ts', 'src/client/rpc-call.ts', 'src/storage/sqlite/opener.ts'],
       // Type-only modules and re-export barrels contain no runtime code
       // (same convention as excluding *.d.ts).
       exclude: [
@@ -58,6 +67,9 @@ export default defineConfig({
         // AGENTS.md §19.4: core ≥ 95% lines, ≥ 90% branches.
         'src/core/**': { lines: 95, branches: 90 },
         'src/app/**': { lines: 70 },
+        'src/workers/rpc-validate.ts': { lines: 85 },
+        'src/client/rpc-call.ts': { lines: 85 },
+        'src/storage/sqlite/opener.ts': { lines: 85 },
       },
     },
   },

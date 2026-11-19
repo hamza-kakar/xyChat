@@ -1,10 +1,12 @@
 /**
  * Typed db.worker client (AGENTS.md §3.1): spawns the worker, wraps it in
- * Comlink, and forwards calls. Components never touch this directly — they
- * go through TanStack Query hooks. The client logs worker failures through
- * the app logger (§18.7 worker sink semantics).
+ * Comlink, and forwards calls through the injectable RPC caller (§18.8).
+ * Components never touch this directly — they go through TanStack Query
+ * hooks. Every call names its method so timeouts, exemptions and diagnostic
+ * ids are traceable (§18.7).
  */
 import * as Comlink from 'comlink';
+import { createRpcCaller, type RpcErrorSink } from './rpc-call';
 import type { DbApi } from '../workers/db-api';
 
 let worker: Worker | null = null;
@@ -27,7 +29,7 @@ function remote(): Comlink.Remote<DbApi> {
  * migrations, boot rollback. Resolves false when the database cannot open —
  * the caller renders the unsupported screen with the failure reason.
  */
-export function ensureDbReady(): Promise<boolean> {
+export async function ensureDbReady(): Promise<boolean> {
   readyPromise ??= (async (): Promise<boolean> => {
     const result = await remote().ready();
     // §9.3 boot rollback (incl. file deletion) completed in the worker.
@@ -37,84 +39,69 @@ export function ensureDbReady(): Promise<boolean> {
 }
 
 const RPC_TIMEOUT_MS = 10_000;
-const RPC_TIMEOUT_EXEMPT = new Set(['commitImport']);
+/** Long-running import commits are exempt from the RPC timeout (§18.8). */
+const RPC_TIMEOUT_EXEMPT: ReadonlySet<string> = new Set(['commitImport']);
 
-let diagnosticCounter = 0;
+const caller = createRpcCaller({
+  ensureReady: ensureDbReady,
+  timeoutMs: RPC_TIMEOUT_MS,
+  exempt: RPC_TIMEOUT_EXEMPT,
+});
 
-/** Forwards a call to the worker with a timeout (§18.8) and diagnostic id
- * (§18.7): timeouts and INTERNAL failures carry a stable id the user can
- * quote from the Diagnostics screen. */
-async function call<T>(fn: (api: DbApi) => Promise<T>, method = 'unknown'): Promise<T> {
-  const ok = await ensureDbReady();
-  if (!ok) {
-    throw new Error('INTERNAL: database unavailable (unsupported browser or open failure)');
-  }
-  const diagnosticId = `${Date.now().toString(36)}-${(diagnosticCounter += 1).toString(36)}`;
-  if (RPC_TIMEOUT_EXEMPT.has(method)) {
-    // Long-running import commits are exempt from the RPC timeout (§18.8).
-    try {
-      return await fn(remote());
-    } catch (error) {
-      // §3.1: no app imports here — the caller logs the diagnostic id.
-      throw new Error(
-        `INTERNAL: ${method} failed (id ${diagnosticId}): ${String(error).slice(0, 120)}`,
-        { cause: error },
-      );
-    }
-  }
-  return Promise.race([
-    fn(remote()),
-    new Promise<never>((_, reject) => {
-      setTimeout(() => {
-        reject(new Error(`TIMEOUT: ${method} exceeded ${RPC_TIMEOUT_MS}ms (id ${diagnosticId})`));
-      }, RPC_TIMEOUT_MS);
-    }),
-  ]);
+/** Registers the failure sink (logger-backed, from the app layer §3.1). */
+export function setRpcErrorSink(sink: RpcErrorSink | null): void {
+  caller.setSink(sink);
 }
 
-/** The main-thread-facing db client. */
+/** The main-thread-facing db client. Every RPC names its method (§18.8). */
 export const dbClient = {
-  listChats: () => call((a) => a.listChats()),
-  getChat: (id: Parameters<DbApi['getChat']>[0]) => call((a) => a.getChat(id)),
+  listChats: () => caller.call(() => remote().listChats(), 'listChats'),
+  getChat: (id: Parameters<DbApi['getChat']>[0]) =>
+    caller.call(() => remote().getChat(id), 'getChat'),
   getParticipants: (chatId: Parameters<DbApi['getParticipants']>[0]) =>
-    call((a) => a.getParticipants(chatId)),
+    caller.call(() => remote().getParticipants(chatId), 'getParticipants'),
   getMessageWindow: (q: Parameters<DbApi['getMessageWindow']>[0]) =>
-    call((a) => a.getMessageWindow(q)),
+    caller.call(() => remote().getMessageWindow(q), 'getMessageWindow'),
   findSeqByDate: (
     chatId: Parameters<DbApi['findSeqByDate']>[0],
     date: Parameters<DbApi['findSeqByDate']>[1],
-  ) => call((a) => a.findSeqByDate(chatId, date)),
-  search: (q: Parameters<DbApi['search']>[0]) => call((a) => a.search(q)),
+  ) => caller.call(() => remote().findSeqByDate(chatId, date), 'findSeqByDate'),
+  search: (q: Parameters<DbApi['search']>[0]) => caller.call(() => remote().search(q), 'search'),
   listAttachments: (q: Parameters<DbApi['listAttachments']>[0]) =>
-    call((a) => a.listAttachments(q)),
-  listLinks: (q: Parameters<DbApi['listLinks']>[0]) => call((a) => a.listLinks(q)),
+    caller.call(() => remote().listAttachments(q), 'listAttachments'),
+  listLinks: (q: Parameters<DbApi['listLinks']>[0]) =>
+    caller.call(() => remote().listLinks(q), 'listLinks'),
   getChatStats: (chatId: Parameters<DbApi['getChatStats']>[0]) =>
-    call((a) => a.getChatStats(chatId)),
+    caller.call(() => remote().getChatStats(chatId), 'getChatStats'),
   setSelf: (
     chatId: Parameters<DbApi['setSelf']>[0],
     participantId: Parameters<DbApi['setSelf']>[1],
-  ) => call((a) => a.setSelf(chatId, participantId)),
+  ) => caller.call(() => remote().setSelf(chatId, participantId), 'setSelf'),
   renameChat: (chatId: Parameters<DbApi['renameChat']>[0], title: string) =>
-    call((a) => a.renameChat(chatId, title)),
-  deleteChat: (chatId: Parameters<DbApi['deleteChat']>[0]) => call((a) => a.deleteChat(chatId)),
+    caller.call(() => remote().renameChat(chatId, title), 'renameChat'),
+  deleteChat: (chatId: Parameters<DbApi['deleteChat']>[0]) =>
+    caller.call(() => remote().deleteChat(chatId), 'deleteChat'),
   addBookmark: (
     chatId: Parameters<DbApi['addBookmark']>[0],
     messageId: number,
     note: string | null,
-  ) => call((a) => a.addBookmark(chatId, messageId, note)),
-  updateBookmark: (id: string, note: string | null) => call((a) => a.updateBookmark(id, note)),
-  removeBookmark: (id: string) => call((a) => a.removeBookmark(id)),
+  ) => caller.call(() => remote().addBookmark(chatId, messageId, note), 'addBookmark'),
+  updateBookmark: (id: string, note: string | null) =>
+    caller.call(() => remote().updateBookmark(id, note), 'updateBookmark'),
+  removeBookmark: (id: string) => caller.call(() => remote().removeBookmark(id), 'removeBookmark'),
   listBookmarks: (chatId: Parameters<DbApi['listBookmarks']>[0]) =>
-    call((a) => a.listBookmarks(chatId)),
-  listImports: (chatId: Parameters<DbApi['listImports']>[0]) => call((a) => a.listImports(chatId)),
-  storageUsage: () => call((a) => a.storageUsage()),
+    caller.call(() => remote().listBookmarks(chatId), 'listBookmarks'),
+  listImports: (chatId: Parameters<DbApi['listImports']>[0]) =>
+    caller.call(() => remote().listImports(chatId), 'listImports'),
+  storageUsage: () => caller.call(() => remote().storageUsage(), 'storageUsage'),
   createImportRecord: (input: Parameters<DbApi['createImportRecord']>[0]) =>
-    call((a) => a.createImportRecord(input)),
-  commitImport: (input: Parameters<DbApi['commitImport']>[0]) => call((a) => a.commitImport(input)),
+    caller.call(() => remote().createImportRecord(input), 'createImportRecord'),
+  commitImport: (input: Parameters<DbApi['commitImport']>[0]) =>
+    caller.call(() => remote().commitImport(input), 'commitImport'),
   recordWrittenPaths: (importId: string, paths: readonly string[]) =>
-    call((a) => a.recordWrittenPaths(importId, paths)),
+    caller.call(() => remote().recordWrittenPaths(importId, paths), 'recordWrittenPaths'),
   getAttachmentsForMessage: (messageId: number) =>
-    call((a) => a.getAttachmentsForMessage(messageId)),
+    caller.call(() => remote().getAttachmentsForMessage(messageId), 'getAttachmentsForMessage'),
 };
 
 /** Test seam: resets the cached worker (contract tests spawn their own). */

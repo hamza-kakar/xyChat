@@ -24,10 +24,14 @@ import type { ImportRecordInput } from '../storage/sqlite/import-record';
 import type { ChatId, ParticipantId } from '../core/ids';
 import type { LocalDateTime } from '../core/model';
 
-/** A serialized worker error (§18.7). */
+/** A serialized worker error (§18.7). The stack rides in the caller-side
+ * message (Comlink re-creates Errors with the message only); it contains
+ * engine locations only — never message content. */
 export interface WorkerError {
-  readonly code: 'INTERNAL';
+  readonly code: 'INTERNAL' | 'INVALID_INPUT';
   readonly message: string;
+  /** Sanitized worker-side stack (diagnostics only; never user-facing). */
+  readonly stack: string | null;
 }
 
 /** The db.worker API exposed over Comlink. */
