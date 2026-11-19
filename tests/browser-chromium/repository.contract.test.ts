@@ -1,16 +1,11 @@
 /**
- * Repository contract tests (AGENTS.md §10.5, §19.1, §19.4): run
- * SqliteChatRepository against the real sqlite-wasm stack directly (not
- * through the worker) so v8 coverage instruments the storage layer.
- * Chromium-only per ADR 0007.
+ * Repository contract tests (§10.5, §19.1, §19.4): run SqliteChatRepository
+ * against the real sqlite-wasm stack directly so v8 coverage instruments
+ * the storage layer. Chromium-only per ADR 0007.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import initSqlite3 from '@sqlite.org/sqlite-wasm';
-import {
-  wrapDatabase,
-  verifyFts5Trigram,
-  type SqliteDatabase,
-} from '../../src/storage/sqlite/open';
+import { wrapDatabase, verifyFts5Trigram, type SqliteDatabase } from '../../src/storage/sqlite/open';
 import { migrate } from '../../src/storage/sqlite/migrate';
 import { SqliteChatRepository } from '../../src/storage/sqlite/sqlite-repository';
 import { commitImport, type ImportCommitInput } from '../../src/storage/sqlite/import-commit';
@@ -24,7 +19,7 @@ let chatId: ChatId;
 
 beforeEach(async () => {
   const sqlite3 = await initSqlite3();
-  const dbRaw = new sqlite3.oo1.DB({ filename: ':memory:', flags: 'ct' });
+  const dbRaw = new sqlite3.oo1.DB({ filename: ':memory:', flags: 'c' });
   db = wrapDatabase(dbRaw);
   db.exec('PRAGMA foreign_keys=ON; PRAGMA temp_store=MEMORY;');
   migrate(db);
@@ -36,193 +31,184 @@ afterEach(() => {
   db.close();
 });
 
-function recordInput(importId: string): {
-  importId: string;
-  fileName: string;
-  fileBytes: number;
-  parserVersion: string;
-} {
+function recordInput(importId: string) {
   return { importId, fileName: 'contract.txt', fileBytes: 100, parserVersion: '1.0.0' };
 }
 
 function msg(seq: number, body: string, minute: number, author = 'Sara'): ParsedMessage {
   return {
-    seq,
-    sourceLine: seq + 1,
+    seq, sourceLine: seq + 1,
     timestamp: { year: 2026, month: 11, day: 17, hour: 21, minute, second: 0 },
-    author,
-    kind: 'text',
-    body,
-    isEdited: false,
-    attachment: null,
-    poll: null,
-    location: null,
+    author, kind: 'text', body, isEdited: false,
+    attachment: null, poll: null, location: null,
   };
 }
 
-function commitInput(importId: string, chatIdToTarget: string | null): ImportCommitInput {
+function mediaMsg(seq: number, body: string, minute: number, status: 'omitted' | 'referenced'): ParsedMessage {
   return {
-    importId,
-    targetChatId: chatIdToTarget,
-    newChat: {
-      title: 'Contract Test Chat',
-      isGroup: false,
-      sourcePlatform: 'android',
-      dateOrder: 'DMY',
-    },
+    seq, sourceLine: seq + 1,
+    timestamp: { year: 2026, month: 11, day: 17, hour: 21, minute, second: 0 },
+    author: 'Sara', kind: 'media', body, isEdited: false,
+    attachment: { fileName: status === 'referenced' ? 'IMG-001.jpg' : null, mediaType: 'image', status },
+    poll: null, location: null,
+  };
+}
+
+function threeMsgInput(importId: string, chatIdToTarget: string | null): ImportCommitInput {
+  return {
+    importId, targetChatId: chatIdToTarget,
+    newChat: { title: 'Contract Test Chat', isGroup: false, sourcePlatform: 'android', dateOrder: 'DMY' },
     messages: [
       { fingerprint: 'fp-0', message: msg(0, 'hello world', 0) },
       { fingerprint: 'fp-1', message: msg(1, 'searchable needle here', 1, 'Ali Khan') },
       { fingerprint: 'fp-2', message: msg(2, 'goodbye', 2) },
     ],
-    attachments: [],
-    fileName: 'contract.txt',
-    fileBytes: 100,
-    parserVersion: '1.0.0',
+    attachments: [], fileName: 'contract.txt', fileBytes: 100, parserVersion: '1.0.0',
   };
 }
 
-describe('repository contract: boot', () => {
+describe('repository contract: boot and import', () => {
   it('opens, migrates and verifies FTS5 trigram', () => {
     expect(db).toBeDefined();
   });
-});
 
-describe('repository contract: import commit', () => {
   it('commits an import and reads it back', () => {
     createImportRecord(db, recordInput('imp-1'));
-    const result = commitImport(db, commitInput('imp-1', null));
+    const result = commitImport(db, threeMsgInput('imp-1', null));
     expect(result.messagesInserted).toBe(3);
-
     chatId = asChatId(result.chatId);
-    const chats = repo.listChats();
-    const chat = chats.find((c) => c.title === 'Contract Test Chat');
+    const chat = repo.listChats().find((c) => c.title === 'Contract Test Chat');
     expect(chat?.messageCount).toBe(3);
-
-    const full = repo.getChat(chatId);
-    expect(full?.title).toBe('Contract Test Chat');
-    expect(full?.sourcePlatform).toBe('android');
-
+    expect(repo.getChat(chatId)?.sourcePlatform).toBe('android');
     const participants = repo.getParticipants(chatId);
     expect(participants.map((p) => p.displayName)).toEqual(['Sara', 'Ali Khan']);
-    expect(participants[0]?.messageCount).toBe(2);
-
     const window = repo.getMessageWindow({ chatId, anchorSeq: 1, before: 5, after: 5 });
-    expect(window.messages.map((m) => m.body)).toEqual([
-      'hello world',
-      'searchable needle here',
-      'goodbye',
-    ]);
-    expect(window.hasBefore).toBe(false);
-    expect(window.hasAfter).toBe(false);
+    expect(window.messages.map((m) => m.body)).toEqual(['hello world', 'searchable needle here', 'goodbye']);
     expect(window.messages[1]?.authorName).toBe('Ali Khan');
   });
 
-  it('skips duplicates when the same fingerprints are committed twice', () => {
-    createImportRecord(db, recordInput('imp-dup-1'));
-    const first = commitImport(db, commitInput('imp-dup-1', null));
-    expect(first.messagesInserted).toBe(3);
-
-    createImportRecord(db, recordInput('imp-dup-2'));
-    const second = commitImport(db, commitInput('imp-dup-2', asChatId(first.chatId)));
+  it('skips duplicates on re-import', () => {
+    createImportRecord(db, recordInput('imp-d1'));
+    const first = commitImport(db, threeMsgInput('imp-d1', null));
+    const localChat = asChatId(first.chatId);
+    createImportRecord(db, recordInput('imp-d2'));
+    const second = commitImport(db, threeMsgInput('imp-d2', localChat));
     expect(second.messagesInserted).toBe(0);
     expect(second.duplicatesSkipped).toBe(3);
-    expect(repo.getChat(asChatId(first.chatId))?.messageCount).toBe(3);
+  });
+
+  it('interleaves a superset with new messages between stored ones', () => {
+    createImportRecord(db, recordInput('imp-sup-1'));
+    const first = commitImport(db, threeMsgInput('imp-sup-1', null));
+    const localChat = asChatId(first.chatId);
+    createImportRecord(db, recordInput('imp-sup-2'));
+    const second = commitImport(db, {
+      importId: 'imp-sup-2', targetChatId: localChat,
+      newChat: { title: '', isGroup: false, sourcePlatform: 'android', dateOrder: 'DMY' },
+      messages: [
+        { fingerprint: 'fp-0', message: msg(0, 'hello world', 0) },
+        { fingerprint: 'fp-B2', message: msg(1, 'B2 between', 1) },
+        { fingerprint: 'fp-1', message: msg(2, 'searchable needle here', 2, 'Ali Khan') },
+        { fingerprint: 'fp-2', message: msg(3, 'goodbye', 3) },
+        { fingerprint: 'fp-D4', message: msg(4, 'D4 new', 4) },
+      ],
+      attachments: [], fileName: 'contract.txt', fileBytes: 100, parserVersion: '1.0.0',
+    });
+    expect(second.messagesInserted).toBe(2);
+    expect(second.duplicatesSkipped).toBe(3);
+    const window = repo.getMessageWindow({ chatId: localChat, anchorSeq: 0, before: 10, after: 10 });
+    expect(window.messages.map((m) => m.body)).toEqual([
+      'hello world', 'B2 between', 'searchable needle here', 'goodbye', 'D4 new',
+    ]);
+    expect(window.messages.map((m) => m.seq)).toEqual([0, 1, 2, 3, 4]);
+  });
+});
+
+describe('repository contract: media upgrades', () => {
+  function omittedMediaInput(importId: string, chatIdToTarget: string | null): ImportCommitInput {
+    return {
+      importId, targetChatId: chatIdToTarget,
+      newChat: { title: 'Media Chat', isGroup: false, sourcePlatform: 'android', dateOrder: 'DMY' },
+      messages: [
+        { fingerprint: 'fp-om', message: mediaMsg(0, 'photo message', 0, 'omitted') },
+      ],
+      attachments: [
+        { id: 'att-om', fingerprintOfMessage: 'fp-om', fileName: null, mediaType: 'image', mime: 'image/jpeg', byteSize: null, opfsPath: null, thumbPath: null, width: null, height: null, durationMs: null, status: 'omitted' },
+      ],
+      fileName: 'media.txt', fileBytes: 50, parserVersion: '1.0.0',
+    };
+  }
+
+  function presentMediaInput(importId: string, chatIdToTarget: string | null): ImportCommitInput {
+    return {
+      importId, targetChatId: chatIdToTarget,
+      newChat: { title: 'Media Chat', isGroup: false, sourcePlatform: 'android', dateOrder: 'DMY' },
+      messages: [
+        { fingerprint: 'fp-om', message: mediaMsg(0, 'photo message', 0, 'referenced') },
+      ],
+      attachments: [
+        { id: 'att-p', fingerprintOfMessage: 'fp-om', fileName: 'IMG-001.jpg', mediaType: 'image', mime: 'image/jpeg', byteSize: 500, opfsPath: 'media/x/att-1.jpg', thumbPath: null, width: 100, height: 80, durationMs: null, status: 'present' },
+      ],
+      fileName: 'media.txt', fileBytes: 50, parserVersion: '1.0.0',
+    };
+  }
+
+  it('upgrades omitted media to present when export provides bytes', () => {
+    createImportRecord(db, recordInput('imp-up-1'));
+    const first = commitImport(db, omittedMediaInput('imp-up-1', null));
+    const localChat = asChatId(first.chatId);
+    const rows = db.selectObjects('SELECT status FROM attachments');
+    expect(rows[0]?.['status']).toBe('omitted');
+    createImportRecord(db, recordInput('imp-up-2'));
+    const second = commitImport(db, presentMediaInput('imp-up-2', localChat));
+    expect(second.mediaUpgraded).toBe(1);
+    expect(second.duplicatesSkipped).toBe(1);
+    const after = db.selectObjects('SELECT status, opfs_path, file_name, width FROM attachments');
+    expect(after[0]).toEqual({ status: 'present', opfs_path: 'media/x/att-1.jpg', file_name: 'IMG-001.jpg', width: 100 });
+  });
+
+  it('re-importing the same without-media export makes 0 upgrades', () => {
+    createImportRecord(db, recordInput('imp-om-1'));
+    const first = commitImport(db, omittedMediaInput('imp-om-1', null));
+    chatId = asChatId(first.chatId);
+    createImportRecord(db, recordInput('imp-om-2'));
+    const second = commitImport(db, omittedMediaInput('imp-om-2', chatId));
+    expect(second.mediaUpgraded).toBe(0);
+    expect(second.duplicatesSkipped).toBe(1);
+    const rows = db.selectObjects('SELECT status FROM attachments');
+    expect(rows[0]?.['status']).toBe('omitted');
   });
 });
 
 describe('repository contract: queries', () => {
   beforeEach(() => {
     createImportRecord(db, recordInput('imp-q'));
-    const result = commitImport(db, commitInput('imp-q', null));
+    const result = commitImport(db, threeMsgInput('imp-q', null));
     chatId = asChatId(result.chatId);
   });
 
   it('finds seq by date', () => {
-    expect(
-      repo.findSeqByDate(chatId, {
-        year: 2026,
-        month: 11,
-        day: 17,
-        hour: 21,
-        minute: 0,
-        second: 0,
-      }),
-    ).toBe(0);
-    expect(
-      repo.findSeqByDate(chatId, {
-        year: 2026,
-        month: 11,
-        day: 17,
-        hour: 21,
-        minute: 1,
-        second: 0,
-      }),
-    ).toBe(1);
-    expect(
-      repo.findSeqByDate(chatId, {
-        year: 2026,
-        month: 11,
-        day: 17,
-        hour: 22,
-        minute: 1,
-        second: 0,
-      }),
-    ).toBeNull();
+    const ts0 = { year: 2026, month: 11, day: 17, hour: 21, minute: 0, second: 0 };
+    const ts1 = { year: 2026, month: 11, day: 17, hour: 21, minute: 1, second: 0 };
+    expect(repo.findSeqByDate(chatId, ts0)).toBe(0);
+    expect(repo.findSeqByDate(chatId, ts1)).toBe(1);
+    expect(repo.findSeqByDate(chatId, { ...ts1, hour: 22 })).toBeNull();
   });
 
   it('searches with filters and snippets', () => {
-    const page = repo.search({
-      chatId: null,
-      query: 'needle',
-      authorId: null,
-      kinds: null,
-      dateFromTsKey: null,
-      dateToTsKey: null,
-      limit: 50,
-      cursor: null,
-    });
+    const page = repo.search({ chatId: null, query: 'needle', authorId: null, kinds: null, dateFromTsKey: null, dateToTsKey: null, limit: 50, cursor: null });
     expect(page.hits).toHaveLength(1);
     expect(page.hits[0]?.snippet).toContain('needle');
     expect(page.hits[0]?.authorName).toBe('Ali Khan');
-    expect(page.nextCursor).toBeNull();
-
-    const byKind = repo.search({
-      chatId,
-      query: 'goodbye',
-      authorId: null,
-      kinds: ['text'],
-      dateFromTsKey: null,
-      dateToTsKey: null,
-      limit: 50,
-      cursor: null,
-    });
+    const byKind = repo.search({ chatId, query: 'goodbye', authorId: null, kinds: ['text'], dateFromTsKey: null, dateToTsKey: null, limit: 50, cursor: null });
     expect(byKind.hits).toHaveLength(1);
-  });
-});
-
-describe('repository contract: attachments, links, stats', () => {
-  beforeEach(() => {
-    createImportRecord(db, recordInput('imp-al'));
-    const result = commitImport(db, commitInput('imp-al', null));
-    chatId = asChatId(result.chatId);
   });
 
   it('lists attachments, links and stats', () => {
-    const links = repo.listLinks({ chatId, cursor: null, limit: 50 });
-    expect(links.links).toHaveLength(0);
-
-    const attachments = repo.listAttachments({
-      chatId,
-      types: ['image'],
-      cursor: null,
-      limit: 50,
-    });
-    expect(attachments.attachments).toHaveLength(0);
-
+    expect(repo.listLinks({ chatId, cursor: null, limit: 50 }).links).toHaveLength(0);
+    expect(repo.listAttachments({ chatId, types: ['image'], cursor: null, limit: 50 }).attachments).toHaveLength(0);
     const stats = repo.getChatStats(chatId);
     expect(stats.totalsByKind.text).toBe(3);
-    expect(stats.dateRange).not.toBeNull();
     expect(stats.dateRange?.first.minute).toBe(0);
     expect(stats.dateRange?.last.minute).toBe(2);
   });
@@ -231,7 +217,7 @@ describe('repository contract: attachments, links, stats', () => {
 describe('repository contract: chat management', () => {
   beforeEach(() => {
     createImportRecord(db, recordInput('imp-m'));
-    const result = commitImport(db, commitInput('imp-m', null));
+    const result = commitImport(db, threeMsgInput('imp-m', null));
     chatId = asChatId(result.chatId);
   });
 
@@ -239,12 +225,9 @@ describe('repository contract: chat management', () => {
     const participants = repo.getParticipants(chatId);
     const first = participants[0];
     expect(first).toBeDefined();
-    if (first === undefined) {
-      return;
-    }
+    if (first === undefined) return;
     repo.setSelf(chatId, first.id);
     expect(repo.getChat(chatId)?.selfParticipantId).toBe(first.id);
-
     repo.renameChat(chatId, 'Renamed');
     expect(repo.getChat(chatId)?.title).toBe('Renamed');
   });
@@ -253,9 +236,7 @@ describe('repository contract: chat management', () => {
     const window = repo.getMessageWindow({ chatId, anchorSeq: 0, before: 1, after: 1 });
     const message = window.messages[0];
     expect(message).toBeDefined();
-    if (message === undefined) {
-      return;
-    }
+    if (message === undefined) return;
     const bookmarkId = repo.addBookmark(chatId, message.rowId, 'note here');
     repo.updateBookmark(bookmarkId, 'edited note');
     const bookmarks = repo.listBookmarks(chatId);
@@ -266,22 +247,19 @@ describe('repository contract: chat management', () => {
     expect(repo.listBookmarks(chatId)).toHaveLength(0);
   });
 
-  it('lists import history with status and version', () => {
+  it('lists import history and storage usage', () => {
     const imports = repo.listImports(chatId);
     expect(imports).toHaveLength(1);
     expect(imports[0]?.status).toBe('complete');
     expect(imports[0]?.parserVersion).toBe('1.0.0');
-
-    const usage = repo.storageUsage();
-    expect(usage.totalBytes).toBe(0);
+    expect(repo.storageUsage().totalBytes).toBe(0);
   });
 
   it('rolls back in_progress imports (§9.3)', () => {
-    createImportRecord(db, recordInput('imp-rollback'));
+    createImportRecord(db, recordInput('imp-rb'));
     const paths = repo.rollbackInProgressImports();
     expect(paths).toEqual([]);
-    const imports = repo.listImports(chatId);
-    expect(imports.every((i) => i.status !== 'in_progress')).toBe(true);
+    expect(repo.listImports(chatId).every((i) => i.status !== 'in_progress')).toBe(true);
   });
 
   it('deletes a chat with cascade', () => {

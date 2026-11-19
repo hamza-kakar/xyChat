@@ -18,7 +18,6 @@ export interface InsertableMessage {
   readonly fingerprint: string;
   readonly message: ParsedMessage;
 }
-
 /** Attachment metadata for one message (bytes stored separately in OPFS). */
 export interface InsertableAttachment {
   readonly id: string;
@@ -34,7 +33,6 @@ export interface InsertableAttachment {
   readonly durationMs: number | null;
   readonly status: 'present' | 'missing' | 'omitted';
 }
-
 /** Import-commit inputs assembled by import.worker (§9.2). */
 export interface ImportCommitInput {
   readonly importId: string;
@@ -52,7 +50,6 @@ export interface ImportCommitInput {
   readonly fileBytes: number;
   readonly parserVersion: string;
 }
-
 /** Outcome counts for the import report (§9.2 step 11). */
 export interface ImportCommitResult {
   readonly chatId: string;
@@ -62,7 +59,6 @@ export interface ImportCommitResult {
   readonly attachmentsInserted: number;
   readonly mediaUpgraded: number;
 }
-
 /** Step 1: resolve the target chat — reuse or create (§12.8 target). */
 function resolveTargetChat(db: SqliteDatabase, input: ImportCommitInput, now: string): string {
   if (input.targetChatId !== null) {
@@ -86,7 +82,6 @@ function resolveTargetChat(db: SqliteDatabase, input: ImportCommitInput, now: st
   db.run('UPDATE imports SET chat_id = ? WHERE id = ?', [chatId, input.importId]);
   return chatId;
 }
-
 /** Stored-side entry for planMerge, loaded from the database. */
 interface StoredEntry {
   readonly rowId: number;
@@ -95,7 +90,6 @@ interface StoredEntry {
   readonly tsKey: number;
   readonly attachmentWasStored: boolean;
 }
-
 /** Loads stored messages as MergeEntry inputs (§9.2 step 7). */
 function loadStoredEntries(db: SqliteDatabase, chatId: string): readonly StoredEntry[] {
   const rows = db.selectObjects(
@@ -112,7 +106,6 @@ function loadStoredEntries(db: SqliteDatabase, chatId: string): readonly StoredE
     attachmentWasStored: Number(row['stored']) === 1,
   }));
 }
-
 /** Context shared by the plan-application helpers. */
 interface ApplyContext {
   readonly db: SqliteDatabase;
@@ -120,17 +113,21 @@ interface ApplyContext {
   readonly importId: string;
   readonly attachmentByFingerprint: ReadonlyMap<string, InsertableAttachment>;
 }
-
 /** Neutral message placeholder for stored entries (plan reads only keys). */
 function placeholderStoredMessage(): ParsedMessage {
   return {
-    seq: 0, sourceLine: 0,
+    seq: 0,
+    sourceLine: 0,
     timestamp: { year: 1970, month: 1, day: 1, hour: 0, minute: 0, second: 0 },
-    author: null, kind: 'text', body: '', isEdited: false,
-    attachment: null, poll: null, location: null,
+    author: null,
+    kind: 'text',
+    body: '',
+    isEdited: false,
+    attachment: null,
+    poll: null,
+    location: null,
   };
 }
-
 /** Step 4: applies the planMerge — stored rows re-sequenced to their final
  * positions, incoming rows inserted, media upgrades applied (§8.10). */
 function applyPlan(
@@ -186,7 +183,7 @@ function applyPlan(
   let mediaUpgraded = 0;
   plan.messages.forEach((merged, finalSeq) => {
     const storedSource = storedByFingerprint.get(merged.fingerprint);
-        if (storedSource !== undefined && !merged.fromIncoming) {
+    if (storedSource !== undefined && !merged.fromIncoming) {
       applyStoredRow(ctx, merged, finalSeq, storedSource.rowId);
       if (countUpgrade(merged, storedSource, attachmentByFingerprint)) {
         mediaUpgraded += 1;
@@ -208,7 +205,6 @@ function applyPlan(
     mediaUpgraded,
   };
 }
-
 /** Moves a stored row to its final seq, applying a media upgrade if the
  * incoming twin has newly *present* media (§8.10 rule 1: attach only when
  * newly present — an omitted twin never turns a placeholder into present). */
@@ -244,7 +240,6 @@ function applyStoredRow(
     ],
   );
 }
-
 /** Counts whether a rule-1 merge performed a media upgrade — the incoming
  * twin must have newly *present* media (§8.10: an omitted twin is a no-op). */
 function countUpgrade(
@@ -258,7 +253,6 @@ function countUpgrade(
   const upgrade = attachmentByFingerprint.get(merged.fingerprintOfIncomingTwin);
   return upgrade?.status === 'present';
 }
-
 /** Inserts an incoming-only message (and its attachment record). */
 function applyIncomingRow(
   ctx: ApplyContext,
@@ -326,7 +320,6 @@ function applyIncomingRow(
     );
   }
 }
-
 /** Step 7: recompute chat aggregates inside the transaction (§10.2). */
 function updateChatAggregates(db: SqliteDatabase, chatId: string, now: string): void {
   const agg =
@@ -363,7 +356,6 @@ function updateChatAggregates(db: SqliteDatabase, chatId: string, now: string): 
     ],
   );
 }
-
 /**
  * Commits an import in ONE transaction (§9.2 step 10, §8.10 semantics).
  *
