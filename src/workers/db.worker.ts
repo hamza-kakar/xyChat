@@ -13,6 +13,16 @@ import type { DbApi, WorkerError } from './db-api';
 import { RpcValidationError, rpcInput } from './rpc-validate';
 import { attachmentFromRow } from '../storage/sqlite/rows';
 
+/** A message on the commit port (§3.2). */
+type CommitPortMessage =
+  | { readonly type: 'commit'; readonly requestId: number; readonly input: unknown }
+  | {
+      readonly type: 'written-paths';
+      readonly requestId: number;
+      readonly importId: string;
+      readonly paths: readonly string[];
+    };
+
 let repository: SqliteChatRepository | null = null;
 
 /** Serializes an unexpected exception into a WorkerError (§18.7). The stack
@@ -167,6 +177,52 @@ const api: DbApi = {
       ]);
     }),
   rollbackInProgressImports: () => wrap(() => repo().rollbackInProgressImports()),
+  markImportCancelled: (importId) =>
+    wrap(() => {
+      repo().database.run(
+        "UPDATE imports SET status = 'cancelled', finished_at = ? WHERE id = ? AND status = 'in_progress'",
+        [
+          new Date().toISOString().replace(/\.\d{3}Z$/u, 'Z'),
+          rpcInput.id('markImportCancelled', importId),
+        ],
+      );
+    }),
+  markImportFailed: (importId) =>
+    wrap(() => {
+      repo().database.run(
+        "UPDATE imports SET status = 'failed', finished_at = ? WHERE id = ? AND status = 'in_progress'",
+        [
+          new Date().toISOString().replace(/\.\d{3}Z$/u, 'Z'),
+          rpcInput.id('markImportFailed', importId),
+        ],
+      );
+    }),
+  connectCommitPort: (port) => {
+    // §3.2: the ONLY place beyond db.worker methods that executes commits.
+    // Messages: { type: 'commit', requestId, input } and
+    // { type: 'written-paths', requestId, importId, paths }.
+    port.onmessage = (event: MessageEvent) => {
+      const data = event.data as CommitPortMessage;
+      if (data.type === 'commit') {
+        try {
+          const result = commitImport(repo().database, rpcInput.commitImport('commit', data.input));
+          port.postMessage({ type: 'commit-result', requestId: data.requestId, result });
+        } catch (error) {
+          port.postMessage({
+            type: 'commit-error',
+            requestId: data.requestId,
+            detail: String(error).slice(0, 200),
+          });
+        }
+        return;
+      }
+      repo().database.run('UPDATE imports SET written_paths_json = ? WHERE id = ?', [
+        JSON.stringify(data.paths),
+        data.importId,
+      ]);
+    };
+    port.start();
+  },
   getAttachmentsForMessage: (messageId) =>
     wrap(() => {
       const rowId = rpcInput.nonNegativeInt('getAttachmentsForMessage', messageId);

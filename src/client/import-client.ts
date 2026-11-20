@@ -8,8 +8,18 @@
 import * as Comlink from 'comlink';
 import { createRpcCaller, type RpcErrorSink } from './rpc-call';
 import { dbClient } from './db-client';
-import type { DetectAnswer, ImportWorkerApi } from '../workers/import-api';
+import type {
+  BeginAnswer,
+  BeginOptions,
+  DetectAnswer,
+  ImportWorkerApi,
+  RunReport,
+} from '../workers/import-api';
 import type { DetectReport, ImportError } from '../workers/import-detect';
+import type { ImportCommitResult } from '../storage/sqlite/import-commit';
+import { newChatId, newImportId } from '../core/ids';
+import { PARSER_VERSION } from '../core/parser';
+import type { DetectedFormat } from '../core/parser';
 import type { ChatId } from '../core/ids';
 
 /** Detection outcome including the merge-target suggestion. */
@@ -38,12 +48,39 @@ const caller = createRpcCaller({
   // Detection never depends on the database boot.
   ensureReady: () => Promise.resolve(true),
   timeoutMs: 10_000,
-  exempt: new Set<string>(),
+  // begin() runs the whole pipeline (minutes on large exports) — exempt
+  // from the RPC timeout like commitImport (§18.8).
+  exempt: new Set<string>(['begin']),
 });
+
+/** The cancel flag the UI flips; the worker polls it via the proxied hook
+ * (§9.3: user cancel during any phase). */
+let cancelled = false;
+
+/** Subscriptions to §9.1 progress events. */
+type ProgressListener = (event: {
+  readonly phase: string;
+  readonly current: number;
+  readonly total: number;
+}) => void;
+const progressListeners = new Set<ProgressListener>();
 
 /** Registers the failure sink (logger-backed; app calls this at boot). */
 export function setImportErrorSink(sink: RpcErrorSink | null): void {
   caller.setSink(sink);
+}
+
+/** Sets the cancel flag checked by the running pipeline (§9.3). */
+export function cancelImport(): void {
+  cancelled = true;
+}
+
+/** Subscribes to §9.1 progress events; returns the unsubscribe function. */
+export function onImportProgress(listener: ProgressListener): () => void {
+  progressListeners.add(listener);
+  return () => {
+    progressListeners.delete(listener);
+  };
 }
 
 /** The main-thread-facing import client. */
@@ -82,9 +119,78 @@ async function suggestTarget(title: string): Promise<ChatId | null> {
   }
 }
 
-/** Test seam: resets the cached worker. */
-export function resetImportClientForTests(): void {
-  worker?.terminate();
-  worker = null;
-  api = null;
+/** Everything the report screen (§12.8.6) needs after a successful run. */
+export interface BeginOutcome {
+  readonly commit: ImportCommitResult;
+  readonly report: RunReport;
+  readonly chatId: ChatId;
 }
+
+/** The confirmed choices for begin(). */
+export interface BeginRequest {
+  readonly file: Blob;
+  readonly fileName: string;
+  readonly format: DetectedFormat;
+  readonly title: string;
+  readonly isGroup: boolean;
+  /** Existing chat to merge into, or null for a new chat (§12.8.4). */
+  readonly targetChatId: ChatId | null;
+}
+
+Object.assign(importClient, {
+  /**
+   * Runs the confirmed pipeline (§9.2 steps 5–11): mints the import row
+   * (§9.3: in_progress BEFORE media writes), wires the commit MessagePort
+   * (§3.2), and drives the worker through parse → fingerprint → media →
+   * commit with proxied progress/cancel hooks. Marks the import cancelled
+   * or failed when the pipeline answers with an error.
+   */
+  begin: async (request: BeginRequest): Promise<BeginOutcome | ImportError> => {
+    cancelled = false;
+    const importId = newImportId();
+    const chatId = request.targetChatId ?? newChatId();
+    await dbClient.createImportRecord({
+      importId,
+      fileName: request.fileName,
+      fileBytes: request.file.size,
+      parserVersion: PARSER_VERSION,
+    });
+    const channel = new MessageChannel();
+    await dbClient.connectCommitPort(Comlink.transfer(channel.port1, [channel.port1]));
+    const hooks = Comlink.proxy({
+      onProgress: (event: { phase: string; current: number; total: number }) => {
+        for (const listener of progressListeners) {
+          listener(event);
+        }
+      },
+      isCancelled: () => cancelled,
+      onWrittenPaths: (paths: readonly string[]) => dbClient.recordWrittenPaths(importId, paths),
+    });
+    const beginOptions: BeginOptions = {
+      file: request.file,
+      fileName: request.fileName,
+      confirmed: {
+        format: request.format,
+        title: request.title,
+        isGroup: request.isGroup,
+        chatId,
+      },
+      importId,
+      commitPort: Comlink.transfer(channel.port2, [channel.port2]),
+      hooks,
+    };
+    const answer: BeginAnswer = await caller.call(
+      (): Promise<BeginAnswer> => remote().begin(beginOptions),
+      'begin',
+    );
+    if (!answer.ok) {
+      if (answer.error.code === 'CANCELLED') {
+        await dbClient.markImportCancelled(importId);
+      } else {
+        await dbClient.markImportFailed(importId);
+      }
+      return answer.error;
+    }
+    return { commit: answer.commit, report: answer.report, chatId };
+  },
+});

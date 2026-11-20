@@ -58,15 +58,15 @@ export interface ImportCommitResult {
   readonly mediaUpgraded: number;
 }
 
-/** Step 1: resolve the target chat — reuse or create (§12.8 target). */
+/** Step 1: resolve the target chat — reuse or create (§12.8 target). The
+ * media phase keys OPFS paths on the chat id BEFORE the commit (§9.2 step
+ * 8), so the UI mints the id up front: a pre-minted id inserts its chats
+ * row here (INSERT OR IGNORE keeps an existing chat's title on merges); a
+ * null target mints one now. */
 function resolveTargetChat(db: SqliteDatabase, input: ImportCommitInput, now: string): string {
-  if (input.targetChatId !== null) {
-    return input.targetChatId;
-  }
-
-  const chatId = crypto.randomUUID();
+  const chatId = input.targetChatId ?? crypto.randomUUID();
   db.run(
-    `INSERT INTO chats (id, title, is_group, self_participant_id, source_platform, date_order,
+    `INSERT OR IGNORE INTO chats (id, title, is_group, self_participant_id, source_platform, date_order,
         message_count, media_count, media_bytes, created_at, updated_at)
      VALUES (?, ?, ?, NULL, ?, ?, 0, 0, 0, ?, ?)`,
     [

@@ -75,6 +75,17 @@ export interface DbApi {
   recordWrittenPaths(importId: string, paths: readonly string[]): Promise<void>;
   /** Boot-time rollback of in_progress imports (§9.3); returns OPFS paths to delete. */
   rollbackInProgressImports(): Promise<readonly string[]>;
+  /** Marks a cancelled import (user cancel after media rollback, §9.3). */
+  markImportCancelled(importId: string): Promise<void>;
+  /** Marks a failed import (§9.3). The detail lives in the client-side
+   * error and the logger — never in the import row (§18.7). */
+  markImportFailed(importId: string): Promise<void>;
+  /**
+   * Takes one end of the commit MessageChannel (§3.2): import.worker sends
+   * commit requests and written-path batches over the port; db.worker —
+   * the ONLY SQLite owner (§3.2) — executes them. The port is transferred.
+   */
+  connectCommitPort(port: MessagePort): void;
   /** Raw attachment rows for a message (media viewer, §12.5). */
   getAttachmentsForMessage(messageId: number): Promise<readonly Attachment[]>;
 }

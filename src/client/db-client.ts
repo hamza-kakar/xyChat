@@ -102,6 +102,16 @@ export const dbClient = {
     caller.call(() => remote().recordWrittenPaths(importId, paths), 'recordWrittenPaths'),
   getAttachmentsForMessage: (messageId: number) =>
     caller.call(() => remote().getAttachmentsForMessage(messageId), 'getAttachmentsForMessage'),
+  markImportCancelled: (importId: string) =>
+    caller.call(() => remote().markImportCancelled(importId), 'markImportCancelled'),
+  markImportFailed: (importId: string) =>
+    caller.call(() => remote().markImportFailed(importId), 'markImportFailed'),
+  /** Takes the db-side end of the commit MessageChannel (§3.2, transferred). */
+  connectCommitPort: (port: MessagePort) =>
+    caller.call(
+      () => remote().connectCommitPort(Comlink.transfer(port, [port])),
+      'connectCommitPort',
+    ),
 };
 
 /** Test seam: resets the cached worker (contract tests spawn their own). */
