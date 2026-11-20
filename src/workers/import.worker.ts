@@ -1,61 +1,48 @@
 /**
  * import.worker (AGENTS.md §3.2, §9.1): CPU- and IO-heavy import work off
  * the main thread. It never touches SQLite directly (§3.2) — commit
- * requests and written-path batches go over the commit MessagePort to
- * db.worker, the ONLY SQLite owner. Thin shell per the ratified ADR 0007
- * addendum: phase logic lives in testable page modules (import-detect,
- * import-run, import-media); the production IO adapters and the port
- * protocol are the only worker-specific code here.
+ * requests go over the commit MessagePort to db.worker, the ONLY SQLite
+ * owner. Thin shell per the ratified ADR 0007 addendum: the pipeline
+ * orchestration lives in the gated page module import-begin.ts; only the
+ * production IO adapters (opened archive, sync-handle sinks, thumbnail
+ * scaling) and the commit-port storage live here.
  */
 import * as Comlink from 'comlink';
 import { detectExport, type ImportError } from './import-detect';
-import type {
-  BeginAnswer,
-  BeginOptions,
-  ConfirmedImport,
-  DetectAnswer,
-  ImportWorkerApi,
-  RunReport,
-} from './import-api';
-import { runImportParse } from './import-run';
-import { writeImportMedia, type MediaPhaseDeps, type ThumbnailResult } from './import-media';
-import { listMediaEntries, readZipEntryBytes } from './archive-reader';
-import { writeMediaFile } from './media-writer';
+import type { BeginAnswer, DetectAnswer, ImportWorkerApi } from './import-api';
+import { runPipeline } from './import-begin';
+import type { MediaPhaseDeps, ThumbnailResult } from './import-media';
+import { listMediaEntries, openArchive } from './archive-reader';
+import { openMediaWriteSink } from './media-writer';
 import { deleteMediaFile } from '../storage/media-store';
 import { IMPORT_LIMITS } from '../core/limits';
-import { PARSER_VERSION } from '../core/parser';
-import type { ImportCommitInput, ImportCommitResult } from '../storage/sqlite/import-commit';
-import type { ImportHooks } from './import-progress';
-import type { ParseStats as RunStats } from '../core/parser';
-import type { Result } from '../core/result';
+import type { OpenedArchive } from './archive-reader';
 
-/** Error detail is already structured; phase modules never throw expected
- * failures. Unexpected exceptions serialize to INTERNAL (§18.7). */
+/** Raw exception text can echo file names or values (§15.4) — the UI
+ * carries the error class name only (§18.7). */
 function toInternalError(error: unknown): ImportError {
-  return { code: 'INTERNAL', detail: String(error).slice(0, 200) };
+  return { code: 'INTERNAL', detail: errorNameOf(error) };
 }
 
-/** Real SHA-256 for §8.10 fingerprints (workers: crypto.subtle). */
-const hashViaSubtle = async (bytes: Uint8Array): Promise<Uint8Array> => {
-  const digest = await crypto.subtle.digest('SHA-256', bytes.buffer as ArrayBuffer);
-  return new Uint8Array(digest);
-};
+function errorNameOf(error: unknown): string {
+  return error instanceof Error ? error.name : 'unknown error';
+}
 
 /** Production IO over the picked archive and worker-only OPFS handles
- * (§9.2 step 8, §10.4). Thin adapter — the logic lives in import-media.ts. */
-function mediaDeps(file: Blob): MediaPhaseDeps {
+ * (§9.2 step 8, §10.4): one opened archive per pipeline run, entries
+ * streamed chunk-by-chunk into sync-handle sinks. Thin adapter — the logic
+ * lives in import-media.ts. */
+function mediaDeps(file: Blob, archive: OpenedArchive): MediaPhaseDeps {
   return {
+    archive,
     listEntries: () => listMediaEntries(file),
-    readEntry: (name) => readZipEntryBytes(file, name),
-    writeFile: async (path, bytes) => {
-      const result = await writeMediaFile(path, bytes);
+    openWriteSink: async (path) => {
+      const result = await openMediaWriteSink(path);
       return result.ok
-        ? { ok: true as const, value: { bytes: result.value.bytes } }
-        : {
-            ok: false as const,
-            error: `${result.error.code}: ${result.error.detail}`,
-          };
+        ? { ok: true as const, value: result.value }
+        : { ok: false as const, error: `${result.error.code}: ${result.error.detail}` };
     },
+    readEntryBuffered: (name) => archive.readEntry(name),
     deleteFile: (path) => deleteMediaFile(path),
     makeThumbnail: makeImageThumbnail,
     thumbnailTypes: DEFAULT_THUMBNAIL_TYPES,
@@ -97,101 +84,7 @@ async function makeImageThumbnail(bytes: Uint8Array): Promise<ThumbnailResult | 
   }
 }
 
-/** Commit-port protocol (§3.2): requests carry a requestId; the answer with
- * the matching id resolves the wait. */
-interface CommitRequest {
-  readonly type: 'commit';
-  readonly requestId: number;
-  readonly input: ImportCommitInput;
-}
-
-interface CommitAnswer {
-  readonly type: 'commit-result' | 'commit-error';
-  readonly requestId: number;
-  readonly result?: ImportCommitResult;
-  readonly detail?: string;
-}
-
-/** Sends the commit request over the port and waits for the answer (§3.2:
- * import.worker → db.worker; db.worker owns SQLite). */
-function commitOverPort(
-  port: MessagePort,
-  input: ImportCommitInput,
-): Promise<Result<ImportCommitResult, ImportError>> {
-  const requestId = Math.floor(Math.random() * 2 ** 31);
-  return new Promise((resolve) => {
-    port.onmessage = (event: MessageEvent) => {
-      const data = event.data as CommitAnswer;
-      if (data.requestId !== requestId) {
-        return;
-      }
-      if (data.type === 'commit-result' && data.result !== undefined) {
-        resolve({ ok: true, value: data.result });
-        return;
-      }
-      resolve({
-        ok: false,
-        error: { code: 'COMMIT_FAILED', detail: (data.detail ?? 'commit failed').slice(0, 160) },
-      });
-    };
-    port.postMessage({ type: 'commit', requestId, input } satisfies CommitRequest);
-  });
-}
-
-/** The import-side end of the commit MessageChannel (§3.2), set once per
- * pipeline run via setCommitPort. */
 let commitPort: MessagePort | null = null;
-
-/** Assembles the §9.2-step-10 commit input from the phase results. */
-function assembleCommitInput(
-  file: Blob,
-  confirmed: ConfirmedImport,
-  phases: {
-    readonly fileName: string;
-    readonly importId: string;
-    readonly run: { readonly messages: ImportCommitInput['messages'] };
-    readonly media: { readonly attachments: ImportCommitInput['attachments'] };
-  },
-): ImportCommitInput {
-  return {
-    importId: phases.importId,
-    targetChatId: confirmed.chatId,
-    newChat: {
-      title: confirmed.title,
-      isGroup: confirmed.isGroup,
-      sourcePlatform: confirmed.format.platform,
-      dateOrder: confirmed.format.dateOrder,
-    },
-    messages: phases.run.messages,
-    attachments: phases.media.attachments,
-    fileName: phases.fileName,
-    fileBytes: file.size,
-    parserVersion: PARSER_VERSION,
-  };
-}
-
-/** Builds the §9.2-step-11 report facts. */
-function buildReport(
-  run: {
-    readonly warningsByCode: Readonly<Record<string, number>>;
-    readonly stats: RunStats;
-    readonly replacementChars: number;
-  },
-  attachments: ImportCommitInput['attachments'],
-  durationMs: number,
-): RunReport {
-  const countBy = (status: 'present' | 'missing' | 'omitted'): number =>
-    attachments.filter((row) => row.status === status).length;
-  return {
-    warningsByCode: run.warningsByCode,
-    stats: run.stats,
-    replacementChars: run.replacementChars,
-    durationMs,
-    mediaStored: countBy('present'),
-    mediaMissing: countBy('missing'),
-    mediaOmitted: countBy('omitted'),
-  };
-}
 
 const api: ImportWorkerApi = {
   setCommitPort(port: MessagePort): void {
@@ -214,69 +107,38 @@ const api: ImportWorkerApi = {
     }
   },
 
-  async begin(options: BeginOptions, hooks: ImportHooks): Promise<BeginAnswer> {
-    const { file, fileName, confirmed, importId } = options;
+  async begin(options, hooks): Promise<BeginAnswer> {
     if (commitPort === null) {
       return { ok: false, error: { code: 'INTERNAL', detail: 'commit port not set' } };
     }
-    const startedAt = Date.now();
+    const port = commitPort;
+    // The archive opens ONCE for the whole media phase (review Major 9);
+    // the pipeline module closes it when the run settles.
+    const opened = await openArchive(options.file);
+    if (!opened.ok) {
+      return { ok: false, error: opened.error };
+    }
     try {
-      // §9.2 steps 1–3: re-read the archive (the detection read is not kept
-      // — the worker stays stateless between detect and begin).
-      hooks.onProgress({ phase: 'reading-archive', current: 0, total: 1 });
-      const named = file as Blob & { readonly name: string };
-      Object.defineProperty(named, 'name', { value: fileName, configurable: true });
-      const archive = await import('./archive-reader').then((m) => m.readArchive(named));
-      if (!archive.ok) {
-        return { ok: false, error: { code: archive.error.code, detail: archive.error.detail } };
-      }
-
-      // §9.2 steps 6–7: parse + fingerprint with the CONFIRMED format.
-      const run = await runImportParse(archive.value.text, confirmed.format, hashViaSubtle, hooks);
-      if (!run.ok) {
-        return { ok: false, error: run.error };
-      }
-
-      // §9.2 steps 8–9: media writes with §9.3 rollback bookkeeping (batches
-      // of 100 flush through the hooks during the phase).
-      const media = await writeImportMedia(
-        confirmed.chatId,
-        run.value.messages,
-        mediaDeps(file),
+      return await runPipeline({
+        file: options.file,
+        fileName: options.fileName,
+        confirmed: options.confirmed,
+        importId: options.importId,
+        commitPort: port,
         hooks,
-      );
-      if (!media.ok) {
-        return { ok: false, error: media.error };
-      }
-
-      // Final written-paths flush so the import row is complete BEFORE the
-      // commit (§9.3 crash safety). The client persists the list via RPC.
-      await hooks.onWrittenPaths?.(media.value.writtenPaths);
-
-      // §9.2 step 10: commit over the port.
-      const input = assembleCommitInput(file, confirmed, {
-        fileName,
-        importId,
-        run: run.value,
-        media: media.value,
+        mediaIO: mediaDeps(options.file, opened.value),
+        hashBytes: hashViaSubtle,
       });
-      const committed = await commitOverPort(commitPort, input);
-      if (!committed.ok) {
-        return { ok: false, error: committed.error };
-      }
-      commitPort.close();
-      commitPort = null;
-
-      // §9.2 step 11: report facts for the UI.
-      return {
-        ok: true,
-        commit: committed.value,
-        report: buildReport(run.value, media.value.attachments, Date.now() - startedAt),
-      };
-    } catch (error) {
-      return { ok: false, error: toInternalError(error) };
+    } finally {
+      await opened.value.close();
     }
   },
+};
+
+/** Real SHA-256 for §8.10 fingerprints (workers: crypto.subtle). */
+const hashViaSubtle = async (bytes: Uint8Array): Promise<Uint8Array> => {
+  const digest = await crypto.subtle.digest('SHA-256', bytes.buffer as ArrayBuffer);
+  return new Uint8Array(digest);
 };
 
 // Expose the API. Comlink's expose returns void; the worker stays alive

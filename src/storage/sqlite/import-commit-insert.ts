@@ -4,11 +4,11 @@
  * (see import-commit-apply.ts), together with their participant and
  * attachment records.
  *
- * Batching (§17 budgets): messages insert in multi-row VALUES statements —
- * one bridge round-trip per ~500 rows instead of per row. Participants are
- * upserted once per distinct author and their counters adjusted in one
- * statement each; attachment rows resolve their message rowids with ONE
- * scan of the import's own messages and insert batched as well.
+ * Statement strategy (§17 budgets): ONE prepared single-row INSERT is
+ * stepped once per message (runEach — the statement parses once, the wasm
+ * bridge does the rest); participants upsert once per distinct author and
+ * their counters adjust in one statement each; attachment rows resolve
+ * their message rowids with ONE scan of the import's own messages.
  */
 import type { ParsedMessage } from '../../core/model';
 import { formatLocalDateTime } from './local-date-time-parse';

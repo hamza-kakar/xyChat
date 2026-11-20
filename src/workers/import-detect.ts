@@ -17,7 +17,8 @@ import {
   type DetectFormatOptions,
 } from '../core/parser';
 import { isGroupChat, titleFromFileName } from '../core/chat-meta';
-import { readArchive, listMediaEntries, type ArchiveError } from './archive-reader';
+import { listMediaEntries, readArchive } from './archive-reader';
+import type { ArchiveError } from './archive-gates';
 
 /** Error codes for the import flow (§9.2, §12.8 — user-facing text is
  * mapped from these codes in i18n). */
@@ -62,6 +63,9 @@ export interface DetectReport {
   readonly participants: readonly string[];
   /** Selected file size. */
   readonly archiveBytes: number;
+  /** Free storage at detection time (§12.8.4 summary; null when the
+   * estimate is unavailable). */
+  readonly freeBytes: number | null;
   /** Uncompressed size of all archive entries (quota fact). */
   readonly uncompressedTotalBytes: number;
   /** U+FFFD count from lossy decoding (shown as a warning fact). */
@@ -96,8 +100,7 @@ export async function detectExport(
   file: Blob,
   options: DetectOptions = {},
 ): Promise<Result<DetectReport, ImportError>> {
-  const namedFile = asNamedFile(file, fileName);
-  const archive = await readArchive(namedFile);
+  const archive = await readArchive(file, fileName);
   if (!archive.ok) {
     return err(fromArchiveError(archive.error));
   }
@@ -122,7 +125,7 @@ export async function detectExport(
     return err({ code: 'UNRECOGNIZED_FORMAT', detail: parsed.error.code });
   }
 
-  const media = await listMediaEntries(namedFile);
+  const media = await listMediaEntries(file);
   const mediaNames = new Set(media.ok ? media.value.map((entry) => entry.name) : []);
   let mediaFilesFound = 0;
   let mediaFilesMissing = 0;
@@ -142,23 +145,26 @@ export async function detectExport(
     .filter((message) => message.kind === 'system')
     .map((message) => message.body);
 
+  let freeBytes: number | null;
+  try {
+    const estimate = await navigator.storage.estimate();
+    freeBytes = (estimate.quota ?? 0) - (estimate.usage ?? 0);
+  } catch {
+    // §0.6: an unavailable estimate must not fail detection — the summary
+    // simply omits the free-storage line.
+    freeBytes = null;
+  }
   return ok({
     format,
     title: titleFromFileName(fileName),
     isGroup: isGroupChat(parsed.value.participants, systemBodies),
     participants: parsed.value.participants,
     archiveBytes: file.size,
+    freeBytes,
     uncompressedTotalBytes: archive.value.uncompressedTotalBytes,
     replacementChars: archive.value.replacementChars,
     messagesCount: parsed.value.messages.length,
     mediaFilesFound,
     mediaFilesMissing,
   });
-}
-
-/** Attaches a name to a plain Blob (the worker receives name alongside). */
-function asNamedFile(file: Blob, fileName: string): Blob & { readonly name: string } {
-  const named = file as Blob & { readonly name: string };
-  Object.defineProperty(named, 'name', { value: fileName, configurable: true });
-  return named;
 }

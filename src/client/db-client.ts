@@ -106,6 +106,11 @@ export const dbClient = {
     caller.call(() => remote().markImportCancelled(importId), 'markImportCancelled'),
   markImportFailed: (importId: string) =>
     caller.call(() => remote().markImportFailed(importId), 'markImportFailed'),
+  listStoredFingerprints: (chatId: string) =>
+    caller.call(() => remote().listStoredFingerprints(chatId), 'listStoredFingerprints'),
+  listOrphanMedia: () => caller.call(() => remote().listOrphanMedia(), 'listOrphanMedia'),
+  deleteOrphanMedia: (paths: readonly string[]) =>
+    caller.call(() => remote().deleteOrphanMedia(paths), 'deleteOrphanMedia'),
   /** Takes the db-side end of the commit MessageChannel (§3.2, transferred). */
   connectCommitPort: (port: MessagePort) =>
     caller.call(

@@ -1,12 +1,14 @@
 /**
  * Import media phase tests (§9.2 steps 8–9, §9.3): classification of
- * present/missing/omitted media, thumbnail generation and degradation,
- * written-path tracking, and rollback on cancel/failure — against injected
- * fakes (§18.4).
+ * present/missing/omitted media, STREAMED writes through the opened-archive
+ * handle (review Major 9), cumulative written-path flushes (review
+ * Blocker), skip-stored fingerprints, thumbnail degradation, and rollback
+ * on cancel/failure — against injected fakes (§18.4).
  */
 import { describe, expect, it } from 'vitest';
 import { ok, err } from '../core/result';
 import { writeImportMedia, type MediaPhaseDeps, type ImportMediaHooks } from './import-media';
+import type { OpenedArchive } from './archive-reader';
 import type { InsertableMessage } from '../storage/sqlite/import-commit';
 import type { ParsedMessage } from '../core/model';
 
@@ -48,44 +50,72 @@ function omitted(fingerprint: string): InsertableMessage {
 /** Mutable knobs the fakes read per call. */
 interface FakeKnobs {
   readonly zip: ReadonlyMap<string, number>;
-  /** 1-based writeFile call number that fails with a quota error (paths
-   * carry attachment UUIDs, not original names — §10.4). */
-  readonly failWriteCall?: number;
+  /** 1-based sink-open number that fails with a quota error (paths carry
+   * attachment UUIDs, not original names — §10.4). */
+  readonly failSinkOpenOn?: number;
   readonly thumbnail?:
     (() => Promise<{ data: Uint8Array; width: number; height: number } | null>) | null;
-  /** When set, the cancel flag flips after N successful writes. */
-  readonly cancelAfterWrites?: number;
+  /** When set, the cancel flag flips after N successful sink opens. */
+  readonly cancelAfterSinkOpens?: number;
 }
 
-/** The fake harness: deps + hooks + recorded writes/deletes. */
+/** In-memory OpenedArchive fake over the knob's zip (§18.4). */
+function fakeArchive(knobs: FakeKnobs): OpenedArchive {
+  const byName = new Map([...knobs.zip].map(([name, size]) => [name, size]));
+  return {
+    listEntries: () => Promise.resolve(ok([...byName].map(([name, size]) => ({ name, size })))),
+    streamEntry: (name, sink) => {
+      if (!byName.has(name)) {
+        return Promise.resolve(err({ code: 'ENTRY_NOT_FOUND' as const, detail: 'absent' }));
+      }
+      const bytes = new TextEncoder().encode(`bytes-of-${name}`);
+      void sink(bytes);
+      return Promise.resolve(ok({ bytes: bytes.byteLength }));
+    },
+    readEntry: (name) => {
+      if (!byName.has(name)) {
+        return Promise.resolve(err({ code: 'ENTRY_NOT_FOUND' as const, detail: 'absent' }));
+      }
+      return Promise.resolve(ok(new TextEncoder().encode(`bytes-of-${name}`)));
+    },
+    close: () => Promise.resolve(),
+  };
+}
+
+/** The fake harness: deps + hooks + recorded writes/deletes/flushes. */
 function harness(knobs: FakeKnobs): {
   readonly deps: MediaPhaseDeps;
   readonly hooks: ImportMediaHooks;
   readonly written: readonly string[];
   readonly deleted: readonly string[];
+  readonly flushes: readonly (readonly string[])[];
 } {
   const written: string[] = [];
   const deleted: string[] = [];
-  let writeCount = 0;
+  const flushes: string[][] = [];
+  let sinkOpenCount = 0;
   let cancelled = false;
   const deps: MediaPhaseDeps = {
+    archive: fakeArchive(knobs),
     listEntries: () => Promise.resolve(ok([...knobs.zip].map(([name, size]) => ({ name, size })))),
-    readEntry: (name) => {
+    openWriteSink: (path) => {
+      sinkOpenCount += 1;
+      if (knobs.failSinkOpenOn !== undefined && sinkOpenCount === knobs.failSinkOpenOn) {
+        return Promise.resolve(err('simulated quota exceeded'));
+      }
+      written.push(path);
+      if (knobs.cancelAfterSinkOpens !== undefined && sinkOpenCount >= knobs.cancelAfterSinkOpens) {
+        cancelled = true;
+      }
+      return Promise.resolve(
+        ok({ write: () => Promise.resolve(), close: () => Promise.resolve() }),
+      );
+    },
+    readEntryBuffered: (name) => {
       if (knobs.zip.has(name)) {
         return Promise.resolve(ok(new TextEncoder().encode(`bytes-of-${name}`)));
       }
-      return Promise.resolve(err({ code: 'ENTRY_NOT_FOUND', detail: name }));
-    },
-    writeFile: (path) => {
-      if (knobs.failWriteCall === writeCount + 1) {
-        return Promise.resolve(err('simulated quota exceeded'));
-      }
-      writeCount += 1;
-      if (knobs.cancelAfterWrites !== undefined && writeCount >= knobs.cancelAfterWrites) {
-        cancelled = true;
-      }
-      written.push(path);
-      return Promise.resolve(ok({ bytes: 10 }));
+      return Promise.resolve(err({ code: 'ENTRY_NOT_FOUND' as const, detail: 'absent' }));
     },
     deleteFile: (path) => {
       deleted.push(path);
@@ -96,25 +126,34 @@ function harness(knobs: FakeKnobs): {
   };
   return {
     deps,
-    hooks: { onProgress: () => undefined, isCancelled: () => cancelled },
+    hooks: {
+      onProgress: () => undefined,
+      isCancelled: () => cancelled,
+      onWrittenPaths: (paths) => {
+        flushes.push([...paths]);
+      },
+    },
     written,
     deleted,
+    flushes,
   };
 }
 
+// eslint-disable-next-line max-lines-per-function -- one grouped classification suite
 describe('writeImportMedia: classification (§9.2 steps 8–9)', () => {
-  it('writes present media with thumbnail and tracks written paths', async () => {
+  it('streams present media with thumbnail and tracks written paths', async () => {
     const { deps, hooks, written } = harness({
       zip: new Map([['IMG-0001.jpg', 12]]),
       thumbnail: () =>
         Promise.resolve({ data: new TextEncoder().encode('thumb'), width: 100, height: 80 }),
     });
-    const result = await writeImportMedia(
-      CHAT_ID,
-      [referenced('fp-1', 'IMG-0001.jpg')],
+    const result = await writeImportMedia({
+      chatId: CHAT_ID,
+      messages: [referenced('fp-1', 'IMG-0001.jpg')],
+      alreadyStored: new Set(),
       deps,
       hooks,
-    );
+    });
     expect(result.ok).toBe(true);
     if (!result.ok) {
       return;
@@ -130,14 +169,34 @@ describe('writeImportMedia: classification (§9.2 steps 8–9)', () => {
     expect(written).toHaveLength(2);
   });
 
-  it('marks referenced-but-absent files missing (§8.6)', async () => {
-    const { deps, hooks } = harness({ zip: new Map() });
-    const result = await writeImportMedia(
-      CHAT_ID,
-      [referenced('fp-1', 'IMG-0001.jpg')],
+  it('skips fingerprints whose media is already stored (§9.2 step 8)', async () => {
+    const { deps, hooks, written } = harness({ zip: new Map([['IMG-0001.jpg', 12]]) });
+    const result = await writeImportMedia({
+      chatId: CHAT_ID,
+      messages: [referenced('fp-stored', 'IMG-0001.jpg')],
+      alreadyStored: new Set(['fp-stored']),
       deps,
       hooks,
-    );
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+    // No row, no write: the stored attachment stays untouched.
+    expect(result.value.attachments).toHaveLength(0);
+    expect(result.value.writtenPaths).toHaveLength(0);
+    expect(written).toHaveLength(0);
+  });
+
+  it('marks referenced-but-absent files missing (§8.6)', async () => {
+    const { deps, hooks } = harness({ zip: new Map() });
+    const result = await writeImportMedia({
+      chatId: CHAT_ID,
+      messages: [referenced('fp-1', 'IMG-0001.jpg')],
+      alreadyStored: new Set(),
+      deps,
+      hooks,
+    });
     expect(result.ok).toBe(true);
     if (!result.ok) {
       return;
@@ -148,7 +207,13 @@ describe('writeImportMedia: classification (§9.2 steps 8–9)', () => {
 
   it('builds omitted rows without touching storage', async () => {
     const { deps, hooks, written } = harness({ zip: new Map() });
-    const result = await writeImportMedia(CHAT_ID, [omitted('fp-1')], deps, hooks);
+    const result = await writeImportMedia({
+      chatId: CHAT_ID,
+      messages: [omitted('fp-1')],
+      alreadyStored: new Set(),
+      deps,
+      hooks,
+    });
     expect(result.ok).toBe(true);
     if (!result.ok) {
       return;
@@ -163,12 +228,13 @@ describe('writeImportMedia: classification (§9.2 steps 8–9)', () => {
       zip: new Map([['IMG-0001.jpg', 12]]),
       thumbnail: () => Promise.resolve(null),
     });
-    const result = await writeImportMedia(
-      CHAT_ID,
-      [referenced('fp-1', 'IMG-0001.jpg')],
+    const result = await writeImportMedia({
+      chatId: CHAT_ID,
+      messages: [referenced('fp-1', 'IMG-0001.jpg')],
+      alreadyStored: new Set(),
       deps,
       hooks,
-    );
+    });
     expect(result.ok).toBe(true);
     if (!result.ok) {
       return;
@@ -177,26 +243,56 @@ describe('writeImportMedia: classification (§9.2 steps 8–9)', () => {
     expect(result.value.attachments[0]?.thumbPath).toBeNull();
     expect(result.value.writtenPaths).toHaveLength(1);
   });
+  // eslint-enable max-lines-per-function -- one grouped classification suite
+});
+
+describe('writeImportMedia: written-path flushes (§9.2 step 8, §9.3)', () => {
+  it('flushes the CUMULATIVE written-path list after every write', async () => {
+    const { deps, hooks, flushes, written } = harness({
+      zip: new Map([
+        ['IMG-0001.jpg', 12],
+        ['IMG-0002.jpg', 12],
+      ]),
+      thumbnail: () =>
+        Promise.resolve({ data: new TextEncoder().encode('thumb'), width: 10, height: 8 }),
+    });
+    const result = await writeImportMedia({
+      chatId: CHAT_ID,
+      messages: [referenced('fp-1', 'IMG-0001.jpg'), referenced('fp-2', 'IMG-0002.jpg')],
+      alreadyStored: new Set(),
+      deps,
+      hooks,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+    // Every flush is a PREFIX of the final written list (cumulative, never
+    // a partial replacement) and the last flush equals it (§9.3).
+    for (const flush of flushes) {
+      expect(written.slice(0, flush.length)).toEqual(flush);
+    }
+    expect(flushes.at(-1)).toEqual(written);
+    expect(flushes.length).toBeGreaterThanOrEqual(4);
+  });
 });
 
 describe('writeImportMedia: rollback (§9.3)', () => {
-  it('rolls back written files on cancellation (§9.3)', async () => {
-    // The cancel flag flips after the first file's media write: file 1 is
-    // written, file 2's write flips it, and the post-item check rolls
-    // everything back (§9.3). Paths carry attachment UUIDs (§10.4).
+  it('rolls back written files on cancellation', async () => {
     const { deps, hooks, deleted } = harness({
       zip: new Map([
         ['IMG-0001.jpg', 12],
         ['IMG-0002.jpg', 12],
       ]),
-      cancelAfterWrites: 1,
+      cancelAfterSinkOpens: 1,
     });
-    const result = await writeImportMedia(
-      CHAT_ID,
-      [referenced('fp-1', 'IMG-0001.jpg'), referenced('fp-2', 'IMG-0002.jpg')],
+    const result = await writeImportMedia({
+      chatId: CHAT_ID,
+      messages: [referenced('fp-1', 'IMG-0001.jpg'), referenced('fp-2', 'IMG-0002.jpg')],
+      alreadyStored: new Set(),
       deps,
       hooks,
-    );
+    });
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.code).toBe('CANCELLED');
@@ -205,23 +301,21 @@ describe('writeImportMedia: rollback (§9.3)', () => {
     expect(deleted[0]?.endsWith('.jpg')).toBe(true);
   });
 
-  it('fails with QUOTA_EXCEEDED and rolls back when a media write hits quota', async () => {
-    // File 1 writes fine; file 2's media write fails — file 1 must be
-    // deleted (§9.3). (A failed THUMBNAIL write degrades instead, §9.2
-    // step 9 — only a media write failure fails the phase.)
+  it('fails with QUOTA_EXCEEDED and rolls back when a sink open hits quota', async () => {
     const { deps, hooks, deleted } = harness({
       zip: new Map([
         ['IMG-0001.jpg', 12],
         ['IMG-0002.jpg', 12],
       ]),
-      failWriteCall: 2,
+      failSinkOpenOn: 2,
     });
-    const result = await writeImportMedia(
-      CHAT_ID,
-      [referenced('fp-1', 'IMG-0001.jpg'), referenced('fp-2', 'IMG-0002.jpg')],
+    const result = await writeImportMedia({
+      chatId: CHAT_ID,
+      messages: [referenced('fp-1', 'IMG-0001.jpg'), referenced('fp-2', 'IMG-0002.jpg')],
+      alreadyStored: new Set(),
       deps,
       hooks,
-    );
+    });
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.code).toBe('QUOTA_EXCEEDED');

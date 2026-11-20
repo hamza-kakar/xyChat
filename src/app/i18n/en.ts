@@ -67,6 +67,7 @@ export const en = {
     confirmSummary:
       '{messages} messages \u00B7 {participants} participants \u00B7 {media} media files',
     confirmQuota: 'Archive {archive} \u00B7 uncompressed {uncompressed}',
+    confirmFreeStorage: 'Free storage: {free}',
     confirmMissingMedia: '{missing} referenced media files are not in the archive',
     confirmStartButton: 'Start import',
     confirmBackButton: 'Back',
@@ -82,6 +83,17 @@ export const en = {
     reportTitle: 'Import complete',
     reportAdded: '{count} messages imported',
     reportDuplicates: '{count} duplicates skipped',
+    reportWarningsHeading: 'Warnings',
+    reportWarningsCount: '{count}× {text}',
+    warnings: {
+      ORPHAN_LINES_BEFORE_FIRST_MESSAGE:
+        '{count} lines before the first message were skipped (app banner text).',
+      INVALID_DATE: '{count} lines had an unreadable date and were kept as message text.',
+      INVALID_TIME: '{count} lines had an unreadable time and were kept as message text.',
+      UNRECOGNIZED_ATTACHMENT_MARKER: '{count} media references used an unknown format.',
+      DECODING_REPLACEMENT_CHARS: '{count} unreadable characters were replaced.',
+      OUT_OF_ORDER_TIMESTAMP: '{count} messages are out of chronological order (kept as sent).',
+    },
     reportMediaStored: '{count} media files stored',
     reportMediaMissing: '{count} media files missing from the archive',
     reportMediaOmitted: '{count} media omitted by the export',
@@ -115,6 +127,12 @@ export const en = {
       COMMIT_FAILED: 'Saving the import failed.',
       INTERNAL: 'An unexpected error occurred. Try again.',
     },
+  },
+  byteUnits: {
+    b: '{count} B',
+    kb: '{count} KB',
+    mb: '{count} MB',
+    gb: '{count} GB',
   },
 } as const;
 

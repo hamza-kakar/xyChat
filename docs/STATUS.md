@@ -4,9 +4,38 @@ Progress tracker for waChatBack. Updated in every PR.
 
 ## Current milestone
 
+M3 — import pipeline (PR #6, under review).
+
 **M2 — Storage and db.worker** (complete; PR opened)
 
-## What's done (M2)
+## What's done (M3)
+
+- Archive reading with §15.2 safety (ratio/entry caps, quota check,
+  traversal rejection) — archive-reader.ts + opened-archive.ts (streaming
+  handle, review Major 9) + 15 node tests.
+- Detection + confirmation (§9.2 step 4, §12.8.4): DetectReport with
+  participants/group/title/media counts/free bytes; DMY/MDY override
+  re-runs detection.
+- Parse + §8.10 fingerprints (§9.2 steps 6–7) with §8.2 progress and §9.3
+  cancellation polling per 1,000 items.
+- Media phase (§9.2 steps 8–9): STREAMED writes through opened-archive
+  sync-handle sinks (review Major 9 — nothing buffered whole), thumbnails
+  with determinate §9.1 progress, skip-stored fingerprints (§9.2 step 8),
+  §9.3 rollback of exactly the written paths.
+- Commit over the §3.2 MessagePort (commit-port.ts page module, Valibot
+  union validation); markImport* via repository methods; import-begin.ts
+  page module owns the orchestration incl. post-media rollback (review
+  Majors 6/7/8).
+- Import UI (§12.8): install gate with bypass, picker, confirm (DMY/MDY
+  toggle, self choice, merge preselect, summary with archive/free-storage
+  bytes), progress (§9.1 phases + wake lock §12.8.5 + cancel), report
+  (media split, plain-language warnings), mapped errors with safe
+  diagnostics (§15.4).
+- §22 M3 scale gate: 100k messages + 2k media imported without memory
+  errors (browser test); e2e flows 2–5 on Chromium (WebKit skips per ADR
+  0007).
+
+## Previously (M2)
 
 - sqlite-wasm + opfs-sahpool in db.worker behind a typed wrapper
   (§10.1 pragmas: journal_mode=DELETE, foreign_keys, synchronous,

@@ -27,6 +27,9 @@ export interface ConfirmedImport {
   /** Pre-minted chat id: an existing chat (merge) or a fresh one — media
    * paths key on it BEFORE the commit creates the chats row (§9.2 step 8). */
   readonly chatId: string;
+  /** Fingerprints whose media the stored chat already holds (§9.2 step 8:
+   * the media phase skips rewriting them; review Blocker 2). */
+  readonly alreadyStored: ReadonlySet<string>;
 }
 
 /** Facts for the §9.2-step-11 report beyond the commit counts. */
@@ -53,9 +56,9 @@ export type BeginAnswer =
       readonly error: ImportError;
     };
 
-/** Options for begin() — `hooks` is passed as a separate top-level
- * Comlink.proxy argument (transfer markers are honored at the top level
- * only). The commit port arrives via setCommitPort (§3.2). */
+/** Options for begin() — `hooks` is a separate top-level Comlink.proxy
+ * argument (transfer markers are honored at the top level only); the
+ * commit port arrives via setCommitPort (§3.2). */
 export interface BeginOptions {
   readonly file: Blob;
   readonly fileName: string;

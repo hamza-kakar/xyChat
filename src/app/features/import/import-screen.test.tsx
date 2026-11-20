@@ -61,6 +61,7 @@ const report: DetectReport = {
   isGroup: true,
   participants: ['Sara', 'Ali Khan'],
   archiveBytes: 1_000,
+  freeBytes: 5_000_000,
   uncompressedTotalBytes: 2_000,
   replacementChars: 0,
   messagesCount: 5,

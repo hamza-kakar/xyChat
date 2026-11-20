@@ -49,7 +49,7 @@ describe('ImportReportStep (§12.8.6)', () => {
     expect(screen.getByText('1 media upgraded')).toBeInTheDocument();
     expect(screen.getByText('Finished in 2.3 s')).toBeInTheDocument();
     expect(screen.getByText(/4 unreadable characters/)).toBeInTheDocument();
-    expect(screen.getByText('OUT_OF_ORDER_TIMESTAMP × 3')).toBeInTheDocument();
+    expect(screen.getByText(/out of chronological order/)).toBeInTheDocument();
   });
 
   it('opens the chat via the §12.8.6 button', async () => {

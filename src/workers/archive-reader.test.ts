@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import * as zipJs from '@zip.js/zip.js';
 import {
   readArchive,
-  readZipEntryBytes,
+  openArchive,
   listMediaEntries,
   isSafeEntryName,
   type ArchiveReaderDeps,
@@ -53,7 +53,7 @@ function depsWithFree(free: number): ArchiveReaderDeps {
 
 describe('archive reader: type and size gates (§9.2 step 1)', () => {
   it('rejects non-archive extensions', async () => {
-    const result = await readArchive(textFile(CHAT_TEXT, 'export.pdf'), generousDeps);
+    const result = await readArchive(textFile(CHAT_TEXT, 'export.pdf'), 'export.pdf', generousDeps);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.code).toBe('UNSUPPORTED_FILE_TYPE');
@@ -62,7 +62,7 @@ describe('archive reader: type and size gates (§9.2 step 1)', () => {
 
   it('rejects a .txt over the size cap', async () => {
     const big = 'x'.repeat(200 * 1024 * 1024 + 1);
-    const result = await readArchive(textFile(big), generousDeps);
+    const result = await readArchive(textFile(big), 'big.txt', generousDeps);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.code).toBe('FILE_TOO_LARGE');
@@ -72,7 +72,7 @@ describe('archive reader: type and size gates (§9.2 step 1)', () => {
 
 describe('archive reader: text files (§9.2 steps 2–3)', () => {
   it('decodes a plain .txt export', async () => {
-    const result = await readArchive(textFile(CHAT_TEXT), generousDeps);
+    const result = await readArchive(textFile(CHAT_TEXT), 'export.txt', generousDeps);
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.text).toBe(CHAT_TEXT);
@@ -85,7 +85,7 @@ describe('archive reader: text files (§9.2 steps 2–3)', () => {
     const bytes = new Uint8Array([0x5b, 0xff, 0xfe, 0x5d, 0x0a]);
     const file = new File([bytes], 'broken.txt') as Blob & { readonly name: string };
     Object.defineProperty(file, 'name', { value: 'broken.txt' });
-    const result = await readArchive(file, generousDeps);
+    const result = await readArchive(file, 'export.zip', generousDeps);
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.replacementChars).toBeGreaterThan(0);
@@ -93,7 +93,7 @@ describe('archive reader: text files (§9.2 steps 2–3)', () => {
   });
 
   it('rejects an empty text file', async () => {
-    const result = await readArchive(textFile('   \n  '), generousDeps);
+    const result = await readArchive(textFile('   \n  '), 'empty.txt', generousDeps);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.code).toBe('NO_CHAT_TEXT_FOUND');
@@ -107,7 +107,7 @@ describe('archive reader: zip archives (§9.2 step 2, §15.2)', () => {
       'other.txt': 'decoy content',
       '_chat.txt': CHAT_TEXT,
     });
-    const result = await readArchive(file, generousDeps);
+    const result = await readArchive(file, 'export.zip', generousDeps);
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.text).toBe(CHAT_TEXT);
@@ -123,7 +123,7 @@ describe('archive reader: zip archives (§9.2 step 2, §15.2)', () => {
     const blob = await writer.close();
     const traversal = new File([blob], 'export.zip') as Blob & { readonly name: string };
     Object.defineProperty(traversal, 'name', { value: 'export.zip' });
-    const result = await readArchive(traversal, generousDeps);
+    const result = await readArchive(traversal, 'export.zip', generousDeps);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(['PATH_TRAVERSAL', 'CORRUPT_ARCHIVE']).toContain(result.error.code);
@@ -152,7 +152,7 @@ describe('archive reader: zip archives (§9.2 step 2, §15.2)', () => {
     // 20 MB of NUL bytes deflate to ~20 KB: > 1000:1.
     const bombBody = '\u0000'.repeat(20 * 1024 * 1024);
     const file = await buildZip({ '_chat.txt': CHAT_TEXT, 'bomb.txt': bombBody });
-    const result = await readArchive(file, generousDeps);
+    const result = await readArchive(file, 'export.zip', generousDeps);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.code).toBe('COMPRESSION_RATIO');
@@ -161,7 +161,7 @@ describe('archive reader: zip archives (§9.2 step 2, §15.2)', () => {
 
   it('fails with NO_CHAT_TEXT_FOUND when no text entry exists', async () => {
     const file = await buildZip({ 'photo.jpg': 'not-text-content' });
-    const result = await readArchive(file, generousDeps);
+    const result = await readArchive(file, 'export.zip', generousDeps);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.code).toBe('NO_CHAT_TEXT_FOUND');
@@ -172,13 +172,13 @@ describe('archive reader: zip archives (§9.2 step 2, §15.2)', () => {
 describe('archive reader: failure modes', () => {
   it('fails with QUOTA_EXCEEDED when free storage is under 1.1× the archive', async () => {
     const file = await buildZip({ '_chat.txt': CHAT_TEXT });
-    const result = await readArchive(file, depsWithFree(1));
+    const result = await readArchive(file, 'export.zip', depsWithFree(1));
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.code).toBe('QUOTA_EXCEEDED');
     }
     // Generous free storage passes.
-    const okResult = await readArchive(file, generousDeps);
+    const okResult = await readArchive(file, 'export.zip', generousDeps);
     expect(okResult.ok).toBe(true);
   });
 
@@ -192,7 +192,7 @@ describe('archive reader: failure modes', () => {
       readonly name: string;
     };
     Object.defineProperty(truncated, 'name', { value: 'cut.zip' });
-    const result = await readArchive(truncated, generousDeps);
+    const result = await readArchive(truncated, 'cut.zip', generousDeps);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(['CORRUPT_ARCHIVE', 'NO_CHAT_TEXT_FOUND']).toContain(result.error.code);
@@ -209,20 +209,51 @@ async function mediaZip(): Promise<Blob & { readonly name: string }> {
 }
 
 describe('archive reader: entry bytes and media listing (§9.2 step 8)', () => {
-  it('reads named entry bytes', async () => {
-    const result = await readZipEntryBytes(await mediaZip(), 'media/IMG-0001.jpg');
+  it('reads named entry bytes through the opened handle', async () => {
+    const opened = await openArchive(await mediaZip());
+    expect(opened.ok).toBe(true);
+    if (!opened.ok) {
+      return;
+    }
+    const result = await opened.value.readEntry('media/IMG-0001.jpg');
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(new TextDecoder().decode(result.value)).toBe('jpeg-bytes-here');
     }
+    await opened.value.close();
+  });
+
+  it('streams named entries chunk-by-chunk (review Major 9)', async () => {
+    const opened = await openArchive(await mediaZip());
+    expect(opened.ok).toBe(true);
+    if (!opened.ok) {
+      return;
+    }
+    const chunks: number[] = [];
+    const streamed = await opened.value.streamEntry('media/IMG-0001.jpg', (chunk) => {
+      chunks.push(chunk.byteLength);
+      return chunk.byteLength;
+    });
+    expect(streamed.ok).toBe(true);
+    if (streamed.ok) {
+      expect(streamed.value.bytes).toBe(15);
+      expect(chunks.reduce((sum, c) => sum + c, 0)).toBe(15);
+    }
+    await opened.value.close();
   });
 
   it('answers ENTRY_NOT_FOUND for absent entries', async () => {
-    const result = await readZipEntryBytes(await mediaZip(), 'media/missing.jpg');
+    const opened = await openArchive(await mediaZip());
+    expect(opened.ok).toBe(true);
+    if (!opened.ok) {
+      return;
+    }
+    const result = await opened.value.readEntry('media/missing.jpg');
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.code).toBe('ENTRY_NOT_FOUND');
     }
+    await opened.value.close();
   });
 
   it('lists media entries, skipping text and metadata', async () => {

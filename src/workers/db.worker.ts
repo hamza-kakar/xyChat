@@ -8,20 +8,11 @@ import { openDatabase } from '../storage/sqlite/open';
 import { SqliteChatRepository } from '../storage/sqlite/sqlite-repository';
 import { commitImport } from '../storage/sqlite/import-commit';
 import { createImportRecord } from '../storage/sqlite/import-record';
-import { deleteMediaFile } from '../storage/media-store';
+import { deleteMediaFile, listFilesUnder } from '../storage/media-store';
 import type { DbApi, WorkerError } from './db-api';
 import { RpcValidationError, rpcInput } from './rpc-validate';
+import { handleCommitMessage } from './commit-port';
 import { attachmentFromRow } from '../storage/sqlite/rows';
-
-/** A message on the commit port (§3.2). */
-type CommitPortMessage =
-  | { readonly type: 'commit'; readonly requestId: number; readonly input: unknown }
-  | {
-      readonly type: 'written-paths';
-      readonly requestId: number;
-      readonly importId: string;
-      readonly paths: readonly string[];
-    };
 
 let repository: SqliteChatRepository | null = null;
 
@@ -49,7 +40,7 @@ function repo(): SqliteChatRepository {
  * everything else serializes as INTERNAL with the worker-side stack. The
  * stack rides in the thrown message because Comlink re-creates Errors with
  * the message only (§18.7). */
-function wrap<T>(fn: () => T): Promise<T> {
+function wrap<T>(fn: () => T | Promise<T>): Promise<T> {
   return Promise.resolve()
     .then(fn)
     .catch((error: unknown) => {
@@ -197,29 +188,34 @@ const api: DbApi = {
         ],
       );
     }),
+  listStoredFingerprints: (chatId) =>
+    wrap(() => repo().listStoredFingerprints(rpcInput.chatId('listStoredFingerprints', chatId))),
+  listOrphanMedia: () =>
+    wrap(async () => {
+      const [media, thumbs] = await Promise.all([
+        listFilesUnder('media'),
+        listFilesUnder('thumbs'),
+      ]);
+      return repo().listOrphanMedia([...media, ...thumbs]);
+    }),
+  deleteOrphanMedia: (paths) =>
+    wrap(async () => {
+      const validated = rpcInput.writtenPaths('deleteOrphanMedia', paths);
+      const results = await Promise.all(validated.map(deleteMediaFile));
+      return results.filter(Boolean).length;
+    }),
   connectCommitPort: (port) => {
     // §3.2: the ONLY place beyond db.worker methods that executes commits.
     // Messages: { type: 'commit', requestId, input } and
     // { type: 'written-paths', requestId, importId, paths }.
     port.onmessage = (event: MessageEvent) => {
-      const data = event.data as CommitPortMessage;
-      if (data.type === 'commit') {
-        try {
-          const result = commitImport(repo().database, rpcInput.commitImport('commit', data.input));
-          port.postMessage({ type: 'commit-result', requestId: data.requestId, result });
-        } catch (error) {
-          port.postMessage({
-            type: 'commit-error',
-            requestId: data.requestId,
-            detail: String(error).slice(0, 200),
-          });
-        }
-        return;
+      const answer = handleCommitMessage(
+        { commit: (input) => commitImport(repo().database, input) },
+        event.data,
+      );
+      if (answer !== null) {
+        port.postMessage(answer);
       }
-      repo().database.run('UPDATE imports SET written_paths_json = ? WHERE id = ?', [
-        JSON.stringify(data.paths),
-        data.importId,
-      ]);
     };
     port.start();
   },
