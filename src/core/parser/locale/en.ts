@@ -14,21 +14,26 @@ export const en: LocalePatterns = {
   },
 
   system: [
+    // §8.6.1: the actor part must not cross an author separator (": "),
+    // otherwise ordinary messages like "Sara: I added sugar" become system
+    // events and lose their author. Actor names never contain ": ".
     /^Messages and calls are end-to-end encrypted\..*$/u,
     /^\u200E?Messages and calls are end-to-end encrypted\..*$/u,
-    /^(?:\u200E?.+|You) created group ["\u201C\u200E]?.*$/u,
-    /^(?:\u200E?.+|You) added (?:.+|you)$/u,
-    /^(?:\u200E?.+|You) removed (?:.+|you)$/u,
-    /^(?:\u200E?.+|You) left$/u,
+    /^(?:\u200E?[^:]+|You) created group .*$/u,
+    /^(?:\u200E?[^:]+|You) added (?:.+|you)$/u,
+    /^(?:\u200E?[^:]+|You) removed (?:.+|you)$/u,
+    /^(?:\u200E?[^:]+|You) left$/u,
     /^You were added$/u,
     /^You were removed$/u,
-    /^(?:\u200E?.+|You) changed the subject from .*$/u,
-    /^(?:\u200E?.+|You) changed this group(?:'s|\u2019s) icon$/u,
-    /^(?:\u200E?.+|You) changed their phone number to a new number\..*$/u,
+    // The subject tail may legitimately contain ": " (old subject names).
+    /^(?:\u200E?[^:]+|You) changed the subject from .*$/u,
+    /^(?:\u200E?[^:]+|You) changed this group(?:'s|\u2019s) icon$/u,
+    /^(?:\u200E?[^:]+|You) changed their phone number to a new number\..*$/u,
     /^Disappearing messages? .*$/u,
-    /^(?:\u200E?.+|You) turned on disappearing messages\..*$/u,
-    /^(?:\u200E?.+|You) changed the group description\..*$/u,
-    /^(?:\u200E?.+|You) joined the group .*$/u,
+    // "turned on" keeps the actor before any ": ".
+    /^(?:\u200E?[^:]+|You) turned on disappearing messages\..*$/u,
+    /^(?:\u200E?[^:]+|You) changed the group description\..*$/u,
+    /^(?:\u200E?[^:]+|You) joined the group .*$/u,
     /^Tap to learn more\.$/u,
   ],
 

@@ -36,36 +36,6 @@ export function thumbPathFor(chatId: ChatId, attachmentId: string): string {
 }
 
 /**
- * Writes media bytes into OPFS via a sync access handle (worker context,
- * §10.4). Creates the chat directory as needed.
- *
- * @param path Canonical path from {@link mediaPathFor}.
- * @param bytes Media bytes to write.
- */
-export async function writeMediaFile(path: string, bytes: Uint8Array): Promise<MediaWriteResult> {
-  try {
-    const root = await navigator.storage.getDirectory();
-    const segments = path.split('/');
-    const fileName = segments.pop();
-    if (fileName === undefined || fileName === '') {
-      return { ok: false, reason: 'empty file name' };
-    }
-    let dir = root;
-    for (const segment of segments) {
-      dir = await dir.getDirectoryHandle(segment, { create: true });
-    }
-    const fileHandle = await dir.getFileHandle(fileName, { create: true });
-    const access = await fileHandle.createSyncAccessHandle();
-    access.write(bytes);
-    access.flush();
-    access.close();
-    return { ok: true, path, bytes: bytes.byteLength };
-  } catch (error) {
-    return { ok: false, reason: String(error).slice(0, 200) };
-  }
-}
-
-/**
  * Reads a media file as a Blob (main thread, async API §10.4).
  *
  * @returns null when the file does not exist.
@@ -97,7 +67,9 @@ export async function listFilesUnder(prefix: string): Promise<readonly string[]>
   const paths: string[] = [];
   const walk = async (dir: FileSystemDirectoryHandle, pathSoFar: string): Promise<void> => {
     for await (const [name, handle] of dir.entries()) {
-      const childPath = `${pathSoFar}/${name}`;
+      // Root-relative paths without a leading slash (callers pass prefixes
+      // like `media/<chatId>`).
+      const childPath = pathSoFar === '' ? name : `${pathSoFar}/${name}`;
       if (handle.kind === 'file') {
         if (childPath.startsWith(prefix)) {
           paths.push(childPath);

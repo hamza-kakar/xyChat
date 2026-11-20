@@ -1,136 +1,151 @@
 /**
- * Repository contract test (AGENTS.md §10.5, §19.1): exercises the REAL
- * sqlite-wasm + OPFS stack through db.worker — open, migrate, commit,
- * read, search, delete. Runs on Chromium; WebKit skips on engines without
- * OPFS per ADR 0007 (ratified: decided at M2).
+ * Repository contract: boot, import commit and media upgrades (§10.5,
+ * §9.2, §8.10, §19.4). Runs SqliteChatRepository against the real
+ * sqlite-wasm stack so v8 coverage instruments the storage layer.
+ * Chromium-only per ADR 0007.
  */
-import { beforeEach, describe, expect, it } from 'vitest';
-import { ensureDbReady, resetDbClientForTests, dbClient } from '../../src/client/db-client';
-import type { ImportCommitInput } from '../../src/storage/sqlite/import-commit';
-import type { ParsedMessage } from '../../src/core/model';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { commitImport } from '../../src/storage/sqlite/import-commit';
+import { createImportRecord } from '../../src/storage/sqlite/import-record';
+import { asChatId, type ChatId } from '../../src/core/ids';
+import {
+  msg,
+  omittedMediaInput,
+  openContractDb,
+  presentMediaInput,
+  recordInput,
+  threeMsgInput,
+} from './contract-helpers';
+import type { SqliteDatabase } from '../../src/storage/sqlite/open';
+import type { SqliteChatRepository } from '../../src/storage/sqlite/sqlite-repository';
 
-/** True when the engine supports OPFS (WebKit on Linux does not, ADR 0007). */
-function engineHasOpfs(): boolean {
-  try {
-    return typeof navigator.storage.getDirectory === 'function';
-  } catch {
-    return false;
-  }
-}
+let db: SqliteDatabase;
+let repo: SqliteChatRepository;
+let chatId: ChatId;
 
-beforeEach(() => {
-  resetDbClientForTests();
+beforeEach(async () => {
+  ({ db, repo } = await openContractDb());
 });
 
-function msg(
-  seq: number,
-  body: string,
-  minute: number,
-): { fingerprint: string; message: ParsedMessage } {
-  const message: ParsedMessage = {
-    seq,
-    sourceLine: seq + 1,
-    timestamp: { year: 2026, month: 11, day: 17, hour: 21, minute, second: 0 },
-    author: 'Person A',
-    kind: 'text',
-    body,
-    isEdited: false,
-    attachment: null,
-    poll: null,
-    location: null,
-  };
-  return { fingerprint: `${seq}-${body}`, message };
-}
+afterEach(() => {
+  db.close();
+});
 
-function commitInput(importId: string): ImportCommitInput {
-  return {
-    importId,
-    targetChatId: null,
-    newChat: {
-      title: 'Contract Test Chat',
-      isGroup: false,
-      sourcePlatform: 'android',
-      dateOrder: 'DMY',
-    },
-    messages: [msg(0, 'hello world', 0), msg(1, 'searchable needle here', 1), msg(2, 'goodbye', 2)],
-    attachments: [],
-    fileName: 'contract.txt',
-    fileBytes: 100,
-    parserVersion: '1.0.0',
-  };
-}
-
-describe('repository contract (real sqlite-wasm + OPFS)', () => {
-  it('opens, migrates and verifies FTS5 through db.worker', async (ctx) => {
-    if (!engineHasOpfs()) {
-      ctx.skip();
-      return;
-    }
-    expect(await ensureDbReady()).toBe(true);
+describe('repository contract: boot and import', () => {
+  it('opens, migrates and verifies FTS5 trigram', () => {
+    expect(db).toBeDefined();
   });
 
-  it('commits an import and reads it back', async (ctx) => {
-    if (!engineHasOpfs()) {
-      ctx.skip();
-      return;
-    }
-    expect(await ensureDbReady()).toBe(true);
-    const result = await dbClient.commitImport(commitInput('22222222-2222-4222-8222-222222222222'));
+  it('commits an import and reads it back', () => {
+    createImportRecord(db, recordInput('imp-1'));
+    const result = commitImport(db, threeMsgInput('imp-1', null));
     expect(result.messagesInserted).toBe(3);
-    expect(result.duplicatesSkipped).toBe(0);
-
-    const chats = await dbClient.listChats();
-    const chat = chats.find((c) => c.title === 'Contract Test Chat');
+    chatId = asChatId(result.chatId);
+    const chat = repo.listChats().find((c) => c.title === 'Contract Test Chat');
     expect(chat?.messageCount).toBe(3);
-
-    if (chat !== undefined) {
-      const window = await dbClient.getMessageWindow({
-        chatId: chat.id,
-        anchorSeq: 1,
-        before: 5,
-        after: 5,
-      });
-      expect(window.messages.map((m) => m.body)).toEqual([
-        'hello world',
-        'searchable needle here',
-        'goodbye',
-      ]);
-      const search = await dbClient.search({
-        chatId: null,
-        query: 'needle',
-        authorId: null,
-        kinds: null,
-        dateFromTsKey: null,
-        dateToTsKey: null,
-        limit: 50,
-        cursor: null,
-      });
-      expect(search.hits).toHaveLength(1);
-      expect(search.hits[0]?.snippet).toContain('needle');
-      await dbClient.deleteChat(chat.id);
-      expect((await dbClient.listChats()).find((c) => c.id === chat.id)).toBeUndefined();
-    }
+    expect(repo.getChat(chatId)?.sourcePlatform).toBe('android');
+    const participants = repo.getParticipants(chatId);
+    expect(participants.map((p) => p.displayName)).toEqual(['Sara', 'Ali Khan']);
+    const window = repo.getMessageWindow({ chatId, anchorSeq: 1, before: 5, after: 5 });
+    expect(window.messages.map((m) => m.body)).toEqual([
+      'hello world',
+      'searchable needle here',
+      'goodbye',
+    ]);
+    expect(window.messages[1]?.authorName).toBe('Ali Khan');
   });
 
-  it('skips duplicates when the same fingerprint is committed twice', async (ctx) => {
-    if (!engineHasOpfs()) {
-      ctx.skip();
-      return;
-    }
-    expect(await ensureDbReady()).toBe(true);
-    const first = await dbClient.commitImport(commitInput('33333333-3333-4333-8333-333333333333'));
-    expect(first.messagesInserted).toBe(3);
-    const second = await dbClient.commitImport({
-      ...commitInput('44444444-4444-4444-8444-444444444444'),
-      targetChatId: first.chatId,
-    });
+  it('skips duplicates on re-import', () => {
+    createImportRecord(db, recordInput('imp-d1'));
+    const first = commitImport(db, threeMsgInput('imp-d1', null));
+    const localChat = asChatId(first.chatId);
+    createImportRecord(db, recordInput('imp-d2'));
+    const second = commitImport(db, threeMsgInput('imp-d2', localChat));
     expect(second.messagesInserted).toBe(0);
     expect(second.duplicatesSkipped).toBe(3);
-    // Cleanup
-    const chats = await dbClient.listChats();
-    const chat = chats.find((c) => c.title === 'Contract Test Chat');
-    if (chat !== undefined) {
-      await dbClient.deleteChat(chat.id);
-    }
+  });
+});
+
+describe('repository contract: merge plan (§8.10)', () => {
+  it('interleaves a superset with new messages between stored ones', () => {
+    createImportRecord(db, recordInput('imp-sup-1'));
+    const first = commitImport(db, threeMsgInput('imp-sup-1', null));
+    const localChat = asChatId(first.chatId);
+    createImportRecord(db, recordInput('imp-sup-2'));
+    const second = commitImport(db, {
+      importId: 'imp-sup-2',
+      targetChatId: localChat,
+      newChat: { title: '', isGroup: false, sourcePlatform: 'android', dateOrder: 'DMY' },
+      messages: [
+        { fingerprint: 'fp-0', message: msg(0, 'hello world', 0) },
+        { fingerprint: 'fp-B2', message: msg(1, 'B2 between', 1) },
+        { fingerprint: 'fp-1', message: msg(2, 'searchable needle here', 2, 'Ali Khan') },
+        { fingerprint: 'fp-2', message: msg(3, 'goodbye', 3) },
+        { fingerprint: 'fp-D4', message: msg(4, 'D4 new', 4) },
+      ],
+      attachments: [],
+      fileName: 'contract.txt',
+      fileBytes: 100,
+      parserVersion: '1.0.0',
+    });
+    expect(second.messagesInserted).toBe(2);
+    expect(second.duplicatesSkipped).toBe(3);
+    const window = repo.getMessageWindow({
+      chatId: localChat,
+      anchorSeq: 0,
+      before: 10,
+      after: 10,
+    });
+    expect(window.messages.map((m) => m.body)).toEqual([
+      'hello world',
+      'B2 between',
+      'searchable needle here',
+      'goodbye',
+      'D4 new',
+    ]);
+    expect(window.messages.map((m) => m.seq)).toEqual([0, 1, 2, 3, 4]);
+  });
+
+  it('re-importing the identical file changes nothing', () => {
+    createImportRecord(db, recordInput('imp-idem-1'));
+    const first = commitImport(db, threeMsgInput('imp-idem-1', null));
+    const localChat = asChatId(first.chatId);
+    createImportRecord(db, recordInput('imp-idem-2'));
+    const second = commitImport(db, threeMsgInput('imp-idem-2', localChat));
+    expect(second.messagesInserted).toBe(0);
+    expect(second.duplicatesSkipped).toBe(3);
+  });
+});
+
+describe('repository contract: media upgrades', () => {
+  it('upgrades omitted media to present when export provides bytes', () => {
+    createImportRecord(db, recordInput('imp-up-1'));
+    const first = commitImport(db, omittedMediaInput('imp-up-1', null));
+    const localChat = asChatId(first.chatId);
+    const rows = db.selectObjects('SELECT status FROM attachments');
+    expect(rows[0]?.['status']).toBe('omitted');
+    createImportRecord(db, recordInput('imp-up-2'));
+    const second = commitImport(db, presentMediaInput('imp-up-2', localChat));
+    expect(second.mediaUpgraded).toBe(1);
+    expect(second.duplicatesSkipped).toBe(1);
+    const after = db.selectObjects('SELECT status, opfs_path, file_name, width FROM attachments');
+    expect(after[0]).toEqual({
+      status: 'present',
+      opfs_path: 'media/x/att-1.jpg',
+      file_name: 'IMG-001.jpg',
+      width: 100,
+    });
+  });
+
+  it('re-importing the same without-media export makes 0 upgrades', () => {
+    createImportRecord(db, recordInput('imp-om-1'));
+    const first = commitImport(db, omittedMediaInput('imp-om-1', null));
+    chatId = asChatId(first.chatId);
+    createImportRecord(db, recordInput('imp-om-2'));
+    const second = commitImport(db, omittedMediaInput('imp-om-2', chatId));
+    expect(second.mediaUpgraded).toBe(0);
+    expect(second.duplicatesSkipped).toBe(1);
+    const rows = db.selectObjects('SELECT status FROM attachments');
+    expect(rows[0]?.['status']).toBe('omitted');
   });
 });

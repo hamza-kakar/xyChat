@@ -130,10 +130,18 @@ export interface SearchHit {
   readonly snippet: string;
 }
 
-/** Keyset-paginated search page (cursor = last ts_key + rowid). */
+/** Keyset-paginated search page (cursor = last ts_key + rowid + seq; the
+ * in-chat ordering keys on seq, the global ordering on ts_key). */
 export interface SearchPage {
   readonly hits: readonly SearchHit[];
-  readonly nextCursor: { readonly tsKey: number; readonly rowId: number } | null;
+  readonly nextCursor: SearchPageCursor | null;
+}
+
+/** Keyset cursor fields for search paging (§11). */
+export interface SearchPageCursor {
+  readonly tsKey: number;
+  readonly rowId: number;
+  readonly seq: number;
 }
 
 /** Query parameters for search (§11). */
@@ -145,7 +153,7 @@ export interface SearchQuery {
   readonly dateFromTsKey: number | null;
   readonly dateToTsKey: number | null;
   readonly limit: number;
-  readonly cursor: { readonly tsKey: number; readonly rowId: number } | null;
+  readonly cursor: SearchPageCursor | null;
 }
 
 /** Attachment-gallery page (keyset by rowId). */

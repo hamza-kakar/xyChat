@@ -19,12 +19,12 @@ function msg(seq: number, body: string): ParsedMessage {
 }
 
 /** Builds a merge entry from a message (fingerprint = body for tests). */
-function entry(m: ParsedMessage, fingerprint: string, attachmentWasStored = true): MergeEntry {
+function entry(m: ParsedMessage, fingerprint: string, attachmentStored = true): MergeEntry {
   return {
     fingerprint,
     message: m,
     tsKey: m.timestamp.hour * 60 + m.timestamp.minute,
-    attachmentWasStored,
+    attachmentStored,
   };
 }
 
@@ -86,6 +86,15 @@ describe('planMerge media upgrades and ordering', () => {
     expect(plan.counts.duplicates).toBe(1);
     expect(plan.counts.mediaUpgraded).toBe(1);
     expect(plan.counts.added).toBe(0);
+  });
+
+  it('an omitted twin is a duplicate but never an upgrade (§8.10)', () => {
+    const omitted = { fileName: null, mediaType: 'image' as const, status: 'omitted' as const };
+    const stored = [entry({ ...msg(0, 'x'), attachment: omitted }, 'f-x', false)];
+    const incoming = [entry({ ...msg(0, 'x'), attachment: omitted }, 'f-x', false)];
+    const plan = planMerge(stored, incoming);
+    expect(plan.counts.duplicates).toBe(1);
+    expect(plan.counts.mediaUpgraded).toBe(0);
   });
 
   it('orders unknown heads by timestamp with stored-first ties', () => {

@@ -6,8 +6,6 @@ import { createHash } from 'node:crypto';
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { fingerprint } from '../fingerprint';
-import { planMerge, type MergeEntry } from '../merge';
-import type { ParsedMessage } from '../model';
 import { detectFormat, parseChat, PARSER_VERSION, type DetectedFormat } from './index';
 
 const RUNS = { numRuns: 1000 };
@@ -21,12 +19,30 @@ const arbitraryBodyLine = fc
   .stringMatching(/^[^\n]{1,40}$/u)
   .filter((s) => !s.includes(': ') && s.trim() === s && s.trim().length > 0 && !/^[0-9[]/u.test(s));
 
+/**
+ * Bodies that COLLIDE with the §8.6 marker vocabulary (system keywords,
+ * deleted, calls). Round-trip and line-accounting generators include these
+ * on purpose: authored messages containing marker text must stay authored
+ * text (regression coverage for the actor-pattern tightening).
+ */
+const arbitraryMarkerishBody = fc.constantFrom(
+  'I added sugar to the tea',
+  'ok we left',
+  'Bob removed the stain',
+  'Disappearing messages are cool',
+  'I joined the group yesterday',
+  'This message was deleted.',
+  'Missed voice call',
+  'You deleted this message',
+  'Tap to learn more about it',
+);
+
 /** Arbitrary author name (letters, digits, spaces, dots). */
 const arbitraryAuthor = fc
   .stringMatching(/^[A-Za-z][A-Za-z .]{0,14}$/u)
   .filter((s) => s.trim().length > 0);
 
-/** Fields for the iOS header renderer. */
+/** Fields for the header renderers. */
 interface HeaderFields {
   readonly day: number;
   readonly hour: number;
@@ -36,10 +52,15 @@ interface HeaderFields {
   readonly body: string;
 }
 
-/** Renders one iOS-style header line for given fields. */
+/** Renders one iOS-style header line (12h with seconds, §24). */
 function renderIosHeader(f: HeaderFields): string {
   const h12 = f.hour % 12 === 0 ? 12 : f.hour % 12;
   return `[${f.day}/11/2026, ${h12}:${String(f.minute).padStart(2, '0')}:00 ${f.meridiem}] ${f.author}: ${f.body}`;
+}
+
+/** Renders one Android-style header line (24h, dash separator, §24). */
+function renderAndroidHeader(f: HeaderFields): string {
+  return `${f.day}/11/2026, ${String(f.hour).padStart(2, '0')}:${String(f.minute).padStart(2, '0')} - ${f.author}: ${f.body}`;
 }
 
 interface GeneratedMessage {
@@ -51,6 +72,18 @@ interface GeneratedMessage {
   readonly body: string;
 }
 
+/** Canonical marker bodies the generator may emit, with the kind the
+ * classifier must recover (§19.2.3 asserts kinds on generated data). */
+function expectedKind(body: string): 'text' | 'deleted' | 'call' {
+  if (body === 'This message was deleted.' || body === 'You deleted this message') {
+    return 'deleted';
+  }
+  if (body === 'Missed voice call') {
+    return 'call';
+  }
+  return 'text';
+}
+
 const arbitraryMessages: fc.Arbitrary<GeneratedMessage[]> = fc.array(
   fc.record({
     day: fc.constantFrom(16, 17, 18),
@@ -58,15 +91,32 @@ const arbitraryMessages: fc.Arbitrary<GeneratedMessage[]> = fc.array(
     minute: fc.integer({ min: 0, max: 59 }),
     meridiem: fc.constantFrom('AM', 'PM'),
     author: arbitraryAuthor,
-    body: arbitraryBodyLine,
+    body: fc.oneof(
+      arbitraryBodyLine,
+      fc.constant('This message was deleted.'),
+      fc.constant('Missed voice call'),
+    ),
   }),
   { minLength: 1, maxLength: 10 },
 );
 
-function renderAll(messages: readonly GeneratedMessage[]): string {
-  return messages
+/** A generated export: one platform per FILE (mixed headers would parse as
+ * one dominant grammar with continuations, §8.5). */
+interface GeneratedExport {
+  readonly platform: 'ios' | 'android';
+  readonly messages: readonly GeneratedMessage[];
+}
+
+const arbitraryExports: fc.Arbitrary<GeneratedExport> = fc.record({
+  platform: fc.constantFrom('ios' as const, 'android' as const),
+  messages: arbitraryMessages,
+});
+
+function renderAll(exported: GeneratedExport): string {
+  const render = exported.platform === 'ios' ? renderIosHeader : renderAndroidHeader;
+  return exported.messages
     .map((m) =>
-      renderIosHeader({
+      render({
         day: m.day,
         hour: m.hour,
         minute: m.minute,
@@ -111,7 +161,10 @@ describe('property: line accounting (§19.2.2)', () => {
           minute: fc.integer({ min: 0, max: 59 }),
           meridiem: fc.constantFrom('AM', 'PM'),
           author: arbitraryAuthor,
-          bodyLines: fc.array(arbitraryBodyLine, { minLength: 1, maxLength: 3 }),
+          bodyLines: fc.array(fc.oneof(arbitraryBodyLine, arbitraryMarkerishBody), {
+            minLength: 1,
+            maxLength: 3,
+          }),
         }),
         { minLength: 1, maxLength: 8 },
       ),
@@ -154,22 +207,29 @@ describe('property: line accounting (§19.2.2)', () => {
 });
 
 describe('property: generated exports round-trip (§19.2.3)', () => {
-  it('recovers authors, times and bodies exactly', () => {
-    const prop = fc.property(arbitraryMessages, (messages) => {
-      const text = renderAll(messages);
+  it('recovers authors, kinds, times and bodies exactly on both platforms', () => {
+    const prop = fc.property(arbitraryExports, (exported) => {
+      const text = renderAll(exported);
       const format = detectOrThrow(text);
+      expect(format.platform).toBe(exported.platform);
       const parsed = parseChat(text, { format });
       if (!parsed.ok) {
         throw new Error('generation must parse');
       }
-      expect(parsed.value.messages).toHaveLength(messages.length);
-      messages.forEach((m, index) => {
+      expect(parsed.value.messages).toHaveLength(exported.messages.length);
+      exported.messages.forEach((m, index) => {
         const parsedMessage = parsed.value.messages[index];
         expect(parsedMessage?.author).toBe(m.author);
+        expect(parsedMessage?.kind).toBe(expectedKind(m.body));
         expect(parsedMessage?.body).toBe(m.body);
         expect(parsedMessage?.timestamp.day).toBe(m.day);
-        const h12 = m.hour % 12 === 0 ? 12 : m.hour % 12;
-        const h24 = m.meridiem === 'PM' ? (h12 === 12 ? 12 : h12 + 12) : h12 === 12 ? 0 : h12;
+        const h24 =
+          exported.platform === 'android'
+            ? m.hour
+            : (() => {
+                const h12 = m.hour % 12 === 0 ? 12 : m.hour % 12;
+                return m.meridiem === 'PM' ? (h12 === 12 ? 12 : h12 + 12) : h12 === 12 ? 0 : h12;
+              })();
         expect(parsedMessage?.timestamp.hour).toBe(h24);
         expect(parsedMessage?.timestamp.minute).toBe(m.minute);
       });
@@ -177,100 +237,6 @@ describe('property: generated exports round-trip (§19.2.3)', () => {
     expect(() => {
       fc.assert(prop, RUNS);
     }).not.toThrow();
-  });
-});
-
-const MERGE_RUNS = { numRuns: 300 };
-
-/** Builds an entry; bodies are unique per list, so fp = body. */
-function mergeEntry(body: string, index: number): MergeEntry {
-  const message: ParsedMessage = {
-    seq: index,
-    sourceLine: index + 1,
-    timestamp: { year: 2026, month: 11, day: 17, hour: 21, minute: index % 60, second: 0 },
-    author: 'A',
-    kind: 'text',
-    body,
-    isEdited: false,
-    attachment: null,
-    poll: null,
-    location: null,
-  };
-  // Content-derived fingerprint, mirroring real occurrence-counted ids.
-  return { fingerprint: body, message, tsKey: index, attachmentWasStored: true };
-}
-
-describe('property: merge idempotent, order-preserving, lossless (§19.2.5)', () => {
-  it('holds on generated lists', () => {
-    const prop = fc.property(
-      fc
-        .array(fc.stringMatching(/^[a-z]{3,6}$/u), { minLength: 0, maxLength: 10 })
-        .map((a) => [...new Set(a)]),
-      fc
-        .array(fc.stringMatching(/^[a-z]{3,6}$/u), { minLength: 0, maxLength: 10 })
-        .map((a) => [...new Set(a)]),
-      fc.boolean(),
-      (existingBodies, incomingBodies, shuffleIncoming) => {
-        const existing = existingBodies.map((b, index) => mergeEntry(b, index));
-        const incomingBodiesMaybeReversed = shuffleIncoming
-          ? [...incomingBodies].reverse()
-          : incomingBodies;
-        const incoming = incomingBodiesMaybeReversed.map((b, index) => mergeEntry(b, index));
-        const plan = planMerge(existing, incoming);
-
-        const bodies = plan.messages.map((m) => m.message.body);
-        // Lossless + deduplicated: each fingerprint appears at most once in
-        // the output (fingerprints are unique per entry, mirroring the
-        // occurrence counter); bodies themselves may legitimately repeat.
-        const fps = plan.messages.map((m) => m.fingerprint);
-        if (new Set(fps).size !== fps.length) {
-          throw new Error(`fps dup: ${JSON.stringify(fps)}`);
-        }
-        const outputSet = new Set(bodies);
-        for (const body of new Set(existingBodies)) {
-          if (!outputSet.has(body)) {
-            throw new Error(`existing body missing from output: ${body}`);
-          }
-        }
-        // Per-input relative order preserved.
-        const existingOrder = plan.messages
-          .filter((m) => !m.fromIncoming)
-          .map((m) => m.message.body)
-          .filter((b) => existingBodies.includes(b));
-        if (JSON.stringify(existingOrder) !== JSON.stringify(existingBodies)) {
-          throw new Error(
-            `existingOrder ${JSON.stringify(existingOrder)} vs ${JSON.stringify(existingBodies)}`,
-          );
-        }
-        // Order preservation is per INPUT list — after the optional shuffle.
-        // A body present in BOTH lists is emitted from the stored side
-        // (§8.10 rule 1), so the incoming-side stream must match exactly the
-        // incoming bodies that were not already stored.
-        const incomingOrder = plan.messages
-          .filter((m) => m.fromIncoming)
-          .map((m) => m.message.body);
-        const storedSet = new Set(existingBodies);
-        const expectedIncoming = incomingBodiesMaybeReversed.filter((b) => !storedSet.has(b));
-        if (JSON.stringify(incomingOrder) !== JSON.stringify(expectedIncoming)) {
-          throw new Error(
-            `incomingOrder ${JSON.stringify(incomingOrder)} vs ${JSON.stringify(expectedIncoming)}`,
-          );
-        }
-
-        // Idempotency: re-merging with the same incoming list adds 0.
-        const mergedEntries: MergeEntry[] = plan.messages.map((m, index) => ({
-          fingerprint: m.fingerprint,
-          message: { ...m.message, seq: index },
-          tsKey: m.message.timestamp.minute,
-          attachmentWasStored: true,
-        }));
-        const again = planMerge(mergedEntries, incoming);
-        if (again.counts.added !== 0) {
-          throw new Error(`idempotency added=${again.counts.added} plan=${JSON.stringify(bodies)}`);
-        }
-      },
-    );
-    fc.assert(prop, MERGE_RUNS);
   });
 });
 
@@ -321,7 +287,7 @@ describe('property: fingerprints deterministic and distinct (§19.2.4)', () => {
         }
       },
     );
-    await fc.assert(prop, MERGE_RUNS);
+    await fc.assert(prop, RUNS);
   });
 });
 

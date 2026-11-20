@@ -3,7 +3,7 @@ import { expect } from '@playwright/test';
 import { test } from '@playwright/test';
 
 /**
- * Boot-dependent flow guard (AGENTS.md §12.11, review M0 round 1 blocker 1).
+ * Boot-dependent flow guard (AGENTS.md §12.11).
  *
  * Nothing is skipped at boot: on engines where the capability gate refuses
  * (Playwright's Linux WebKit cannot open OPFS — upstream

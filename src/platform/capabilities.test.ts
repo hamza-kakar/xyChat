@@ -115,7 +115,7 @@ describe('checkCapabilities transient-error retry', () => {
   });
 });
 
-describe('boot budget (review minor 16)', () => {
+describe('boot budget', () => {
   it('keeps the worker probe timeout bounded at 5 seconds', () => {
     // The constant is the boot bound: a hung worker is abandoned after 5 s
     // and reported as a failure (timeouts are final - no retry). happy-dom

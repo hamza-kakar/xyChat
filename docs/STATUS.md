@@ -107,16 +107,38 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
   safety checks, confirmation handshake with DMY/MDY live preview,
   thumbnails, cancellation + crash rollback wiring, import UI.
 
-## Verified results (M2)
+## Verified results (M2 + audit rounds 2–3)
 
-- Unit (node): **250 passed**; browser contract tests **3 passed** on
-  Chromium against the real sqlite-wasm + OPFS stack (WebKit leg in CI per
-  ADR 0007; dev machine lacks system libs).
-- Storage coverage: covered via unit + contract suites; §19.4 storage
-  thresholds enforce on the browser-mode run in CI.
-- Perf: parse 100k unchanged **1.2–1.4 s** (budget 2.0 s); §19.2.7 regex
-  timing property caught and fixed an unanchored attachment pattern
-  (O(n²) → linear).
+- Import-commit perf gate (§17): committing a 100k-message re-import into a
+  chat with 100k stored messages — **~1.6 s** (budget 2.0 s, CI Chromium).
+  The plan is computed first; undisplaced rows are never touched, displaced
+  rows take the §10.2 offset trick in batched statements, incoming rows
+  insert at their final positions.
+- planMerge counts `mediaUpgraded` only for twins whose export NEWLY
+  provides bytes; two new properties pin this (omitted twins never upgrade;
+  upgrades equal the newly-present twin count) — 1,000 runs each.
+
+- Unit (node): **274 passed** — core suites plus the new injection-tested
+  modules: `opener.test.ts` (Web Locks lifetime lock: second open →
+  LOCK_UNAVAILABLE, release on close / migration failure), `rpc-call.test.ts`
+  (timeout carries method + diagnostic id, timer cleared on settle,
+  commitImport exemption, sink events), `rpc-validate.test.ts` (every RPC
+  input schema: fingerprints, timestamps, coordinates, traversal-safe
+  written paths).
+- Browser contract tests: **30 passed** on Chromium against real
+  sqlite-wasm (boot/import, merge plan with media upgrades, seq-keyset
+  search paging, LIKE 500-cap, link extraction, chat management, rollback,
+  delete cascade). Storage coverage **≥ 85% lines enforced** on this run.
+- Perf: parse 100k **1.2–1.4 s** (budget 2.0 s); fingerprint+merge 100k
+  **~1.05 s** (budget 2.0 s); search 100k **< 100 ms** (budget, CI
+  Chromium). §19.2.7 regex timing property caught and fixed an unanchored
+  attachment pattern (O(n²) → linear).
+- Worker coverage strategy (Major 8, ADR 0007 addendum): testable worker
+  logic lives in page modules with enforced thresholds —
+  `workers/rpc-validate.ts`, `client/rpc-call.ts`, `storage/sqlite/opener.ts`
+  each ≥ 85% lines in the unit project; the thin worker shells
+  (db.worker, import-api, media-writer) run only in real worker contexts
+  and are exercised end-to-end.
 
 ## Previously verified (M1)
 

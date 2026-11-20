@@ -20,12 +20,18 @@ import type {
   Participant,
 } from '../storage/repository';
 import type { ImportCommitInput, ImportCommitResult } from '../storage/sqlite/import-commit';
+import type { ImportRecordInput } from '../storage/sqlite/import-record';
 import type { ChatId, ParticipantId } from '../core/ids';
+import type { LocalDateTime } from '../core/model';
 
-/** A serialized worker error (§18.7). */
+/** A serialized worker error (§18.7). The stack rides in the caller-side
+ * message (Comlink re-creates Errors with the message only); it contains
+ * engine locations only — never message content. */
 export interface WorkerError {
-  readonly code: 'INTERNAL';
+  readonly code: 'INTERNAL' | 'INVALID_INPUT';
   readonly message: string;
+  /** Sanitized worker-side stack (diagnostics only; never user-facing). */
+  readonly stack: string | null;
 }
 
 /** The db.worker API exposed over Comlink. */
@@ -41,7 +47,7 @@ export interface DbApi {
     before: number;
     after: number;
   }): Promise<MessageWindow>;
-  findSeqByDate(chatId: ChatId, tsKey: number): Promise<number | null>;
+  findSeqByDate(chatId: ChatId, date: LocalDateTime): Promise<number | null>;
   search(q: SearchQuery): Promise<SearchPage>;
   listAttachments(q: {
     chatId: ChatId;
@@ -61,6 +67,8 @@ export interface DbApi {
   listBookmarks(chatId: ChatId | null): Promise<readonly BookmarkView[]>;
   listImports(chatId: ChatId): Promise<readonly ImportRecord[]>;
   storageUsage(): Promise<StorageUsage>;
+  /** Creates the in_progress import row (§9.3: before media writes). */
+  createImportRecord(input: ImportRecordInput): Promise<void>;
   /** Transactional import commit (§9.2 step 10). */
   commitImport(input: ImportCommitInput): Promise<ImportCommitResult>;
   /** Registers OPFS paths against the import row for crash rollback. */

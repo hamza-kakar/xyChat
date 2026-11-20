@@ -6,17 +6,25 @@
 import * as Comlink from 'comlink';
 import { openDatabase } from '../storage/sqlite/open';
 import { SqliteChatRepository } from '../storage/sqlite/sqlite-repository';
-import { commitImport, type ImportCommitInput } from '../storage/sqlite/import-commit';
-import type { ChatId } from '../core/ids';
+import { commitImport } from '../storage/sqlite/import-commit';
+import { createImportRecord } from '../storage/sqlite/import-record';
+import { deleteMediaFile } from '../storage/media-store';
 import type { DbApi, WorkerError } from './db-api';
+import { RpcValidationError, rpcInput } from './rpc-validate';
 import { attachmentFromRow } from '../storage/sqlite/rows';
 
 let repository: SqliteChatRepository | null = null;
 
-/** Serializes an unexpected exception into a WorkerError (§18.7). The
- * client-side sink logs it; the worker has no app imports (§3.2). */
-function toWorkerError(error: unknown): WorkerError {
-  return { code: 'INTERNAL', message: String(error).slice(0, 200) };
+/** Serializes an unexpected exception into a WorkerError (§18.7). The stack
+ * is preserved so the client-side diagnostics can quote it; it contains
+ * engine locations only, never message content (§15.4). */
+function toWorkerError(error: unknown, code: WorkerError['code'] = 'INTERNAL'): WorkerError {
+  return {
+    code,
+    message: String(error).slice(0, 200),
+    stack:
+      error instanceof Error && typeof error.stack === 'string' ? error.stack.slice(0, 800) : null,
+  };
 }
 
 /** Asserts the repository exists; throws INTERNAL otherwise. */
@@ -27,14 +35,21 @@ function repo(): SqliteChatRepository {
   return repository;
 }
 
-/** Wraps a repository call with INTERNAL serialization. */
+/** Wraps a repository call: validation failures answer INVALID_INPUT (§18.5),
+ * everything else serializes as INTERNAL with the worker-side stack. The
+ * stack rides in the thrown message because Comlink re-creates Errors with
+ * the message only (§18.7). */
 function wrap<T>(fn: () => T): Promise<T> {
-  try {
-    return Promise.resolve(fn());
-  } catch (error) {
-    const workerError = toWorkerError(error);
-    return Promise.reject(new Error(`${workerError.code}: ${workerError.message}`));
-  }
+  return Promise.resolve()
+    .then(fn)
+    .catch((error: unknown) => {
+      const code = error instanceof RpcValidationError ? 'INVALID_INPUT' : 'INTERNAL';
+      const workerError = toWorkerError(error, code);
+      const frames =
+        workerError.stack !== null ? workerError.stack.split('\n').slice(0, 4).join(' | ') : '';
+      const detail = frames === '' ? workerError.message : `${workerError.message} | ${frames}`;
+      return Promise.reject(new Error(`${workerError.code}: ${detail}`));
+    });
 }
 
 const api: DbApi = {
@@ -44,13 +59,18 @@ const api: DbApi = {
       if (!opened.ok) {
         return {
           ok: false as const,
-          error: { code: 'INTERNAL' as const, message: opened.error.code },
+          error: { code: 'INTERNAL' as const, message: opened.error.code, stack: null },
         };
       }
       repository = new SqliteChatRepository(opened.value);
-      // §9.3 boot rollback: mark in_progress imports rolled_back (the client
-      // logs the returned path count from the RPC result).
-      void repository.rollbackInProgressImports();
+      // §9.3 boot rollback: mark in_progress imports rolled_back and return
+      // their written OPFS paths — the client deletes the files.
+      const orphanPaths = repository.rollbackInProgressImports();
+      // §9.3: the worker deletes the crashed import's files itself (workers
+      // may import storage per §3.1); the client only logs the count.
+      for (const path of orphanPaths) {
+        await deleteMediaFile(path);
+      }
       return { ok: true as const };
     } catch (error) {
       return { ok: false as const, error: toWorkerError(error) };
@@ -58,27 +78,42 @@ const api: DbApi = {
   },
 
   listChats: () => wrap(() => repo().listChats()),
-  getChat: (id) => wrap(() => repo().getChat(id)),
-  getParticipants: (chatId) => wrap(() => repo().getParticipants(chatId)),
-  getMessageWindow: (q) => wrap(() => repo().getMessageWindow(q)),
-  findSeqByDate: (chatId: ChatId, tsKey: number) => wrap(() => repo().findSeqByDate(chatId, tsKey)),
-  search: (q) => wrap(() => repo().search(q)),
-  listAttachments: (q) => wrap(() => repo().listAttachments(q)),
-  listLinks: (q) => wrap(() => repo().listLinks(q)),
-  getChatStats: (chatId) => wrap(() => repo().getChatStats(chatId)),
+  getChat: (id) => wrap(() => repo().getChat(rpcInput.chatId('getChat', id))),
+  getParticipants: (chatId) =>
+    wrap(() => repo().getParticipants(rpcInput.chatId('getParticipants', chatId))),
+  getMessageWindow: (q) =>
+    wrap(() => {
+      const input = rpcInput.messageWindow('getMessageWindow', q);
+      return repo().getMessageWindow(input);
+    }),
+  findSeqByDate: (chatId, date) =>
+    wrap(() => {
+      const id = rpcInput.chatId('findSeqByDate', chatId);
+      const local = rpcInput.localDateTime('findSeqByDate', date);
+      return repo().findSeqByDate(id, local);
+    }),
+  search: (q) => wrap(() => repo().search(rpcInput.search('search', q))),
+  listAttachments: (q) =>
+    wrap(() => repo().listAttachments(rpcInput.attachments('listAttachments', q))),
+  listLinks: (q) => wrap(() => repo().listLinks(rpcInput.links('listLinks', q))),
+  getChatStats: (chatId) =>
+    wrap(() => repo().getChatStats(rpcInput.chatId('getChatStats', chatId))),
   setSelf: (chatId, participantId) =>
     wrap(() => {
-      repo().setSelf(chatId, participantId);
+      const id = rpcInput.chatId('setSelf', chatId);
+      const self = rpcInput.participantId('setSelf', participantId);
+      repo().setSelf(id, self);
     }),
   renameChat: (chatId, title) =>
     wrap(() => {
-      repo().renameChat(chatId, title);
+      repo().renameChat(rpcInput.chatId('renameChat', chatId), rpcInput.title('renameChat', title));
     }),
   deleteChat: (chatId) =>
     wrap(() => {
+      const id = rpcInput.chatId('deleteChat', chatId);
       const attachments = repo().database.selectObjects(
         'SELECT opfs_path, thumb_path FROM attachments WHERE chat_id = ?',
-        [chatId],
+        [id],
       );
       const paths: string[] = [];
       for (const row of attachments) {
@@ -89,35 +124,55 @@ const api: DbApi = {
           }
         }
       }
-      repo().deleteChat(chatId);
+      repo().deleteChat(id);
       return paths;
     }),
-  addBookmark: (chatId, messageId, note) => wrap(() => repo().addBookmark(chatId, messageId, note)),
+  addBookmark: (chatId, messageId, note) =>
+    wrap(() => {
+      const id = rpcInput.chatId('addBookmark', chatId);
+      const rowId = rpcInput.nonNegativeInt('addBookmark', messageId);
+      const parsedNote = rpcInput.bookmarkNote('addBookmark', note);
+      return repo().addBookmark(id, rowId, parsedNote);
+    }),
   updateBookmark: (id, note) =>
     wrap(() => {
-      repo().updateBookmark(id, note);
+      const bookmarkId = rpcInput.id('updateBookmark', id);
+      const parsedNote = rpcInput.bookmarkNote('updateBookmark', note);
+      repo().updateBookmark(bookmarkId, parsedNote);
     }),
   removeBookmark: (id) =>
     wrap(() => {
-      repo().removeBookmark(id);
+      repo().removeBookmark(rpcInput.id('removeBookmark', id));
     }),
-  listBookmarks: (chatId) => wrap(() => repo().listBookmarks(chatId)),
-  listImports: (chatId) => wrap(() => repo().listImports(chatId)),
-  storageUsage: () => wrap(() => repo().storageUsage()),
-  commitImport: (input: ImportCommitInput) => wrap(() => commitImport(repo().database, input)),
-  recordWrittenPaths: (importId: string, paths: readonly string[]) =>
+  listBookmarks: (chatId) =>
     wrap(() => {
+      const id = chatId === null ? null : rpcInput.chatId('listBookmarks', chatId);
+      return repo().listBookmarks(id);
+    }),
+  listImports: (chatId) => wrap(() => repo().listImports(rpcInput.chatId('listImports', chatId))),
+  storageUsage: () => wrap(() => repo().storageUsage()),
+  createImportRecord: (input) =>
+    wrap(() => {
+      createImportRecord(repo().database, rpcInput.importRecord('createImportRecord', input));
+    }),
+  commitImport: (input) =>
+    wrap(() => commitImport(repo().database, rpcInput.commitImport('commitImport', input))),
+  recordWrittenPaths: (importId, paths) =>
+    wrap(() => {
+      const id = rpcInput.id('recordWrittenPaths', importId);
+      const validated = rpcInput.writtenPaths('recordWrittenPaths', paths);
       repo().database.run('UPDATE imports SET written_paths_json = ? WHERE id = ?', [
-        JSON.stringify(paths),
-        importId,
+        JSON.stringify(validated),
+        id,
       ]);
     }),
   rollbackInProgressImports: () => wrap(() => repo().rollbackInProgressImports()),
-  getAttachmentsForMessage: (messageId: number) =>
+  getAttachmentsForMessage: (messageId) =>
     wrap(() => {
+      const rowId = rpcInput.nonNegativeInt('getAttachmentsForMessage', messageId);
       const rows = repo().database.selectObjects(
         'SELECT * FROM attachments WHERE message_id = ? ORDER BY id',
-        [messageId],
+        [rowId],
       );
       return rows.map(attachmentFromRow);
     }),

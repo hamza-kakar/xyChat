@@ -8,6 +8,9 @@ import { messageFromRow } from './rows';
 import type { SqliteDatabase } from './open';
 import type { LinkPage, SearchPage, SearchQuery } from '../repository';
 
+/** §11: LIKE fallback result cap (in-chat, 1–2 char queries). */
+const LIKE_RESULT_CAP = 500;
+
 /** Escapes a LIKE query per §11 (1–2 char fallback path). */
 function escapeLike(raw: string): string {
   return raw.replace(/[\\%_]/gu, (c) => `\\${c}`);
@@ -31,18 +34,23 @@ function buildSnippet(body: string, query: string): string {
   return `${prefix}${body.slice(start, end)}${suffix}`;
 }
 
-/**
- * Runs a search: FTS MATCH for 3+ char queries, LIKE fallback below (§11).
- * Results sort newest-first with keyset pagination.
- */
-export function searchMessages(db: SqliteDatabase, q: SearchQuery): SearchPage {
-  /** Full-text or LIKE search with filters and keyset paging (§11). */
+/** WHERE fragments + parameters for one search (§11 filters, keyset, mode). */
+interface SearchConditions {
+  readonly conditions: readonly string[];
+  readonly params: readonly (string | number | null)[];
+  readonly joins: string;
+  readonly effectiveLimit: number;
+}
 
+/** Builds the WHERE conditions for a search: filters first, then the
+ * keyset cursor (matching the ordering), then the FTS/LIKE mode. */
+function searchConditions(q: SearchQuery): SearchConditions {
   const conditions: string[] = [];
   const params: (string | number | null)[] = [];
   let joins = '';
+  const inChat = q.chatId !== null;
 
-  if (q.chatId !== null) {
+  if (inChat) {
     conditions.push('m.chat_id = ?');
     params.push(q.chatId);
   }
@@ -63,8 +71,15 @@ export function searchMessages(db: SqliteDatabase, q: SearchQuery): SearchPage {
     params.push(q.dateToTsKey);
   }
   if (q.cursor !== null) {
-    conditions.push('(m.ts_key < ? OR (m.ts_key = ? AND m.id < ?))');
-    params.push(q.cursor.tsKey, q.cursor.tsKey, q.cursor.rowId);
+    // §11 keyset: the cursor matches the ordering — in-chat pages forward by
+    // seq, global pages backward by ts_key (rowid breaks ties in both).
+    if (inChat) {
+      conditions.push('(m.seq > ? OR (m.seq = ? AND m.id > ?))');
+      params.push(q.cursor.seq, q.cursor.seq, q.cursor.rowId);
+    } else {
+      conditions.push('(m.ts_key < ? OR (m.ts_key = ? AND m.id < ?))');
+      params.push(q.cursor.tsKey, q.cursor.tsKey, q.cursor.rowId);
+    }
   }
 
   if (q.query.length >= 3) {
@@ -72,18 +87,39 @@ export function searchMessages(db: SqliteDatabase, q: SearchQuery): SearchPage {
     conditions.push('messages_fts MATCH ?');
     params.push(ftsPhrase(q.query));
   } else {
-    conditions.push("m.body LIKE ? ESCAPE '\\'");
-    params.push(`%${escapeLike(q.query)}%`);
+    // §11: 1–2 char queries skip FTS and use LIKE, in-chat only.
+    if (!inChat) {
+      conditions.push('1 = 0');
+    } else {
+      conditions.push("m.body LIKE ? ESCAPE '\\'");
+      params.push(`%${escapeLike(q.query)}%`);
+    }
   }
 
+  // §11: the LIKE fallback is limited to 500 results — cap the limit rather
+  // than refusing the query.
+  const effectiveLimit =
+    inChat && q.query.length < 3 ? Math.min(q.limit, LIKE_RESULT_CAP) : q.limit;
+  return { conditions, params, joins, effectiveLimit };
+}
+
+/**
+ * Runs a search: FTS MATCH for 3+ char queries, LIKE fallback below (§11).
+ * Global results sort newest-first; in-chat results sort by seq — each with
+ * its own keyset pagination.
+ */
+export function searchMessages(db: SqliteDatabase, q: SearchQuery): SearchPage {
+  const { conditions, params, joins, effectiveLimit } = searchConditions(q);
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  // §11: global search sorts newest-first; in-chat search sorts by seq.
+  const orderBy = q.chatId !== null ? 'm.seq ASC, m.id ASC' : 'm.ts_key DESC, m.id DESC';
   const rows = db.selectObjects(
     `SELECT m.*, p.display_name AS author_name
      FROM messages m ${joins} LEFT JOIN participants p ON p.id = m.author_id
      ${where}
-     ORDER BY m.ts_key DESC, m.id DESC
+     ORDER BY ${orderBy}
      LIMIT ?`,
-    [...params, q.limit],
+    [...params, effectiveLimit],
   );
 
   const hits = rows.map((row) => {
@@ -99,8 +135,8 @@ export function searchMessages(db: SqliteDatabase, q: SearchQuery): SearchPage {
   });
   const lastRow = rows.at(-1);
   const nextCursor =
-    rows.length === q.limit && lastRow !== undefined && typeof lastRow['ts_key'] === 'number'
-      ? { tsKey: lastRow['ts_key'], rowId: Number(lastRow['id']) }
+    rows.length === effectiveLimit && lastRow !== undefined && typeof lastRow['ts_key'] === 'number'
+      ? { tsKey: lastRow['ts_key'], rowId: Number(lastRow['id']), seq: Number(lastRow['seq']) }
       : null;
   return { hits, nextCursor };
 }

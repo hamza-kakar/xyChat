@@ -93,7 +93,7 @@ async function askProbeWorker(): Promise<WorkerReply | null> {
 /**
  * Outcome of the ONE storage-probe worker spawned per app load; both the
  * moduleWorkers and syncAccessHandle probes read this cached result instead
- * of spawning a second worker (review M0 round 1, minor 16).
+ * of spawning a second worker.
  */
 let cachedStorageProbe: Promise<StorageProbeOutcome> | null = null;
 

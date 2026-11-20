@@ -174,6 +174,45 @@ describe('locations', () => {
 });
 
 describe('polls', () => {
+  it('keeps ordinary messages containing system keywords as text with authors', () => {
+    // Regression: system actor patterns used `.+` and crossed the ": "
+    // separator, turning these into author-less system messages.
+    expect(android('Sara: I added sugar to the tea')).toEqual(
+      expect.objectContaining({ author: 'Sara', kind: 'text', body: 'I added sugar to the tea' }),
+    );
+    expect(android('Ali Khan: ok we left')).toEqual(
+      expect.objectContaining({ author: 'Ali Khan', kind: 'text' }),
+    );
+    expect(android('Sara: Bob removed the stain')).toEqual(
+      expect.objectContaining({ author: 'Sara', kind: 'text' }),
+    );
+    expect(ios('Ali Khan: Disappearing messages are cool')).toEqual(
+      expect.objectContaining({ author: 'Ali Khan', kind: 'text' }),
+    );
+    expect(android('Sara: I joined the group yesterday')).toEqual(
+      expect.objectContaining({ author: 'Sara', kind: 'text' }),
+    );
+  });
+
+  it('still classifies real system events after the pattern tightening', () => {
+    expect(android('Ali Khan created group "Family"').kind).toBe('system');
+    expect(android('Ali Khan added Sara').kind).toBe('system');
+    expect(android('Sara left').kind).toBe('system');
+    expect(android('Ali Khan changed the subject from "Fam: old" to "Family"').kind).toBe('system');
+  });
+
+  it('keeps continuation lines after call markers', () => {
+    const r = ios('Sara: \u200EMissed voice call', ['second line after call']);
+    expect(r.kind).toBe('call');
+    expect(r.body).toBe('Missed voice call\nsecond line after call');
+  });
+
+  it('keeps continuation lines after deleted markers', () => {
+    const r = ios('Sara: \u200EThis message was deleted.', ['stray continuation']);
+    expect(r.kind).toBe('deleted');
+    expect(r.body).toBe('This message was deleted.\nstray continuation');
+  });
+
   it('parses poll question and options', () => {
     const r = android('Ali Khan: POLL:', [
       'Dinner?',

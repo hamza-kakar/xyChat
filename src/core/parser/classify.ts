@@ -13,8 +13,8 @@ import type {
 } from '../model';
 import { mediaTypeForFileName } from './attachments';
 import { LRM, cleanBodyLine, stripMarksBeforeMarker } from './normalize';
+import { matchersFor } from './matchers';
 import type { LocalePatterns } from './locale/types';
-import { en } from './locale/en';
 
 /** The classification outcome for one message's body. */
 export interface ClassifiedBody {
@@ -32,18 +32,6 @@ function joinBody(lines: readonly string[]): string {
   return lines.join('\n').trimEnd();
 }
 
-/*
- * Combined fast-path matchers: one anchored test per message short-circuits
- * the per-pattern loops (100k-message exports make the constant factor
- * matter). Alternation order is irrelevant here — these answer match /
- * no-match; the specific pattern is resolved only on a hit.
- */
-const SYSTEM_ANY = new RegExp(en.system.map((re) => `(?:${re.source})`).join('|'), 'u');
-const DELETED_ANY = new RegExp(en.deleted.map((re) => `(?:${re.source})`).join('|'), 'u');
-const EDITED_ANY = new RegExp(en.edited.map((re) => `(?:${re.source})`).join('|'), 'u');
-const OMITTED_ANY = new RegExp(en.omitted.map((o) => `(?:${o.re.source})`).join('|'), 'u');
-const CALLS_ANY = new RegExp(en.calls.map((re) => `(?:${re.source})`).join('|'), 'u');
-
 /** Drops a leading LRM or RLM from a chunk split out of a line. */
 function stripLeadingMarks(text: string): string {
   return text.startsWith(LRM) || text.startsWith('\u200F') ? text.slice(1) : text;
@@ -60,7 +48,7 @@ function stripEditedMarker(lines: readonly string[], locale: LocalePatterns): re
       copy[copy.length - 1] = last.slice(0, m.index).trimEnd();
       return copy;
     }
-    /* v8 ignore next 2 -- the EDITED_ANY gate already matched one pattern */
+    /* v8 ignore next 2 -- the union gate already matched one pattern */
   }
   return lines;
 }
@@ -105,9 +93,10 @@ function systemBody(core: BodyCore): ClassifiedBody {
 function tryClassifySystem(
   firstLine: string,
   continuation: readonly string[],
+  locale: LocalePatterns,
 ): ClassifiedBody | null {
-  // SYSTEM_ANY is the union of locale.system, so one test decides.
-  if (SYSTEM_ANY.test(firstLine)) {
+  // The union matcher decides in one test (§8.7 table-driven).
+  if (matchersFor(locale).system.test(firstLine)) {
     return systemBody({
       author: null,
       firstLine,
@@ -141,9 +130,9 @@ function tryStripEdited(
   lines: readonly string[],
   locale: LocalePatterns,
 ): { readonly lines: readonly string[]; readonly isEdited: boolean } {
-  // EDITED_ANY is the union of locale.edited, so one test decides.
+  // The union matcher decides in one test (§8.7 table-driven).
   /* v8 ignore next -- lines always has at least the first body line */
-  if (EDITED_ANY.test(lines.at(-1) ?? '')) {
+  if (matchersFor(locale).edited.test(lines.at(-1) ?? '')) {
     return { lines: stripEditedMarker(lines, locale), isEdited: true };
   }
   return { lines, isEdited: false };
@@ -195,15 +184,16 @@ function tryReferencedAttachment(
 /** Tries the omitted-media placeholders. */
 function tryOmittedMedia(core: BodyCore, locale: LocalePatterns): ClassifiedBody | null {
   const first = core.firstLine;
-  if (!OMITTED_ANY.test(first)) {
-    return null;
-  }
-  for (const { re, mediaType } of locale.omitted) {
-    if (re.test(first)) {
-      return makeBody(core, 'media', {
-        body: joinBody(core.lines.slice(1)),
-        attachment: { fileName: null, mediaType, status: 'omitted' },
-      });
+  // The union matcher decides in one test (§8.7 table-driven); the loop
+  // resolves which media type the matched pattern implies.
+  if (matchersFor(locale).omitted.test(first)) {
+    for (const { re, mediaType } of locale.omitted) {
+      if (re.test(first)) {
+        return makeBody(core, 'media', {
+          body: joinBody(core.lines.slice(1)),
+          attachment: { fileName: null, mediaType, status: 'omitted' },
+        });
+      }
     }
   }
   return null;
@@ -266,11 +256,12 @@ function tryPoll(core: BodyCore, locale: LocalePatterns): ClassifiedBody | null 
 }
 
 /** Tries the exact call bodies from the locale table. */
-function tryCall(core: BodyCore): ClassifiedBody | null {
-  // CALLS_ANY is the union of locale.calls, so one test decides.
-  if (CALLS_ANY.test(core.firstLine)) {
+function tryCall(core: BodyCore, locale: LocalePatterns): ClassifiedBody | null {
+  // The union matcher decides in one test (§8.7 table-driven).
+  // Continuation lines after the call marker are kept (§8.1: no silent loss).
+  if (matchersFor(locale).calls.test(core.firstLine)) {
     return makeBody(core, 'call', {
-      body: joinBody([stripMarksBeforeMarker(core.firstLine)]),
+      body: joinBody([stripMarksBeforeMarker(core.firstLine), ...core.lines.slice(1)]),
     });
   }
   return null;
@@ -282,10 +273,11 @@ function classifyKind(
   locale: LocalePatterns,
   platform: SourcePlatform,
 ): ClassifiedBody {
-  // DELETED_ANY is the union of locale.deleted, so one test decides.
-  if (DELETED_ANY.test(core.firstLine)) {
+  // The union matcher decides in one test (§8.7 table-driven).
+  // Continuation lines after the marker are kept (§8.1: no silent loss).
+  if (matchersFor(locale).deleted.test(core.firstLine)) {
     return makeBody(core, 'deleted', {
-      body: joinBody([stripMarksBeforeMarker(core.firstLine)]),
+      body: joinBody([stripMarksBeforeMarker(core.firstLine), ...core.lines.slice(1)]),
     });
   }
   const chained: readonly ((c: BodyCore) => ClassifiedBody | null)[] = [
@@ -293,7 +285,7 @@ function classifyKind(
     (c) => tryOmittedMedia(c, locale),
     (c) => tryLocation(c, locale),
     (c) => tryPoll(c, locale),
-    (c) => tryCall(c),
+    (c) => tryCall(c, locale),
   ];
   for (const step of chained) {
     const outcome = step(core);
@@ -324,7 +316,7 @@ export function classifyBody(
   const firstLine = cleanBodyLine(rest);
 
   // 1. System check on the whole REST, before any author split (§8.6.1).
-  const wholeRestSystem = tryClassifySystem(firstLine, continuationLines);
+  const wholeRestSystem = tryClassifySystem(firstLine, continuationLines, locale);
   if (wholeRestSystem !== null) {
     return wholeRestSystem;
   }
@@ -343,11 +335,25 @@ export function classifyBody(
     };
   }
 
-  const authoredLines = [split.bodyFirst, ...continuationLines.map(cleanBodyLine)];
-  const iosSystem = tryClassifySystem(split.bodyFirst, continuationLines.map(cleanBodyLine));
-  if (iosSystem !== null) {
-    return iosSystem;
+  // §8.6.2 iOS special case, restricted to the iOS form: the group/contact
+  // name is followed by a LRM-prefixed system text. Without the LRM shape
+  // and platform check, ordinary Android/iOS messages whose bodies happen to
+  // contain system keywords would lose their author. rawAfterColon keeps the
+  // original characters so the LRM is detectable before cleaning.
+  const rawAfterColon = rest.slice(rest.indexOf(': ') + 2);
+  if (platform === 'ios' && rawAfterColon.startsWith(LRM)) {
+    const cleanedCandidate = cleanBodyLine(rawAfterColon);
+    if (matchersFor(locale).system.test(cleanedCandidate)) {
+      return systemBody({
+        author: null,
+        firstLine: cleanedCandidate,
+        lines: [cleanedCandidate, ...continuationLines.map(cleanBodyLine)],
+        isEdited: false,
+      });
+    }
   }
+
+  const authoredLines = [split.bodyFirst, ...continuationLines.map(cleanBodyLine)];
 
   // 4. Body-kind classification; edited marker first (§8.6.4).
   const edited = tryStripEdited(authoredLines, locale);

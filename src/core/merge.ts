@@ -14,6 +14,12 @@ export interface MergedMessage {
   readonly message: ParsedMessage;
   /** True when this entry came from the incoming export. */
   readonly fromIncoming: boolean;
+  /**
+   * When a stored entry merged with an identical incoming twin (§8.10
+   * rule 1), this is the twin's fingerprint — the caller uses it to apply
+   * upgrades (e.g. media bytes the export newly provides). Null otherwise.
+   */
+  readonly fingerprintOfIncomingTwin: string | null;
 }
 
 /** Aggregate counts reported to the import report (§9.2 step 11). */
@@ -35,8 +41,12 @@ export interface MergeEntry {
   readonly message: ParsedMessage;
   /** Timestamp key for tie-breaking (wall-clock as UTC seconds). */
   readonly tsKey: number;
-  /** True when the stored entry already has its media bytes stored. */
-  readonly attachmentWasStored: boolean;
+  /**
+   * True when the entry carries its media bytes: for a stored entry, the
+   * bytes are already in OPFS; for an incoming entry, the file is present
+   * in the export (§8.6 status 'referenced' that will be written).
+   */
+  readonly attachmentStored: boolean;
 }
 
 /** Mutable walk state, local to one planMerge run. */
@@ -52,12 +62,29 @@ interface MergePlanBuilder {
 }
 
 /** Emits a stored entry in the output, marking its fingerprint as present. */
-function emitExisting(plan: MergePlanBuilder, entry: MergeEntry): void {
+function emitExisting(
+  plan: MergePlanBuilder,
+  entry: MergeEntry,
+  twinFingerprint: string | null = null,
+): void {
   plan.messages.push({
     fingerprint: entry.fingerprint,
     message: entry.message,
     fromIncoming: false,
+    fingerprintOfIncomingTwin: twinFingerprint,
   });
+  plan.emitted.add(entry.fingerprint);
+}
+
+/** Emits an incoming-only entry as newly added. */
+function emitNewIncoming(plan: MergePlanBuilder, entry: MergeEntry): void {
+  plan.messages.push({
+    fingerprint: entry.fingerprint,
+    message: entry.message,
+    fromIncoming: true,
+    fingerprintOfIncomingTwin: null,
+  });
+  plan.added += 1;
   plan.emitted.add(entry.fingerprint);
 }
 
@@ -126,26 +153,22 @@ export function planMerge(
       if (plan.emitted.has(incomingEntry.fingerprint)) {
         plan.duplicates += 1;
       } else {
-        plan.messages.push({
-          fingerprint: incomingEntry.fingerprint,
-          message: incomingEntry.message,
-          fromIncoming: true,
-        });
-        plan.added += 1;
-        plan.emitted.add(incomingEntry.fingerprint);
+        emitNewIncoming(plan, incomingEntry);
       }
       j += 1;
       continue;
     }
 
     if (existingEntry.fingerprint === incomingEntry.fingerprint) {
-      // Rule 1: emit once from the stored side, advance BOTH; media that the
-      // export newly provides upgrades a stored omitted/missing attachment.
-      emitExisting(plan, existingEntry);
+      // Rule 1: emit once from the stored side, advance BOTH. Media counts
+      // as upgraded only when the export NEWLY provides bytes (§8.10): the
+      // stored entry has none and the incoming twin has them. An omitted
+      // twin never turns a placeholder into present media.
       plan.duplicates += 1;
-      if (!existingEntry.attachmentWasStored && incomingEntry.message.attachment !== null) {
+      if (!existingEntry.attachmentStored && incomingEntry.attachmentStored) {
         plan.mediaUpgraded += 1;
       }
+      emitExisting(plan, existingEntry, incomingEntry.fingerprint);
       i += 1;
       j += 1;
       continue;
@@ -155,13 +178,7 @@ export function planMerge(
       emitExisting(plan, existingEntry);
       i += 1;
     } else {
-      plan.messages.push({
-        fingerprint: incomingEntry.fingerprint,
-        message: incomingEntry.message,
-        fromIncoming: true,
-      });
-      plan.added += 1;
-      plan.emitted.add(incomingEntry.fingerprint);
+      emitNewIncoming(plan, incomingEntry);
       j += 1;
     }
   }

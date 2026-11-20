@@ -4,6 +4,11 @@
  * no vitest module-transform overhead). Exits non-zero over budget.
  */
 import { detectFormat, parseChat } from '../src/core/parser';
+import { fingerprint, type HashBytes } from '../src/core/fingerprint';
+import { planMerge } from '../src/core/merge';
+
+import { formatLocalDateTime } from '../src/storage/sqlite/local-date-time-parse';
+import { createHash } from 'node:crypto';
 
 const BUDGET_MS = 2_000;
 const MESSAGE_COUNT = 100_000;
@@ -25,6 +30,9 @@ function build(n: number): string {
   }
   return lines.join('\n');
 }
+
+const hashBytes: HashBytes = (bytes) =>
+  Promise.resolve(new Uint8Array(createHash('sha256').update(bytes).digest()));
 
 const text = build(MESSAGE_COUNT);
 // Warm up JIT with a smaller parse so the measurement is steady-state.
@@ -49,7 +57,47 @@ if (parsed.value.messages.length !== MESSAGE_COUNT) {
   throw new Error(`expected ${MESSAGE_COUNT} messages, got ${parsed.value.messages.length}`);
 }
 console.log(`parse ${MESSAGE_COUNT}: ${elapsed.toFixed(0)}ms (budget ${BUDGET_MS}ms)`);
-if (elapsed >= BUDGET_MS) {
-  console.error('PERF BUDGET EXCEEDED');
+
+// §17: fingerprint + merge 100k ≤ 2 s.
+const FP_BUDGET_MS = 2_000;
+const fpStart = performance.now();
+const entries = [];
+for (let i = 0; i < MESSAGE_COUNT; i += 1) {
+  const message = parsed.value.messages[i];
+  if (message === undefined) {
+    continue;
+  }
+  entries.push({
+    fingerprint: await fingerprint(
+      {
+        tsCanonical: formatLocalDateTime(message.timestamp),
+        author: message.author,
+        kind: message.kind,
+        body: message.body,
+        attachmentFileName: message.attachment?.fileName ?? '',
+        occurrence: 0,
+      },
+      hashBytes,
+    ),
+    message,
+    tsKey:
+      Date.UTC(
+        message.timestamp.year,
+        message.timestamp.month - 1,
+        message.timestamp.day,
+        message.timestamp.hour,
+        message.timestamp.minute,
+        message.timestamp.second,
+      ) / 1000,
+    attachmentStored: false,
+  });
+}
+planMerge([], entries);
+const fpElapsed = performance.now() - fpStart;
+console.log(
+  `fingerprint+merge ${MESSAGE_COUNT}: ${fpElapsed.toFixed(0)}ms (budget ${FP_BUDGET_MS}ms)`,
+);
+if (fpElapsed >= FP_BUDGET_MS) {
+  console.error('FP+MERGE BUDGET EXCEEDED');
   process.exit(1);
 }

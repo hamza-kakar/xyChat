@@ -4,7 +4,10 @@
  * validation. Runs inside db.worker — never on the main thread.
  */
 import type { ChatId, ParticipantId } from '../../core/ids';
-import { formatLocalDateTime } from './local-date-time-parse';
+import * as v from 'valibot';
+import { formatLocalDateTime, parseLocalDateTime } from './local-date-time-parse';
+import { tsLocalToKey } from './ts-key';
+import type { LocalDateTime } from '../../core/model';
 import {
   attachmentFromRow,
   bookmarkFromRow,
@@ -124,8 +127,9 @@ export class SqliteChatRepository {
     };
   }
 
-  /** First seq at/after the given wall-clock ts_key (§12.5 jump-to-date). */
-  findSeqByDate(chatId: ChatId, tsKey: number): number | null {
+  /** First seq at/after the given date (§10.5, §12.5 jump-to-date). */
+  findSeqByDate(chatId: ChatId, date: LocalDateTime): number | null {
+    const tsKey = tsLocalToKey(date);
     const rows = this.db.selectObjects(
       'SELECT seq FROM messages WHERE chat_id = ? AND ts_key >= ? ORDER BY seq LIMIT 1',
       [chatId, tsKey],
@@ -205,10 +209,7 @@ export class SqliteChatRepository {
       mediaBytes,
       dateRange:
         typeof first === 'string' && typeof last === 'string'
-          ? {
-              first: messageFromRow({ ts_local: first, kind: 'text' }).tsLocal,
-              last: messageFromRow({ ts_local: last, kind: 'text' }).tsLocal,
-            }
+          ? { first: parseLocalDateTime(first), last: parseLocalDateTime(last) }
           : null,
     };
   }
@@ -318,9 +319,13 @@ export class SqliteChatRepository {
     const paths: string[] = [];
     for (const row of rows) {
       const raw = row['written_paths_json'];
-      const written: unknown = JSON.parse(typeof raw === 'string' ? raw : '[]');
-      if (Array.isArray(written)) {
-        paths.push(...written.filter((p): p is string => typeof p === 'string'));
+      const parsed: unknown = JSON.parse(typeof raw === 'string' ? raw : '[]');
+      // §18.5: worker RPC inputs (and stored JSON) are validated — an
+      // invalid written_paths list is treated as empty (rollback deletes
+      // nothing rather than guessing).
+      const validated = v.safeParse(v.array(v.string()), parsed);
+      if (validated.success) {
+        paths.push(...validated.output);
       }
       this.db.run("UPDATE imports SET status = 'rolled_back', finished_at = ? WHERE id = ?", [
         new Date().toISOString().replace(/\.\d{3}Z$/u, 'Z'),
