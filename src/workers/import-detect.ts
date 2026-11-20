@@ -78,6 +78,9 @@ export interface DetectReport {
 export interface DetectOptions {
   /** BCP-47 tag for ambiguous date orders (§8.4 step 4). */
   readonly localeHint?: string;
+  /** §12.8.4: the confirm screen's DMY/MDY toggle re-runs detection with
+   * the user's order (marked `dateOrderSource: 'user'`). */
+  readonly dateOrderOverride?: 'DMY' | 'MDY';
 }
 
 /**
@@ -101,12 +104,20 @@ export async function detectExport(
 
   const detectionOptions: DetectFormatOptions =
     options.localeHint === undefined ? {} : { localeHint: options.localeHint };
-  const format = detectFormat(archive.value.text, detectionOptions);
-  if (!format.ok) {
-    return err({ code: 'UNRECOGNIZED_FORMAT', detail: format.error.code });
+  const detected = detectFormat(archive.value.text, detectionOptions);
+  if (!detected.ok) {
+    return err({ code: 'UNRECOGNIZED_FORMAT', detail: detected.error.code });
   }
+  const format =
+    options.dateOrderOverride === undefined
+      ? detected.value
+      : {
+          ...detected.value,
+          dateOrder: options.dateOrderOverride,
+          dateOrderSource: 'user' as const,
+        };
 
-  const parsed = parseChat(archive.value.text, { format: format.value });
+  const parsed = parseChat(archive.value.text, { format });
   if (!parsed.ok) {
     return err({ code: 'UNRECOGNIZED_FORMAT', detail: parsed.error.code });
   }
@@ -132,7 +143,7 @@ export async function detectExport(
     .map((message) => message.body);
 
   return ok({
-    format: format.value,
+    format,
     title: titleFromFileName(fileName),
     isGroup: isGroupChat(parsed.value.participants, systemBodies),
     participants: parsed.value.participants,

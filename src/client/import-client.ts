@@ -93,9 +93,10 @@ export const importClient = {
     file: Blob,
     fileName: string,
     localeHint?: string,
+    dateOrderOverride?: 'DMY' | 'MDY',
   ): Promise<DetectOutcome | ImportError> => {
     const answer = await caller.call(
-      (): Promise<DetectAnswer> => remote().detect(file, fileName, localeHint),
+      (): Promise<DetectAnswer> => remote().detect(file, fileName, localeHint, dateOrderOverride),
       'detect',
     );
     if (!answer.ok) {
@@ -106,38 +107,7 @@ export const importClient = {
       suggestedTargetChatId: await suggestTarget(answer.report.title),
     };
   },
-};
 
-/** Best-effort title match against existing chats (§12.8.4); null when the
- * database is unavailable or nothing matches — the UI offers "new chat". */
-async function suggestTarget(title: string): Promise<ChatId | null> {
-  try {
-    const chats = await dbClient.listChats();
-    return chats.find((chat) => chat.title === title)?.id ?? null;
-  } catch {
-    return null;
-  }
-}
-
-/** Everything the report screen (§12.8.6) needs after a successful run. */
-export interface BeginOutcome {
-  readonly commit: ImportCommitResult;
-  readonly report: RunReport;
-  readonly chatId: ChatId;
-}
-
-/** The confirmed choices for begin(). */
-export interface BeginRequest {
-  readonly file: Blob;
-  readonly fileName: string;
-  readonly format: DetectedFormat;
-  readonly title: string;
-  readonly isGroup: boolean;
-  /** Existing chat to merge into, or null for a new chat (§12.8.4). */
-  readonly targetChatId: ChatId | null;
-}
-
-Object.assign(importClient, {
   /**
    * Runs the confirmed pipeline (§9.2 steps 5–11): mints the import row
    * (§9.3: in_progress BEFORE media writes), wires the commit MessagePort
@@ -179,7 +149,7 @@ Object.assign(importClient, {
       commitPort: Comlink.transfer(channel.port2, [channel.port2]),
       hooks,
     };
-    const answer: BeginAnswer = await caller.call(
+    const answer = await caller.call(
       (): Promise<BeginAnswer> => remote().begin(beginOptions),
       'begin',
     );
@@ -193,4 +163,33 @@ Object.assign(importClient, {
     }
     return { commit: answer.commit, report: answer.report, chatId };
   },
-});
+};
+
+/** Best-effort title match against existing chats (§12.8.4); null when the
+ * database is unavailable or nothing matches — the UI offers "new chat". */
+async function suggestTarget(title: string): Promise<ChatId | null> {
+  try {
+    const chats = await dbClient.listChats();
+    return chats.find((chat) => chat.title === title)?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Everything the report screen (§12.8.6) needs after a successful run. */
+export interface BeginOutcome {
+  readonly commit: ImportCommitResult;
+  readonly report: RunReport;
+  readonly chatId: ChatId;
+}
+
+/** The confirmed choices for begin(). */
+export interface BeginRequest {
+  readonly file: Blob;
+  readonly fileName: string;
+  readonly format: DetectedFormat;
+  readonly title: string;
+  readonly isGroup: boolean;
+  /** Existing chat to merge into, or null for a new chat (§12.8.4). */
+  readonly targetChatId: ChatId | null;
+}

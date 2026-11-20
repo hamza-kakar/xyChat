@@ -130,9 +130,15 @@ function commitOverPort(
 }
 
 const api: ImportWorkerApi = {
-  async detect(file, fileName, localeHint): Promise<DetectAnswer> {
+  async detect(file, fileName, localeHint, dateOrderOverride): Promise<DetectAnswer> {
     try {
-      const options = localeHint === undefined ? {} : { localeHint };
+      const options =
+        localeHint === undefined && dateOrderOverride === undefined
+          ? {}
+          : {
+              ...(localeHint === undefined ? {} : { localeHint }),
+              ...(dateOrderOverride === undefined ? {} : { dateOrderOverride }),
+            };
       const result = await detectExport(fileName, file, options);
       return result.ok ? { ok: true, report: result.value } : { ok: false, error: result.error };
     } catch (error) {
