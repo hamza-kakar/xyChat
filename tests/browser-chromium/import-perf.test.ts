@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import * as zipJs from '@zip.js/zip.js';
-import { ok } from '../../src/core/result';
+import { err, ok } from '../../src/core/result';
 import { listMediaEntries, openArchive, readArchive } from '../../src/workers/archive-reader';
 import { runImportParse } from '../../src/workers/import-run';
 import type { ImportCommitInput } from '../../src/storage/sqlite/import-commit';
@@ -21,11 +21,14 @@ import { newChatId } from '../../src/core/ids';
 const MESSAGE_COUNT = 100_000;
 const MEDIA_COUNT = 2_000;
 
-/** Builds the synthetic zip in-memory (100k chat lines + 2k media entries). */
-async function buildScaleZip(): Promise<Blob> {
+/** Builds the synthetic zip in-memory (parameterized counts). */
+async function buildScaleZip(
+  messageCount = MESSAGE_COUNT,
+  mediaCount = MEDIA_COUNT,
+): Promise<Blob> {
   const writer = new zipJs.ZipWriter(new zipJs.BlobWriter('application/zip'));
   const lines: string[] = [];
-  for (let i = 0; i < MESSAGE_COUNT; i += 1) {
+  for (let i = 0; i < messageCount; i += 1) {
     const minute = i % 12 === 0 ? 12 : i % 12;
     const stamp = `‎[17/11/2026, ${minute}:${String(i % 60).padStart(2, '0')}:00 PM] Author${i % 9}:`;
     if (i < MEDIA_COUNT) {
@@ -39,7 +42,7 @@ async function buildScaleZip(): Promise<Blob> {
     }
   }
   await writer.add('_chat.txt', new zipJs.TextReader(lines.join('\n')));
-  for (let m = 0; m < MEDIA_COUNT; m += 1) {
+  for (let m = 0; m < mediaCount; m += 1) {
     await writer.add(
       `0000${String(m).padStart(5, '0')}-PHOTO-2026-11-17-21-20-30.jpg`,
       new zipJs.TextReader(`fake jpeg ${m}`),
@@ -151,6 +154,84 @@ async function runMediaPhase(
   return failures;
 }
 
+/** Runs one media phase over `entryCount` streamed entries; returns the
+ * elapsed time (review Major 9 verify: 1k vs 2k within 2.5×). */
+async function runLinearProbe(
+  entryCount: number,
+): Promise<{ readonly elapsed: number; readonly mediaOk: boolean }> {
+  const blob = await buildScaleZip(entryCount, entryCount * 2);
+  const file = blob as Blob & { readonly name: string };
+  Object.defineProperty(file, 'name', { value: `linear-${entryCount}.zip` });
+  const opened = await openArchive(file);
+  if (!opened.ok) {
+    return { elapsed: 0, mediaOk: false };
+  }
+  const listed = await opened.value.listEntries();
+  const mediaNames = listed.ok ? listed.value.map((entry) => entry.name) : [];
+  const lines: string[] = [];
+  for (let i = 0; i < entryCount; i += 1) {
+    const minute = i % 12 === 0 ? 12 : i % 12;
+    const name = mediaNames[i] ?? `missing-${i}.jpg`;
+    lines.push(
+      `‎[17/11/2026, ${minute}:${String(i % 60).padStart(2, '0')}:00 PM] Author: ‎<attached: ${name}>`,
+    );
+  }
+  const text = lines.join(String.fromCharCode(10));
+  const detected = detectFormat(text);
+  if (!detected.ok) {
+    await opened.value.close();
+    return { elapsed: 0, mediaOk: false };
+  }
+  const run = await runImportParse(
+    text,
+    detected.value,
+    async (bytes) => {
+      const digest = await crypto.subtle.digest('SHA-256', bytes.buffer as ArrayBuffer);
+      return new Uint8Array(digest);
+    },
+    { onProgress: () => undefined, isCancelled: () => false },
+  );
+  if (!run.ok) {
+    await opened.value.close();
+    return { elapsed: 0, mediaOk: false };
+  }
+  const store = new Map<string, Uint8Array>();
+  const deps: MediaPhaseDeps = {
+    archive: opened.value,
+    listEntries: () => listMediaEntries(file),
+    openWriteSink: (path) => {
+      store.set(path, new Uint8Array());
+      return Promise.resolve(
+        ok({ write: () => Promise.resolve(), close: () => Promise.resolve() }),
+      );
+    },
+    readEntryBuffered: (name) => {
+      if (mediaNames.includes(name)) {
+        return Promise.resolve(ok(new TextEncoder().encode(`bytes-of-${name}`)));
+      }
+      return Promise.resolve(err({ code: 'ENTRY_NOT_FOUND' as const, detail: 'absent' }));
+    },
+    deleteFile: (path) => {
+      store.delete(path);
+      return Promise.resolve(true);
+    },
+    makeThumbnail: null,
+    thumbnailTypes: new Set(['image']),
+  };
+  const start = performance.now();
+  const media = await writeImportMedia({
+    chatId: newChatId(),
+    messages: run.value.messages,
+    alreadyStored: new Set(),
+    deps,
+    hooks: { onProgress: () => undefined, isCancelled: () => false },
+  });
+  const elapsed = performance.now() - start;
+  await opened.value.close();
+  return { elapsed, mediaOk: media.ok };
+}
+
+// eslint-disable-next-line max-lines-per-function -- 100k gate + linear ratio in one suite
 describe('import scale (§22 M3 acceptance, ADR 0007 addendum)', () => {
   // Building the zip + full pipeline at 100k scale: generous but bounded
   // (the acceptance is completion without memory errors, not speed).
@@ -160,6 +241,24 @@ describe('import scale (§22 M3 acceptance, ADR 0007 addendum)', () => {
     async () => {
       const failures = await runScaleImport();
       expect(failures).toEqual([]);
+    },
+  );
+
+  it(
+    'media-phase time scales roughly linearly (1k vs 2k entries within 2.5×)',
+    { timeout: 120_000 },
+    async () => {
+      const timings: number[] = [];
+      for (const entryCount of [1_000, 2_000]) {
+        const probe = await runLinearProbe(entryCount);
+        timings.push(probe.elapsed);
+        expect(probe.mediaOk).toBe(true);
+      }
+      // Review Major 9 verify: streaming keeps the phase roughly linear.
+      const [first, second] = timings;
+      expect(first).toBeGreaterThan(0);
+      expect(second).toBeGreaterThan(0);
+      expect(second / first).toBeLessThan(2.5);
     },
   );
 });
