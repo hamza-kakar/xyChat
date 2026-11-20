@@ -1,5 +1,5 @@
 /**
- * Archive reader (AGENTS.md §9.2 steps 1–3, §15.2, review Major 9): opens a
+ * Archive reader (AGENTS.md §9.2 steps 1–3, §15.2): opens a
  * `.zip` or `.txt` export, validates size and magic bytes, enforces the
  * zip-bomb and entry limits, checks free storage quota, locates the chat
  * text, and decodes it. The media phase opens the archive ONCE and streams
@@ -9,7 +9,7 @@
  *
  * Storage estimation is dependency-injected (§18.4) so the safety checks
  * run in Node tests against a fake. Error details carry COUNTS ONLY —
- * never entry names or raw exception text (§15.4, review Blocker 3).
+ * never entry names or raw exception text (§15.4).
  */
 import * as zipJs from '@zip.js/zip.js';
 import { err, ok, type Result } from '../core/result';

@@ -80,7 +80,7 @@ export interface DbApi {
   /** Marks a failed import (§9.3). */
   markImportFailed(importId: string): Promise<void>;
   /** Fingerprints whose media the stored chat already holds (§9.2 step 8:
-   * the media phase skips rewriting them; review Blocker 2). */
+   * the media phase skips rewriting them). */
   listStoredFingerprints(chatId: string): Promise<readonly string[]>;
   /** §9.3 orphan sweep, list half: OPFS paths no attachment row references. */
   listOrphanMedia(): Promise<readonly string[]>;

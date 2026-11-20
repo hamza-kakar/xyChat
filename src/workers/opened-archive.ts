@@ -1,5 +1,5 @@
 /**
- * Opened-archive handle (AGENTS.md §9.2 step 8, review Major 9): ONE
+ * Opened-archive handle (AGENTS.md §9.2 step 8): ONE
  * ZipReader shared by the whole media phase — the central directory is
  * never re-parsed per file, and entries STREAM chunk-by-chunk into a sink
  * so nothing is buffered whole (§9.4). Split from archive-reader.ts for
@@ -15,7 +15,7 @@ import { isBombEntry, isOversizedEntry, isSafeEntryName, type ArchiveError } fro
 export type ChunkSink = (chunk: Uint8Array) => Promise<number> | number;
 
 /**
- * An opened archive for the MEDIA phase (review Major 9): the central
+ * An opened archive for the MEDIA phase: the central
  * directory is parsed ONCE; entries stream chunk-by-chunk into a sink —
  * no entry is ever buffered whole (§9.2 step 8, §9.4).
  */

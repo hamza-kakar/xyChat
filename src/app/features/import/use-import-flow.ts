@@ -1,5 +1,5 @@
 /**
- * Import flow hook (AGENTS.md §18.4, review Minor): owns the §12.8 state
+ * Import flow hook (AGENTS.md §18.4): owns the §12.8 state
  * machine and the client calls — components render state, they never call
  * RPC clients directly. setSelf failures are tolerated: the commit already
  * succeeded, so the flow still reaches the report (§12.8.6) and the failure
@@ -175,7 +175,7 @@ export function useImportFlow() {
             return;
           }
           // §12.8.4: persist the self choice; a failure here must not fail
-          // the import — the commit already succeeded (review Minor).
+          // the import — the commit already succeeded.
           if (choices.selfName !== null) {
             try {
               const participants = await dbClient.getParticipants(outcome.chatId);

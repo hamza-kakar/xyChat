@@ -223,7 +223,7 @@ describe('archive reader: entry bytes and media listing (§9.2 step 8)', () => {
     await opened.value.close();
   });
 
-  it('streams named entries chunk-by-chunk (review Major 9)', async () => {
+  it('streams named entries chunk-by-chunk', async () => {
     const opened = await openArchive(await mediaZip());
     expect(opened.ok).toBe(true);
     if (!opened.ok) {
