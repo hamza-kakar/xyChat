@@ -5,6 +5,7 @@
  * id — never with message content or file names (§15.4).
  */
 import { setRpcErrorSink } from '../../client/db-client';
+import { setImportErrorSink } from '../../client/import-client';
 import type { RpcErrorEvent } from '../../client/rpc-call';
 import { logger } from './logger';
 
@@ -18,7 +19,9 @@ export function rpcErrorSink(event: RpcErrorEvent): void {
   });
 }
 
-/** Registers the logger-backed sink. Called once at app boot (main.tsx). */
+/** Registers the logger-backed sink on both worker clients (db + import).
+ * Called once at app boot (main.tsx). */
 export function installRpcErrorSink(): void {
   setRpcErrorSink(rpcErrorSink);
+  setImportErrorSink(rpcErrorSink);
 }
