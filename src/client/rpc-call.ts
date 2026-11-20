@@ -1,5 +1,5 @@
 /**
- * Injectable RPC caller (AGENTS.md §18.8, review Major 6): every worker call
+ * Injectable RPC caller (AGENTS.md §18.8): every worker call
  * carries its METHOD NAME (for timeout exemption and diagnostics), runs
  * under a timeout whose timer never outlives the settlement (no dangling
  * rejection), and reports failures to a sink so the app layer can log them

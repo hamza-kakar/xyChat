@@ -21,6 +21,12 @@ export interface SqliteDatabase {
   selectArrays(sql: string, params?: readonly (string | number | null)[]): unknown[][];
   /** Runs a parameterized statement returning nothing. */
   run(sql: string, params?: readonly (string | number | null)[]): void;
+  /**
+   * Runs one parameterized statement per params list, preparing the SQL a
+   * single time (§17: exec() re-parses the SQL text on every call, which
+   * dominates bulk insert/update paths).
+   */
+  runEach(sql: string, paramsList: readonly (readonly (string | number | null)[])[]): void;
   /** Wraps the callback in BEGIN/COMMIT, rolling back on throw. */
   transaction<T>(fn: () => T): T;
   /** Last inserted rowid. */
@@ -66,6 +72,21 @@ export function wrapDatabase(db: Database): SqliteDatabase {
         return;
       }
       db.exec({ sql, bind: [...params] });
+    },
+    runEach(sql: string, paramsList: readonly (readonly (string | number | null)[])[]): void {
+      if (paramsList.length === 0) {
+        return;
+      }
+      const stmt = db.prepare(sql);
+      try {
+        for (const params of paramsList) {
+          stmt.reset();
+          stmt.bind([...params]);
+          stmt.step();
+        }
+      } finally {
+        stmt.finalize();
+      }
     },
     transaction<T>(fn: () => T): T {
       db.exec('BEGIN');

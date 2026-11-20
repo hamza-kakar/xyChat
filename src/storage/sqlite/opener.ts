@@ -1,5 +1,5 @@
 /**
- * Single-instance database opener (AGENTS.md §10.1, review Major 5): the
+ * Single-instance database opener (AGENTS.md §10.1): the
  * Web Locks lifetime lock with dependency-injected collaborators, so the
  * locking semantics are unit-tested against a fake lock manager
  * (opener.test.ts, node project). The sahpool-backed production wiring stays

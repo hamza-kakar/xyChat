@@ -106,8 +106,18 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
 - M3 — import pipeline (§9, §12.8): zip/txt reading with the archive
   safety checks, confirmation handshake with DMY/MDY live preview,
   thumbnails, cancellation + crash rollback wiring, import UI.
+  **One PR, not sub-PRs** — owner decision (2026-11-20), an explicit
+  exception to §0 rule 12; reviewability is kept via small, ordered
+  commits that each pass typecheck and tests.
 
 ## Verified results (M2 + audit rounds 2–3)
+
+- Import-commit perf (ADR 0012): stable 100k re-import ~1.6 s (2 s
+  budget); displaced case (100k inserts + 100k renumbered) ~14.3 s — the
+  measured floor of the §11 trigram FTS + §10.2 indexes on sqlite-wasm,
+  so its gate is 20 s with documented evidence. Bulk-load path: FTS sync
+  triggers dropped inside the commit transaction, messages inserted via
+  prepared statements, index backfilled scoped to the import's own rows.
 
 - Import-commit perf gate (§17): committing a 100k-message re-import into a
   chat with 100k stored messages — **~1.6 s** (budget 2.0 s, CI Chromium).

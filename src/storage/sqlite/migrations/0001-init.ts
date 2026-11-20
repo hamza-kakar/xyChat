@@ -4,8 +4,12 @@
  * §11 search indexes.
  */
 
-/** SQL for the initial schema; executed by migrate.ts inside a transaction. */
-export const SQL_0001_INIT = `
+import { FTS_TRIGGER_DDL } from '../fts-triggers';
+
+/** SQL for the initial schema; executed by migrate.ts inside a transaction.
+ * The FTS sync triggers come from fts-triggers.ts (single DDL source). */
+export const SQL_0001_INIT =
+  `
 CREATE TABLE IF NOT EXISTS meta (
   key   TEXT PRIMARY KEY,
   value TEXT NOT NULL
@@ -108,22 +112,4 @@ CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
   content_rowid='id',
   tokenize='trigram'
 );
-
-CREATE TRIGGER IF NOT EXISTS messages_fts_insert
-AFTER INSERT ON messages BEGIN
-  INSERT INTO messages_fts(rowid, body) VALUES (new.id, new.body);
-END;
-
-CREATE TRIGGER IF NOT EXISTS messages_fts_delete
-AFTER DELETE ON messages BEGIN
-  INSERT INTO messages_fts(messages_fts, rowid, body)
-  VALUES ('delete', old.id, old.body);
-END;
-
-CREATE TRIGGER IF NOT EXISTS messages_fts_update
-AFTER UPDATE OF body ON messages BEGIN
-  INSERT INTO messages_fts(messages_fts, rowid, body)
-  VALUES ('delete', old.id, old.body);
-  INSERT INTO messages_fts(rowid, body) VALUES (new.id, new.body);
-END;
-`;
+` + FTS_TRIGGER_DDL;
