@@ -69,6 +69,8 @@ interface MediaContext {
   readonly zipSizes: ReadonlyMap<string, number>;
   readonly attachments: InsertableAttachment[];
   readonly writtenPaths: string[];
+  /** Count already emitted through onWrittenPaths (§9.2 step 8). */
+  flushedPaths: number;
 }
 
 /**
@@ -100,6 +102,7 @@ export async function writeImportMedia(
     zipSizes: new Map(media.value.map((entry) => [entry.name, entry.size])),
     attachments: [],
     writtenPaths: [],
+    flushedPaths: 0,
   };
 
   const referenced = messages.filter((item) => item.message.attachment?.status === 'referenced');
@@ -193,6 +196,7 @@ async function writeReferenced(
     const stored = await ctx.deps.writeFile(thumbPath, thumbnail.data);
     if (stored.ok) {
       ctx.writtenPaths.push(thumbPath);
+      flushWrittenPaths(ctx);
       width = thumbnail.width;
       height = thumbnail.height;
     } else {
@@ -262,6 +266,25 @@ async function fail(
   }
   return err(error);
 }
+
+/** Emits the written paths in batches of 100 for crash-safety
+ * bookkeeping (§9.2 step 8: flushed every 100 files). */
+function flushWrittenPaths(ctx: MediaContext): void {
+  const onWrittenPaths = ctx.hooks.onWrittenPaths;
+  if (onWrittenPaths === undefined) {
+    return;
+  }
+  if (ctx.writtenPaths.length - ctx.flushedPaths >= WRITE_FLUSH_EVERY) {
+    const batch = ctx.writtenPaths.slice(ctx.flushedPaths);
+    ctx.flushedPaths = ctx.writtenPaths.length;
+    // Fire-and-forget bookkeeping: the client persists the batch; the final
+    // full-list flush before the commit is awaited there (§9.3).
+    void Promise.resolve(onWrittenPaths(batch));
+  }
+}
+
+/** Written paths per bookkeeping flush (§9.2 step 8). */
+const WRITE_FLUSH_EVERY = 100;
 
 /** Maps an archive-read failure onto import error codes. */
 function fromArchiveError(error: ArchiveError): ImportError {

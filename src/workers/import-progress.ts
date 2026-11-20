@@ -15,8 +15,11 @@ export interface ImportProgressEvent {
   readonly total: number;
 }
 
-/** Progress + cancellation hooks shared by the pipeline phases (§18.8). */
+/** Progress + cancellation hooks shared by the pipeline phases (§18.8).
+ * onWrittenPaths flushes OPFS rollback bookkeeping every 100 files (§9.2
+ * step 8) — the main thread persists them against the import row. */
 export interface ImportHooks {
   readonly onProgress: (event: ImportProgressEvent) => void;
   readonly isCancelled: () => boolean | Promise<boolean>;
+  readonly onWrittenPaths?: (paths: readonly string[]) => void | Promise<void>;
 }
