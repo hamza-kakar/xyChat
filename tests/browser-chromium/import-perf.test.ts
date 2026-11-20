@@ -255,7 +255,7 @@ describe('import scale (§22 M3 acceptance, ADR 0007 addendum)', () => {
         expect(probe.mediaOk).toBe(true);
       }
       // Review Major 9 verify: streaming keeps the phase roughly linear.
-      const [first, second] = timings;
+      const [first = 0, second = 0] = timings;
       expect(first).toBeGreaterThan(0);
       expect(second).toBeGreaterThan(0);
       expect(second / first).toBeLessThan(2.5);
