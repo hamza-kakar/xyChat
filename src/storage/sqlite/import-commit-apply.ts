@@ -15,7 +15,8 @@ import { planMerge, type MergeEntry, type MergedMessage } from '../../core/merge
 import { tsLocalToKey } from './ts-key';
 import type { SqliteDatabase } from './open';
 import type { ImportCommitInput, InsertableAttachment, InsertableMessage } from './import-commit';
-import { applyIncomingRow, type ApplyContext } from './import-commit-insert';
+import { applyIncomingRows, type ApplyContext } from './import-commit-insert';
+import { dropFtsTriggers, restoreFtsTriggersAndBackfill } from './fts-triggers';
 
 /** Stored-side entry loaded from the database for planMerge. */
 export interface StoredEntry {
@@ -268,11 +269,18 @@ export function applyPlan(
 
   // Displaced stored rows vacate their positions first, then incoming-only
   // rows insert at their final positions (no transient UNIQUE collisions).
+  // Bulk-load path (ADR 0012): when messages will be inserted, the FTS sync
+  // triggers drop for the inserts and the index backfills for the import's
+  // own rows at the end — per-row trigram triggers cost ~8× the insert
+  // otherwise. All inside this transaction: a rollback restores the triggers
+  // atomically.
+  if (incomingFinals.length > 0) {
+    dropFtsTriggers(db);
+  }
   resequenceDisplacedRows(db, displaced);
-  let messagesInserted = 0;
-  for (const { merged, finalSeq } of incomingFinals) {
-    applyIncomingRow(ctx, merged, finalSeq, incomingByFingerprint);
-    messagesInserted += 1;
+  const messagesInserted = applyIncomingRows(ctx, incomingFinals, incomingByFingerprint);
+  if (messagesInserted > 0) {
+    restoreFtsTriggersAndBackfill(db, input.importId);
   }
 
   return {

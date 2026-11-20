@@ -46,6 +46,7 @@ function stubDb(failExec: boolean): SqliteDatabase & { readonly closed: () => bo
     },
     selectObjects: () => [],
     selectArrays: () => [],
+    runEach: () => undefined,
     run: () => undefined,
     transaction: <T>(fn: () => T): T => fn(),
     lastInsertRowId: () => 0,

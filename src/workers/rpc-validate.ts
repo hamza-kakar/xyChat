@@ -1,5 +1,5 @@
 /**
- * RPC input validation (AGENTS.md §18.5, review Major 9): every db.worker
+ * RPC input validation (AGENTS.md §18.5): every db.worker
  * method validates its inputs with Valibot at the worker boundary before
  * touching the repository. Invalid data → typed RpcValidationError (the
  * worker answers INVALID_INPUT), never undefined behavior.
