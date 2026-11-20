@@ -77,14 +77,17 @@ export interface DbApi {
   rollbackInProgressImports(): Promise<readonly string[]>;
   /** Marks a cancelled import (user cancel after media rollback, §9.3). */
   markImportCancelled(importId: string): Promise<void>;
-  /** Marks a failed import (§9.3). The detail lives in the client-side
-   * error and the logger — never in the import row (§18.7). */
+  /** Marks a failed import (§9.3). */
   markImportFailed(importId: string): Promise<void>;
-  /**
-   * Takes one end of the commit MessageChannel (§3.2): import.worker sends
-   * commit requests and written-path batches over the port; db.worker —
-   * the ONLY SQLite owner (§3.2) — executes them. The port is transferred.
-   */
+  /** Fingerprints whose media the stored chat already holds (§9.2 step 8:
+   * the media phase skips rewriting them; review Blocker 2). */
+  listStoredFingerprints(chatId: string): Promise<readonly string[]>;
+  /** §9.3 orphan sweep, list half: OPFS paths no attachment row references. */
+  listOrphanMedia(): Promise<readonly string[]>;
+  /** §9.3 orphan sweep, delete half: removes the given OPFS paths. */
+  deleteOrphanMedia(paths: readonly string[]): Promise<number>;
+  /** Takes the db-side end of the commit MessageChannel (§3.2);
+   * transferred by the caller. */
   connectCommitPort(port: MessagePort): void;
   /** Raw attachment rows for a message (media viewer, §12.5). */
   getAttachmentsForMessage(messageId: number): Promise<readonly Attachment[]>;

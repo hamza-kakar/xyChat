@@ -324,6 +324,13 @@ export const rpcInput = {
   commitImport(method: string, input: unknown): ImportCommitInput {
     return withSchema(method, COMMIT_IMPORT_INPUT, input);
   },
+
+  /** Non-throwing variant for the §3.2 commit-port dispatcher: null when
+   * invalid (§18.5). */
+  tryCommitImport(input: unknown): ImportCommitInput | null {
+    const result = safeParse(COMMIT_IMPORT_INPUT, input);
+    return result.success ? result.output : null;
+  },
   writtenPaths(method: string, input: unknown): readonly string[] {
     return withSchema(method, WRITTEN_PATHS, input);
   },

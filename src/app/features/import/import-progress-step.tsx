@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { en } from '../../i18n/en';
+import { acquireScreenWakeLock, type WakeLockHandle } from '../../../platform/wake-lock';
 import { onImportProgress } from '../../../client/import-client';
 
 /** Props for {@link ImportProgressStep}. */
@@ -31,6 +32,35 @@ export function ImportProgressStep({ onCancel }: ImportProgressStepProps) {
       setCurrent(event);
     });
     return unsubscribe;
+  }, []);
+
+  // §12.8.5 (review Blocker 4): keep the screen awake while the import
+  // runs; released on unmount (done/cancel/fail) and re-acquired when the
+  // tab becomes visible again.
+  const [, setWakeLock] = useState<WakeLockHandle | null>(null);
+  useEffect(() => {
+    let active = true;
+    let handle: WakeLockHandle | null = null;
+    const acquire = (): void => {
+      void acquireScreenWakeLock().then((result) => {
+        if (active && result.ok && result.value !== null) {
+          handle = result.value;
+          setWakeLock(result.value);
+        }
+      });
+    };
+    acquire();
+    const onVisible = (): void => {
+      if (document.visibilityState === 'visible') {
+        acquire();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      active = false;
+      document.removeEventListener('visibilitychange', onVisible);
+      void handle?.release();
+    };
   }, []);
 
   const phaseIndex = PHASES.findIndex((phase) => phase.id === current.phase);

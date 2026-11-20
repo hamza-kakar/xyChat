@@ -137,6 +137,12 @@ export const importClient = {
       fileBytes: request.file.size,
       parserVersion: PARSER_VERSION,
     });
+    // §9.2 step 8 (review Blocker 2): fingerprints whose media is already
+    // stored — the media phase skips rewriting those files.
+    const alreadyStored =
+      request.targetChatId !== null
+        ? new Set(await dbClient.listStoredFingerprints(request.targetChatId))
+        : new Set<string>();
     const channel = new MessageChannel();
     await dbClient.connectCommitPort(Comlink.transfer(channel.port1, [channel.port1]));
     const hooks = {
@@ -156,6 +162,7 @@ export const importClient = {
         title: request.title,
         isGroup: request.isGroup,
         chatId,
+        alreadyStored,
       },
       importId,
     };

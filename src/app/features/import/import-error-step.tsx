@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { en } from '../../i18n/en';
+import { APP_VERSION } from '../../config';
+import { PARSER_VERSION } from '../../../core/parser';
 import type { ImportError } from '../../../workers/import-detect';
 
 /** Props for {@link ImportErrorStep}. */
@@ -15,7 +17,14 @@ export function ImportErrorStep({ error, onRetry }: ImportErrorStepProps) {
   const [copied, setCopied] = useState(false);
   const mapped: string = en.import.errors[error.code];
   const message = error.code === 'CANCELLED' ? en.import.errorCancelled : mapped;
-  const diagnostics = JSON.stringify({ code: error.code, detail: error.detail }, null, 2);
+  // §12.8/§15.4 (review Blocker 3): diagnostics carry the typed code,
+  // counts and app/parser versions — never detail strings (which may
+  // contain engine text), never message or file content.
+  const diagnostics = JSON.stringify(
+    { code: error.code, appVersion: APP_VERSION, parserVersion: PARSER_VERSION },
+    null,
+    2,
+  );
 
   return (
     <main className="safe-area bg-surface mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-4 px-6">

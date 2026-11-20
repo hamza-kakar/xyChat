@@ -1,37 +1,29 @@
 /**
- * Archive reader (AGENTS.md §9.2 steps 1–3, §15.2): opens a `.zip` or
- * `.txt` export, validates size and magic bytes, enforces the zip-bomb and
- * entry limits, checks free storage quota, locates the chat text, and
- * decodes it. No full-archive load into memory: zip.js reads the central
- * directory lazily and streams one entry at a time.
+ * Archive reader (AGENTS.md §9.2 steps 1–3, §15.2, review Major 9): opens a
+ * `.zip` or `.txt` export, validates size and magic bytes, enforces the
+ * zip-bomb and entry limits, checks free storage quota, locates the chat
+ * text, and decodes it. The media phase opens the archive ONCE and streams
+ * entries chunk-by-chunk into OPFS through the sync-handle sink — the
+ * central directory is never re-parsed per file, and no entry is buffered
+ * whole (§9.2 step 8, §9.4).
  *
  * Storage estimation is dependency-injected (§18.4) so the safety checks
- * run in Node tests against a fake.
+ * run in Node tests against a fake. Error details carry COUNTS ONLY —
+ * never entry names or raw exception text (§15.4, review Blocker 3).
  */
 import * as zipJs from '@zip.js/zip.js';
 import { err, ok, type Result } from '../core/result';
 import { IMPORT_LIMITS } from '../core/limits';
+import {
+  hasAcceptedExtension,
+  isBombEntry,
+  isOversizedEntry,
+  isSafeEntryName,
+  type ArchiveError,
+} from './archive-gates';
 
-/** Error codes for archive reading (§9.2, §15.2). */
-export type ArchiveErrorCode =
-  | 'UNSUPPORTED_FILE_TYPE'
-  | 'FILE_TOO_LARGE'
-  | 'CORRUPT_ARCHIVE'
-  | 'ARCHIVE_TOO_LARGE'
-  | 'ENTRY_TOO_LARGE'
-  | 'COMPRESSION_RATIO'
-  | 'QUOTA_EXCEEDED'
-  | 'PATH_TRAVERSAL'
-  | 'TOO_MANY_ENTRIES'
-  | 'ENTRY_NOT_FOUND'
-  | 'NO_CHAT_TEXT_FOUND';
-
-/** A structured archive-read failure. */
-export interface ArchiveError {
-  readonly code: ArchiveErrorCode;
-  /** Counts/positions only — never file content (§18.7). */
-  readonly detail: string;
-}
+export type { ArchiveError, ArchiveErrorCode } from './archive-gates';
+export { isSafeEntryName } from './archive-gates';
 
 /** The located chat text plus archive facts for the report (§9.2 step 11). */
 export interface ArchiveContent {
@@ -62,49 +54,11 @@ export const productionArchiveReaderDeps: ArchiveReaderDeps = {
 /** ZIP local-file-header magic (§9.2 step 1). */
 const ZIP_MAGIC = [0x50, 0x4b, 0x03, 0x04];
 
-/** True when the file name ends with an accepted extension. */
-function hasAcceptedExtension(name: string): boolean {
-  return name.toLowerCase().endsWith('.zip') || name.toLowerCase().endsWith('.txt');
-}
-
 /** True when the leading bytes match the ZIP magic. */
 function hasZipMagic(bytes: Uint8Array): boolean {
   return (
     bytes.length >= ZIP_MAGIC.length && ZIP_MAGIC.every((byte, index) => bytes[index] === byte)
   );
-}
-
-/** Rejects entry names with path traversal, absolute paths, NULs, or
- * backslash separators (§15.2 — non-conformant in zip names and a
- * Windows-style traversal vector; conservative per §0.6). Exported for the
- * safety-table unit tests; zip.js additionally rejects some unsafe names at
- * read time (surfacing as CORRUPT_ARCHIVE). */
-export function isSafeEntryName(name: string): boolean {
-  if (name.includes('\u0000')) {
-    return false;
-  }
-  if (name.includes('\\')) {
-    return false;
-  }
-  if (name.startsWith('/') || /^[a-zA-Z]:/u.test(name)) {
-    return false;
-  }
-  const segments = name.split('/');
-  return segments.every((segment) => segment !== '..' && segment !== '');
-}
-
-/** True when an entry's declared sizes exceed the §15.2 bomb ratio. */
-function isBombEntry(entry: zipJs.EntryMetaData): boolean {
-  if (entry.compressedSize <= 0) {
-    return false;
-  }
-  const ratio = entry.uncompressedSize / entry.compressedSize;
-  return ratio > IMPORT_LIMITS.maxCompressionRatio;
-}
-
-/** True when a media entry declares more bytes than the §15.2 cap. */
-function isOversizedEntry(entry: zipJs.EntryMetaData): boolean {
-  return entry.uncompressedSize > IMPORT_LIMITS.maxMediaEntryBytes;
 }
 
 /** Checks free quota against 1.1× the expected footprint (§9.2 step 1). */
@@ -122,32 +76,32 @@ async function checkQuota(
     return ok(true);
   }
   if (free < required) {
-    return err({
-      code: 'QUOTA_EXCEEDED',
-      detail: `free ${free}, required ${required}`,
-    });
+    return err({ code: 'QUOTA_EXCEEDED', detail: `free ${free}, required ${required}` });
   }
   return ok(true);
 }
 
 /**
- * Reads the chat text out of an export file.
+ * Reads the chat text out of an export file. The file name arrives as an
+ * explicit parameter — the caller's Blob is never mutated (review nit).
  *
- * @param file The user-selected `File` (Blob) from the import picker.
+ * @param file The user-selected blob from the import picker.
+ * @param fileName The picker's file name (extension gate + title source).
  * @param deps Storage estimate; production default uses
  *   `navigator.storage.estimate` (§9.2 step 1).
  * @returns The decoded chat text plus archive facts, or a structured error.
  * @example
- * const result = await readArchive(file);
+ * const result = await readArchive(file, 'export.zip');
  * if (!result.ok) showError(result.error.code);
  */
 export async function readArchive(
-  file: Blob & { readonly name: string },
+  file: Blob,
+  fileName: string,
   deps: ArchiveReaderDeps = productionArchiveReaderDeps,
 ): Promise<Result<ArchiveContent, ArchiveError>> {
   // §9.2 step 1: validate size and type before touching the contents.
-  if (!hasAcceptedExtension(file.name)) {
-    return err({ code: 'UNSUPPORTED_FILE_TYPE', detail: file.name.slice(-24) });
+  if (!hasAcceptedExtension(fileName)) {
+    return err({ code: 'UNSUPPORTED_FILE_TYPE', detail: 'extension not accepted' });
   }
   if (file.size > IMPORT_LIMITS.maxTextFileBytes) {
     return err({ code: 'FILE_TOO_LARGE', detail: `${file.size} bytes` });
@@ -192,7 +146,6 @@ async function readTextFile(file: Blob): Promise<Result<ArchiveContent, ArchiveE
 
 /** The zip scan result: the chosen chat entry plus archive facts. */
 interface ZipScan {
-  readonly chatEntry: zipJs.Entry;
   readonly chatEntryName: string;
   readonly uncompressedTotalBytes: number;
 }
@@ -221,11 +174,14 @@ async function scanZip(file: Blob): Promise<Result<ZipScan, ArchiveError>> {
       const name = entry.filename;
       // §15.2: reject traversal/absolute/NUL names anywhere in the archive.
       if (!isSafeEntryName(name)) {
-        return err({ code: 'PATH_TRAVERSAL', detail: name.slice(-40) });
+        return err({ code: 'PATH_TRAVERSAL', detail: 'unsafe entry name' });
       }
       // §15.2: zip-bomb and per-entry size caps from declared metadata.
       if (isBombEntry(entry)) {
-        return err({ code: 'COMPRESSION_RATIO', detail: name.slice(-40) });
+        return err({
+          code: 'COMPRESSION_RATIO',
+          detail: `ratio over ${IMPORT_LIMITS.maxCompressionRatio}:1`,
+        });
       }
       if (isOversizedEntry(entry)) {
         return err({ code: 'ENTRY_TOO_LARGE', detail: `${entry.uncompressedSize} bytes` });
@@ -257,9 +213,9 @@ async function scanZip(file: Blob): Promise<Result<ZipScan, ArchiveError>> {
     if (chatEntry === null) {
       return err({ code: 'NO_CHAT_TEXT_FOUND', detail: `${entries.length} entries scanned` });
     }
-    return ok({ chatEntry, chatEntryName, uncompressedTotalBytes });
+    return ok({ chatEntryName, uncompressedTotalBytes });
   } catch (error) {
-    return err({ code: 'CORRUPT_ARCHIVE', detail: String(error).slice(0, 160) });
+    return err({ code: 'CORRUPT_ARCHIVE', detail: errorNameOf(error) });
   } finally {
     await reader?.close();
   }
@@ -279,7 +235,7 @@ async function readChatEntry(
         candidate.filename === scan.chatEntryName && !candidate.directory,
     );
     if (entry === undefined) {
-      return err({ code: 'ENTRY_NOT_FOUND', detail: scan.chatEntryName.slice(-40) });
+      return err({ code: 'ENTRY_NOT_FOUND', detail: 'chat text entry vanished' });
     }
     const text = await entry.getData(new zipJs.TextWriter());
     const { text: decoded, replacementChars } = decodeTextLossy(text);
@@ -290,10 +246,24 @@ async function readChatEntry(
       uncompressedTotalBytes: scan.uncompressedTotalBytes,
     });
   } catch (error) {
-    return err({ code: 'CORRUPT_ARCHIVE', detail: String(error).slice(0, 160) });
+    return err({ code: 'CORRUPT_ARCHIVE', detail: errorNameOf(error) });
   } finally {
     await reader?.close();
   }
+}
+
+export {
+  openArchive,
+  listMediaEntries,
+  type OpenedArchive,
+  type ChunkSink,
+} from './opened-archive';
+
+/** Raw exception TEXT can echo file names or values (§15.4) — diagnostics
+ * carry the error's class name only; the full text goes to the worker
+ * logger sink, never to the UI (§18.7). */
+function errorNameOf(error: unknown): string {
+  return error instanceof Error ? error.name : 'unknown error';
 }
 
 /** Decodes a zip-entry text that zip.js already produced, counting U+FFFD. */
@@ -324,73 +294,4 @@ function decodeUtf8Lossy(buffer: ArrayBuffer): {
     }
   }
   return { text, replacementChars };
-}
-
-/**
- * Reads raw bytes of one zip entry (media writing, §9.2 step 8), enforcing
- * the §15.2 entry-size and bomb-ratio caps before decompression.
- *
- * @returns The entry bytes, or a structured error (`ENTRY_NOT_FOUND` when
- *   the name is absent from the archive).
- */
-export async function readZipEntryBytes(
-  file: Blob,
-  entryName: string,
-): Promise<Result<Uint8Array, ArchiveError>> {
-  let reader: zipJs.ZipReader<zipJs.BlobReader> | null = null;
-  try {
-    reader = new zipJs.ZipReader(new zipJs.BlobReader(file));
-    for (const entry of await reader.getEntries()) {
-      if (entry.filename !== entryName || entry.directory) {
-        continue;
-      }
-      if (isOversizedEntry(entry)) {
-        return err({ code: 'ENTRY_TOO_LARGE', detail: `${entry.uncompressedSize} bytes` });
-      }
-      if (isBombEntry(entry)) {
-        return err({ code: 'COMPRESSION_RATIO', detail: entryName.slice(-40) });
-      }
-      return ok(await entry.getData(new zipJs.Uint8ArrayWriter()));
-    }
-    return err({ code: 'ENTRY_NOT_FOUND', detail: entryName.slice(-40) });
-  } catch (error) {
-    return err({ code: 'CORRUPT_ARCHIVE', detail: String(error).slice(0, 160) });
-  } finally {
-    await reader?.close();
-  }
-}
-
-/** Lists safe media entry names of an archive (§9.2 step 8 input). All
- * entries here already passed the scan caps when the archive was opened;
- * this rescan guards direct callers. */
-export async function listMediaEntries(
-  file: Blob,
-): Promise<Result<readonly { readonly name: string; readonly size: number }[], ArchiveError>> {
-  let reader: zipJs.ZipReader<zipJs.BlobReader> | null = null;
-  try {
-    reader = new zipJs.ZipReader(new zipJs.BlobReader(file));
-    const out: { readonly name: string; readonly size: number }[] = [];
-    for (const entry of await reader.getEntries()) {
-      if (entry.directory) {
-        continue;
-      }
-      const name = entry.filename;
-      if (
-        !isSafeEntryName(name) ||
-        name.includes('__MACOSX') ||
-        name.split('/').pop()?.startsWith('.') === true
-      ) {
-        continue;
-      }
-      if (name.toLowerCase().endsWith('.txt')) {
-        continue;
-      }
-      out.push({ name, size: entry.uncompressedSize });
-    }
-    return ok(out);
-  } catch (error) {
-    return err({ code: 'CORRUPT_ARCHIVE', detail: String(error).slice(0, 160) });
-  } finally {
-    await reader?.close();
-  }
 }

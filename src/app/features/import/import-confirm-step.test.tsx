@@ -39,6 +39,7 @@ function reportWith(orderSource: 'unambiguous' | 'locale-hint' | 'user'): Detect
     isGroup: true,
     participants: ['Sara', 'Ali Khan'],
     archiveBytes: 1234,
+    freeBytes: 3_500_000,
     uncompressedTotalBytes: 2345,
     replacementChars: 0,
     messagesCount: 1,

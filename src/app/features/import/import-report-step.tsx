@@ -11,6 +11,9 @@ export interface ImportReportStepProps {
 /** Report step (§12.8.6): success summary, warnings grouped by code with
  * plain-language notes, and the Open chat button. Diagnostics (codes and
  * counts only, §18.7) come from the outcome, never message content. */
+/** Plain-language explanations keyed by warning code (§12.8 step 6). */
+const warningExplanations: Readonly<Record<string, string>> = en.import.warnings;
+
 export function ImportReportStep({ outcome, onOpenChat }: ImportReportStepProps) {
   const navigate = useNavigate();
   const warningEntries = Object.entries(outcome.report.warningsByCode);
@@ -61,11 +64,16 @@ export function ImportReportStep({ outcome, onOpenChat }: ImportReportStepProps)
       </ul>
       {warningEntries.length > 0 ? (
         <ul className="text-text-muted flex flex-col gap-1 text-xs">
-          {warningEntries.map(([code, count]) => (
-            <li key={code}>
-              {code} × {count}
-            </li>
-          ))}
+          {warningEntries.map(([code, count]) => {
+            const explanation = warningExplanations[code] ?? code;
+            return (
+              <li key={code}>
+                {en.import.reportWarningsCount
+                  .replace('{count}', String(count))
+                  .replace('{text}', explanation)}
+              </li>
+            );
+          })}
         </ul>
       ) : null}
       <button

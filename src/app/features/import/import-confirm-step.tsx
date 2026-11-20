@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { en } from '../../i18n/en';
 import { formatTimestamp } from '../../../core/dates/format';
+import { formatBytes } from '../../i18n/format-string';
 import type { DetectReport } from '../../../workers/import-detect';
 import type { ChatId } from '../../../core/ids';
 
@@ -184,6 +185,14 @@ export function ImportConfirmStep({
         {summary}
         {missing > 0
           ? ` · ${en.import.confirmMissingMedia.replace('{missing}', String(missing))}`
+          : ''}
+      </p>
+      <p className="text-text-muted text-xs">
+        {en.import.confirmQuota
+          .replace('{archive}', formatBytes(file.size))
+          .replace('{uncompressed}', formatBytes(report.uncompressedTotalBytes))}
+        {report.freeBytes !== null
+          ? ` · ${en.import.confirmFreeStorage.replace('{free}', formatBytes(report.freeBytes))}`
           : ''}
       </p>
 

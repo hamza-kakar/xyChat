@@ -40,6 +40,59 @@ function classify(error: unknown): MediaWriteErrorCode {
  * @param bytes Media bytes to write.
  * @returns The written path and byte count, or a typed failure.
  */
+/** A streaming writer over one OPFS file's sync access handle (review
+ * Major 9: entries stream chunk-by-chunk — the largest in-memory object is
+ * one decompressed chunk, §9.2 step 8). */
+export interface MediaWriteSink {
+  /** Appends one chunk at the tracked position. */
+  write(chunk: Uint8Array): Promise<void>;
+  /** Flushes and releases the handle; idempotent. */
+  close(): Promise<void>;
+}
+
+/** Opens the streaming sink for one OPFS path (§10.4). The handle closes
+ * even when a write fails — a leaked handle locks the file. */
+export async function openMediaWriteSink(
+  path: string,
+): Promise<Result<MediaWriteSink, MediaWriteError>> {
+  try {
+    const root = await navigator.storage.getDirectory();
+    const segments = path.split('/');
+    const fileName = segments.pop();
+    if (fileName === undefined || fileName === '') {
+      return err({ code: 'EMPTY_NAME' as const, detail: path });
+    }
+    let dir = root;
+    for (const segment of segments) {
+      dir = await dir.getDirectoryHandle(segment, { create: true });
+    }
+    const fileHandle = await dir.getFileHandle(fileName, { create: true });
+    const access = await fileHandle.createSyncAccessHandle();
+    let position = 0;
+    let closed = false;
+    const close = (): Promise<void> => {
+      if (!closed) {
+        closed = true;
+        access.close();
+      }
+      return Promise.resolve();
+    };
+    return ok({
+      write: (chunk: Uint8Array) => {
+        if (closed) {
+          return Promise.reject(new Error('sink closed'));
+        }
+        access.write(chunk, { at: position });
+        position += chunk.byteLength;
+        return Promise.resolve();
+      },
+      close,
+    });
+  } catch (error) {
+    return err({ code: classify(error), detail: String(error).slice(0, 200) });
+  }
+}
+
 export async function writeMediaFile(path: string, bytes: Uint8Array): Promise<MediaWrite> {
   try {
     const root = await navigator.storage.getDirectory();
