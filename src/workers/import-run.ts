@@ -20,28 +20,12 @@ import { formatLocalDateTime } from '../storage/sqlite/local-date-time-parse';
 import type { ParsedMessage } from '../core/model';
 import type { InsertableMessage } from '../storage/sqlite/import-commit';
 import type { ImportError } from './import-detect';
+import type { ImportHooks, ImportProgressEvent } from './import-progress';
 
-/** Progress phases of the run (§9.1 event `phase`). */
-export type RunPhase = 'parsing' | 'fingerprinting';
-
-/** One progress event (§9.1: `{ phase, current, total }`). */
-export interface RunProgress {
-  readonly phase: RunPhase;
-  readonly current: number;
-  readonly total: number;
-}
-
-/** Cancellation flag — polled between chunks; the UI mutates its backing
- * state through the Comlink proxy (§18.8). */
-export interface CancelFlag {
-  readonly isCancelled: () => boolean;
-}
-
-/** Progress callbacks; every phase reports at most every 5,000 items (§8.2). */
-export interface RunHooks {
-  readonly onProgress: (progress: RunProgress) => void;
-  readonly isCancelled: () => boolean;
-}
+/** Progress callbacks; every phase reports at most every 5,000 items (§8.2).
+ * Re-exported for the worker API's typing. */
+export type RunHooks = ImportHooks;
+export type RunProgress = ImportProgressEvent;
 
 /** The run outcome: commit-ready messages plus the facts for the report. */
 export interface ImportRunResult {
@@ -74,7 +58,7 @@ export async function runImportParse(
   hashBytes: HashBytes,
   hooks: RunHooks,
 ): Promise<Result<ImportRunResult, ImportError>> {
-  const parsed = drainParse(text, format, hooks);
+  const parsed = await drainParse(text, format, hooks);
   if (!parsed.ok) {
     return parsed;
   }
@@ -107,11 +91,11 @@ interface ParsedBatch {
 /** Drives the parser iterator, collecting messages and warnings. Cancellation
  * is checked on progress events — latency is at most PROGRESS_EVERY lines
  * (§18.8). Malformed lines arrive as warnings and never stop the run (§8.1). */
-function drainParse(
+async function drainParse(
   text: string,
   format: DetectedFormat,
   hooks: RunHooks,
-): Result<ParsedBatch, ImportError> {
+): Promise<Result<ParsedBatch, ImportError>> {
   const iterator = parseChatIterator(text, { format });
   const messages: ParsedMessage[] = [];
   let lastReported = 0;
@@ -121,7 +105,7 @@ function drainParse(
     if (event.type === 'message') {
       messages.push(event.message);
     } else if (event.type === 'progress') {
-      if (hooks.isCancelled()) {
+      if (await hooks.isCancelled()) {
         return err({ code: 'CANCELLED', detail: 'cancelled during parse' });
       }
       if (event.linesProcessed - lastReported >= PROGRESS_EVERY) {
@@ -166,7 +150,7 @@ async function fingerprintAll(
     out.push({ fingerprint: await fingerprint(input, hashBytes), message });
     if (index - lastReported >= PROGRESS_EVERY) {
       lastReported = index;
-      if (hooks.isCancelled()) {
+      if (await hooks.isCancelled()) {
         return err({ code: 'CANCELLED', detail: 'cancelled during fingerprinting' });
       }
       hooks.onProgress({ phase: 'fingerprinting', current: index, total: messages.length });

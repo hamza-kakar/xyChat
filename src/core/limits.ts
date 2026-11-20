@@ -21,4 +21,8 @@ export const IMPORT_LIMITS = {
   maxUncompressedTotalBytes: 20 * GIB,
   /** Abort an entry whose compression ratio exceeds this value. */
   maxCompressionRatio: 1000,
+  /** Thumbnail long edge in pixels (§9.2 step 9). */
+  thumbnailLongEdge: 320,
+  /** Thumbnail JPEG quality (§9.2 step 9). */
+  thumbnailQuality: 0.8,
 } as const;
