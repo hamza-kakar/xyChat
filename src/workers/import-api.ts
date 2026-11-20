@@ -67,7 +67,12 @@ export interface ImportWorkerApi {
    * derives the confirmation-screen metadata. The worker stays stateless —
    * the caller keeps the file and re-sends it to start the pipeline.
    */
-  detect(file: Blob, fileName: string, localeHint?: string): Promise<DetectAnswer>;
+  detect(
+    file: Blob,
+    fileName: string,
+    localeHint?: string,
+    dateOrderOverride?: 'DMY' | 'MDY',
+  ): Promise<DetectAnswer>;
   /**
    * Runs the confirmed pipeline (§9.2 steps 6–11): parse → fingerprint →
    * media writes → commit over the MessagePort. Cancellation via the

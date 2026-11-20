@@ -1,3 +1,4 @@
+import { Link } from 'react-router';
 import { APP_NAME, APP_VERSION } from '../../config';
 import { en } from '../../i18n/en';
 import { formatString } from '../../i18n/format-string';
@@ -8,6 +9,12 @@ export function HomeScreen() {
     <main className="safe-area bg-surface flex min-h-dvh flex-col items-center justify-center gap-3 px-6 text-center">
       <h1 className="text-text text-3xl font-bold tracking-tight">{APP_NAME}</h1>
       <p className="text-text-muted max-w-sm">{en.tagline}</p>
+      <Link
+        to="/import"
+        className="bg-accent text-surface mt-2 min-h-11 rounded-lg px-6 py-2 font-semibold"
+      >
+        {en.home.importButton}
+      </Link>
       <p className="text-text-muted text-sm">
         {formatString(en.home.versionLabel, { version: APP_VERSION })}
       </p>
