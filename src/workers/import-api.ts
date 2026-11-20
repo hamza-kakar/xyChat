@@ -28,7 +28,7 @@ export interface ConfirmedImport {
    * paths key on it BEFORE the commit creates the chats row (§9.2 step 8). */
   readonly chatId: string;
   /** Fingerprints whose media the stored chat already holds (§9.2 step 8:
-   * the media phase skips rewriting them; review Blocker 2). */
+   * the media phase skips rewriting them). */
   readonly alreadyStored: ReadonlySet<string>;
 }
 

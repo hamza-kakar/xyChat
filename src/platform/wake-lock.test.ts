@@ -1,5 +1,5 @@
 /**
- * Wake-lock wrapper tests (§12.8.5, review Blocker 4): acquires when
+ * Wake-lock wrapper tests (§12.8.5): acquires when
  * navigator.wakeLock exists, ok(null) when unsupported, err on rejection.
  */
 import { describe, expect, it, vi } from 'vitest';

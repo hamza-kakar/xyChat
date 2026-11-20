@@ -1,10 +1,9 @@
 /**
- * Import pipeline orchestration (AGENTS.md §9.2 steps 5–11, review Major
- * 8): the confirmed pipeline — re-read archive → parse + fingerprint →
+ * Import pipeline orchestration (AGENTS.md §9.2 steps 5–11): the confirmed pipeline — re-read archive → parse + fingerprint →
  * media writes → commit over the §3.2 MessagePort — lives in this gated
  * page module; import.worker.ts only wires production IO adapters.
  *
- * Rollback (§9.3, review Major 6): every failure AFTER the media phase
+ * Rollback (§9.3): every failure AFTER the media phase
  * (commit error, flush throw, unexpected exception) deletes the written
  * paths before answering, and cancellation is checked once more just
  * before the commit.
@@ -122,8 +121,8 @@ export function buildReport(
   };
 }
 
-/** Rollback helper for failures AFTER the media phase (§9.3, review Major
- * 6): the commit never ran, so the written files are orphans — delete them
+/** Rollback helper for failures AFTER the media phase (§9.3): the commit
+ * never ran, so the written files are orphans — delete them
  * with the same deps the media phase used. */
 async function rollbackWritten(
   mediaIO: MediaPhaseDeps,
@@ -194,8 +193,8 @@ async function finishAfterMedia(
   const input = assembleCommitInput(file, confirmed, state);
   const committed = await commitOverPort(state.commitPort, input);
   if (!committed.ok) {
-    // §9.3 (review Major 6): the commit failed — the written files would be
-    // orphans (the row leaves in_progress via markImportFailed).
+    // §9.3: the commit failed — the written files would be orphans (the
+    // row leaves in_progress via markImportFailed).
     await rollbackWritten(mediaIO, writtenPaths);
     return { ok: false, error: committed.error };
   }
@@ -273,8 +272,8 @@ export async function runPipeline(
       startedAt,
     });
   } catch (error) {
-    // §9.3 (review Major 6): an unexpected exception after the media phase
-    // must still roll the written files back.
+    // §9.3: an unexpected exception after the media phase must still roll
+    // the written files back.
     await rollbackWritten(mediaIO, writtenPaths);
     return { ok: false, error: { code: 'INTERNAL', detail: errorNameOf(error) } };
   }

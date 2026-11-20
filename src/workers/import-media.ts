@@ -1,11 +1,11 @@
 /**
  * Import media phase (AGENTS.md §9.2 steps 8–9, §9.3): for every media
  * message referenced by the confirmed export, STREAMS the entry bytes from
- * the opened archive into OPFS through the sync-handle sink (review Major
- * 9: one opened zip, chunked writes, nothing buffered whole), generates
+ * the opened archive into OPFS through the sync-handle sink (one opened
+ * zip, chunked writes, nothing buffered whole), generates
  * JPEG thumbnails for images, and produces the attachment rows for the
  * commit. Fingerprints already `present` in the stored chat are SKIPPED —
- * re-importing a 1 GB export writes nothing (§9.2 step 8, review Blocker).
+ * re-importing a 1 GB export writes nothing (§9.2 step 8).
  * Missing files become `missing` rows; parser-omitted media becomes
  * `omitted` rows (§8.6).
  *
@@ -36,7 +36,7 @@ export interface ThumbnailResult {
 }
 
 /** Injectable IO for the media phase (§18.4). The opened archive is the
- * ONE zip reader shared by the whole phase (review Major 9). */
+ * ONE zip reader shared by the whole phase. */
 export interface MediaPhaseDeps {
   /** The opened archive (single central-directory parse). */
   readonly archive: OpenedArchive;
@@ -90,7 +90,7 @@ interface MediaContext {
  * @param chatId The chat id minted by the caller; media paths key on it.
  * @param messages The fingerprinted messages (from runImportParse).
  * @param alreadyStored Fingerprints whose media the stored chat already
- *   holds — their files are NOT rewritten (§9.2 step 8, review Blocker).
+ *   holds — their files are NOT rewritten (§9.2 step 8).
  * @param deps Injectable IO (§18.4).
  * @param hooks Progress (writing-media, thumbnails), cancellation, and the
  *   cumulative written-path flush (§9.2 step 8).
@@ -134,7 +134,7 @@ export async function writeImportMedia(
   const omitted = messages.filter((item) => item.message.attachment?.status === 'omitted');
 
   // §9.1 determinate thumbnails: count the qualifying images up front and
-  // report a running current/total for the whole phase (review Minor).
+  // report a running current/total for the whole phase.
   const thumbnailTotal = referenced.filter((item) => {
     const name = item.message.attachment?.fileName ?? '';
     return (
@@ -261,7 +261,7 @@ async function writeReferenced(
   });
 }
 
-/** Streams one archive entry into the OPFS sink path (review Major 9:
+/** Streams one archive entry into the OPFS sink path:
  * chunked writes through the sync handle — nothing buffered whole). */
 async function streamEntryToOpfs(
   ctx: MediaContext,

@@ -88,7 +88,7 @@ async function runScaleImport(): Promise<string[]> {
   }
 
   // §9.2 steps 8–9: media classification + streamed writes (injected OPFS
-  // sink; the opened archive is the ONE reader, review Major 9).
+  // sink; the opened archive is the ONE reader).
   return runMediaPhase(file, run.value.messages);
 }
 
@@ -155,7 +155,7 @@ async function runMediaPhase(
 }
 
 /** Runs one media phase over `entryCount` streamed entries; returns the
- * elapsed time (review Major 9 verify: 1k vs 2k within 2.5×). */
+ * elapsed time (verify: 1k vs 2k within 2.5×). */
 async function runLinearProbe(
   entryCount: number,
 ): Promise<{ readonly elapsed: number; readonly mediaOk: boolean }> {

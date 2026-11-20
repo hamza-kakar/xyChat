@@ -1,5 +1,5 @@
 /**
- * Persistent-storage wrapper tests (§12.9, §22 M3, review Blocker 4).
+ * Persistent-storage wrapper tests (§12.9, §22 M3).
  */
 import { describe, expect, it, vi } from 'vitest';
 import { isStoragePersisted, requestPersistentStorage } from './persistence';

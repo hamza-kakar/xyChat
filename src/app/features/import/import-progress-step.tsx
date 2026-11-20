@@ -34,7 +34,7 @@ export function ImportProgressStep({ onCancel }: ImportProgressStepProps) {
     return unsubscribe;
   }, []);
 
-  // §12.8.5 (review Blocker 4): keep the screen awake while the import
+  // §12.8.5: keep the screen awake while the import
   // runs; released on unmount (done/cancel/fail) and re-acquired when the
   // tab becomes visible again.
   const [, setWakeLock] = useState<WakeLockHandle | null>(null);

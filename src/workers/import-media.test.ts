@@ -1,9 +1,9 @@
 /**
  * Import media phase tests (§9.2 steps 8–9, §9.3): classification of
  * present/missing/omitted media, STREAMED writes through the opened-archive
- * handle (review Major 9), cumulative written-path flushes (review
- * Blocker), skip-stored fingerprints, thumbnail degradation, and rollback
- * on cancel/failure — against injected fakes (§18.4).
+ * handle, cumulative written-path flushes, skip-stored fingerprints,
+ * thumbnail degradation, and rollback on cancel/failure — against injected
+ * fakes (§18.4).
  */
 import { describe, expect, it } from 'vitest';
 import { ok, err } from '../core/result';

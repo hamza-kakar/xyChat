@@ -1,5 +1,5 @@
 /**
- * Archive entry gates (AGENTS.md §15.2, review Blocker 3): the shared error
+ * Archive entry gates (AGENTS.md §15.2): the shared error
  * types and per-entry safety predicates used by both the chat-text scan
  * (archive-reader.ts) and the opened media handle (opened-archive.ts).
  * Leaf module — imported by both, no cycles (§18.2).

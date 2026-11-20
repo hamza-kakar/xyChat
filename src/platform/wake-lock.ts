@@ -1,5 +1,5 @@
 /**
- * Screen wake lock (AGENTS.md §12.8 step 5, review Blocker): keeps the
+ * Screen wake lock (AGENTS.md §12.8 step 5): keeps the
  * screen awake during long imports when `navigator.wakeLock` is available.
  * Pure platform wrapper (platform → core only, §3.1); the UI acquires on
  * start and releases on done/cancel/fail/unmount, re-acquiring on

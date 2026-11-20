@@ -112,7 +112,7 @@ const api: ImportWorkerApi = {
       return { ok: false, error: { code: 'INTERNAL', detail: 'commit port not set' } };
     }
     const port = commitPort;
-    // The archive opens ONCE for the whole media phase (review Major 9);
+    // The archive opens ONCE for the whole media phase;
     // the pipeline module closes it when the run settles.
     const opened = await openArchive(options.file);
     if (!opened.ok) {

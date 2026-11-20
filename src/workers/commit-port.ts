@@ -1,5 +1,5 @@
 /**
- * Commit-port message dispatch (AGENTS.md §3.2, review Major 7): a gated
+ * Commit-port message dispatch (AGENTS.md §3.2): a gated
  * page module handling the db-side end of the commit MessageChannel. The
  * WHOLE message union is validated with Valibot — unknown or malformed
  * messages are ignored (no SQL runs) — and commit inputs pass the same

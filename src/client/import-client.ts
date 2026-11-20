@@ -137,7 +137,7 @@ export const importClient = {
       fileBytes: request.file.size,
       parserVersion: PARSER_VERSION,
     });
-    // §9.2 step 8 (review Blocker 2): fingerprints whose media is already
+    // §9.2 step 8: fingerprints whose media is already
     // stored — the media phase skips rewriting those files.
     const alreadyStored =
       request.targetChatId !== null

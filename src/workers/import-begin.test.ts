@@ -1,5 +1,5 @@
 /**
- * Pipeline orchestration tests (§9.2 steps 5–11, §9.3; review Blockers 3/5,
+ * Pipeline orchestration tests (§9.2 steps 5–11, §9.3):
  * Majors 6/8): commit over a fake port, rollback of written paths on commit
  * failure and cancellation, final cancellation check, and name-free
  * diagnostics.

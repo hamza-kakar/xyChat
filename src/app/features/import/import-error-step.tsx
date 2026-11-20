@@ -17,7 +17,7 @@ export function ImportErrorStep({ error, onRetry }: ImportErrorStepProps) {
   const [copied, setCopied] = useState(false);
   const mapped: string = en.import.errors[error.code];
   const message = error.code === 'CANCELLED' ? en.import.errorCancelled : mapped;
-  // §12.8/§15.4 (review Blocker 3): diagnostics carry the typed code,
+  // §12.8/§15.4: diagnostics carry the typed code,
   // counts and app/parser versions — never detail strings (which may
   // contain engine text), never message or file content.
   const diagnostics = JSON.stringify(
