@@ -6,5 +6,5 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.worker.tsbuildinfo"
   },
   "include": ["src/storage", "src/workers"],
-  "exclude": ["src/storage/media-store.ts"]
+  "exclude": ["src/storage/media-store.ts", "src/**/*.test.ts"]
 }
