@@ -69,6 +69,12 @@ export default defineConfig({
         'src/core/parser/pattern-id.ts',
         'src/core/parser/locale/types.ts',
         'src/core/**/index.ts',
+        // Non-TS artifacts and side-effect entry points: CSS carries no
+        // executable lines; main.tsx (document + createRoot + SW register)
+        // and vite-env.d.ts are exercised by every e2e flow (ADR 0007).
+        '**/*.css',
+        'src/app/main.tsx',
+        'src/app/vite-env.d.ts',
       ],
       thresholds: {
         // AGENTS.md §19.4: core ≥ 95% lines, ≥ 90% branches.

@@ -35,6 +35,10 @@ export interface RunReport {
   readonly stats: ParseStats;
   readonly replacementChars: number;
   readonly durationMs: number;
+  /** Media attachment rows by status (§9.2 step 11: stored/missing/omitted). */
+  readonly mediaStored: number;
+  readonly mediaMissing: number;
+  readonly mediaOmitted: number;
 }
 
 /** Pipeline outcome over the wire (§9.2 steps 6–11). */
@@ -49,15 +53,14 @@ export type BeginAnswer =
       readonly error: ImportError;
     };
 
-/** Options for begin() — hooks arrive Comlink.proxy'd from the client. */
+/** Options for begin() — `hooks` is passed as a separate top-level
+ * Comlink.proxy argument (transfer markers are honored at the top level
+ * only). The commit port arrives via setCommitPort (§3.2). */
 export interface BeginOptions {
   readonly file: Blob;
   readonly fileName: string;
   readonly confirmed: ConfirmedImport;
   readonly importId: string;
-  /** One end of the commit MessageChannel (§3.2); transferred. */
-  readonly commitPort: MessagePort;
-  readonly hooks: ImportHooks;
 }
 
 /** The import.worker API exposed over Comlink. */
@@ -78,5 +81,8 @@ export interface ImportWorkerApi {
    * media writes → commit over the MessagePort. Cancellation via the
    * proxied hooks; the commit request carries the pre-assembled input.
    */
-  begin(options: BeginOptions): Promise<BeginAnswer>;
+  /** Takes the import-side end of the commit MessageChannel (§3.2);
+   * transferred by the caller. */
+  setCommitPort(port: MessagePort): void;
+  begin(options: BeginOptions, hooks: ImportHooks): Promise<BeginAnswer>;
 }

@@ -190,7 +190,8 @@ beforeEach(async () => {
 });
 
 describe('import-commit performance (§17, ADR 0007)', () => {
-  it('commits a 100k re-import into a 100k-message chat within budget', () => {
+  // Test timeout > budget with headroom (§17; ADR 0012 for the floors).
+  it('commits a 100k re-import into a 100k-message chat within budget', { timeout: 30_000 }, () => {
     beginImport('perf-commit-2', 'perf2.txt');
     const input: ImportCommitInput = {
       importId: 'perf-commit-2',
@@ -223,26 +224,30 @@ describe('import-commit performance (§17, ADR 0007)', () => {
     ).toBeLessThan(BUDGET_MS);
   });
 
-  it('commits a 100k superset landing early, displacing every stored row', () => {
-    // The incoming messages carry EARLIER timestamps than the stored chat, so
-    // the plan emits them all first: every stored row moves by +ROWS and the
-    // batched renumbering (§10.2 offset trick) is what gets timed.
-    beginImport('perf-commit-3', 'perf3.txt');
-    const { result, elapsed } = timedCommit(supersetInput('perf-commit-3', 'perf3.txt'));
+  it(
+    'commits a 100k superset landing early, displacing every stored row',
+    { timeout: 30_000 },
+    () => {
+      // The incoming messages carry EARLIER timestamps than the stored chat, so
+      // the plan emits them all first: every stored row moves by +ROWS and the
+      // batched renumbering (§10.2 offset trick) is what gets timed.
+      beginImport('perf-commit-3', 'perf3.txt');
+      const { result, elapsed } = timedCommit(supersetInput('perf-commit-3', 'perf3.txt'));
 
-    expect(result.messagesInserted).toBe(ROWS);
-    expect(result.duplicatesSkipped).toBe(ROWS);
-    // Every stored twin moved: perf-fp-0 sat at seq 0 and must sit at ROWS.
-    const moved = db.selectObjects(
-      'SELECT seq FROM messages WHERE chat_id = ? AND fingerprint = ?',
-      [chatId, 'perf-fp-0'],
-    );
-    expect(moved[0]?.['seq']).toBe(ROWS);
-    assertNoSeqGaps();
-    assertChatCount(ROWS * 2);
-    expect(
-      elapsed,
-      `commit ${ROWS} displaced +${ROWS} inserted took ${elapsed.toFixed(0)}ms (budget ${DISPLACED_BUDGET_MS}ms, ADR 0012)`,
-    ).toBeLessThan(DISPLACED_BUDGET_MS);
-  });
+      expect(result.messagesInserted).toBe(ROWS);
+      expect(result.duplicatesSkipped).toBe(ROWS);
+      // Every stored twin moved: perf-fp-0 sat at seq 0 and must sit at ROWS.
+      const moved = db.selectObjects(
+        'SELECT seq FROM messages WHERE chat_id = ? AND fingerprint = ?',
+        [chatId, 'perf-fp-0'],
+      );
+      expect(moved[0]?.['seq']).toBe(ROWS);
+      assertNoSeqGaps();
+      assertChatCount(ROWS * 2);
+      expect(
+        elapsed,
+        `commit ${ROWS} displaced +${ROWS} inserted took ${elapsed.toFixed(0)}ms (budget ${DISPLACED_BUDGET_MS}ms, ADR 0012)`,
+      ).toBeLessThan(DISPLACED_BUDGET_MS);
+    },
+  );
 });
