@@ -25,8 +25,18 @@ export function ImportReportStep({ outcome, onOpenChat }: ImportReportStepProps)
           {en.import.reportDuplicates.replace('{count}', String(outcome.commit.duplicatesSkipped))}
         </li>
         <li>
-          {en.import.reportMedia.replace('{count}', String(outcome.commit.attachmentsInserted))}
+          {en.import.reportMediaStored.replace('{count}', String(outcome.report.mediaStored))}
         </li>
+        {outcome.report.mediaMissing > 0 ? (
+          <li>
+            {en.import.reportMediaMissing.replace('{count}', String(outcome.report.mediaMissing))}
+          </li>
+        ) : null}
+        {outcome.report.mediaOmitted > 0 ? (
+          <li>
+            {en.import.reportMediaOmitted.replace('{count}', String(outcome.report.mediaOmitted))}
+          </li>
+        ) : null}
         {outcome.commit.mediaUpgraded > 0 ? (
           <li>
             {en.import.reportUpgraded.replace('{count}', String(outcome.commit.mediaUpgraded))}

@@ -103,12 +103,14 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
 
 ## What's next
 
-- M3 — import pipeline (§9, §12.8): zip/txt reading with the archive
-  safety checks, confirmation handshake with DMY/MDY live preview,
-  thumbnails, cancellation + crash rollback wiring, import UI.
-  **One PR, not sub-PRs** — owner decision (2026-11-20), an explicit
-  exception to §0 rule 12; reviewability is kept via small, ordered
-  commits that each pass typecheck and tests.
+- M3 — import pipeline (§9, §12.8): COMPLETE on branch m3-import (8
+  ordered commits, each passing typecheck + tests). **One PR, not
+  sub-PRs** — owner decision (2026-11-20), an explicit exception to §0
+  rule 12; reviewability kept via the ordered commit structure.
+  Acceptance: e2e flows 2–5 pass on Chromium (WebKit skips per ADR
+  0007); the §22 scale gate imports a 100k-message + 2k-media synthetic
+  zip in CI Chromium without memory errors. Commit map (§9/§12.8 →
+  commits) lives in the PR description.
 
 ## Verified results (M2 + audit rounds 2–3)
 

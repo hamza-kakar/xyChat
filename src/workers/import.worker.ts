@@ -9,7 +9,14 @@
  */
 import * as Comlink from 'comlink';
 import { detectExport, type ImportError } from './import-detect';
-import type { BeginAnswer, BeginOptions, DetectAnswer, ImportWorkerApi } from './import-api';
+import type {
+  BeginAnswer,
+  BeginOptions,
+  ConfirmedImport,
+  DetectAnswer,
+  ImportWorkerApi,
+  RunReport,
+} from './import-api';
 import { runImportParse } from './import-run';
 import { writeImportMedia, type MediaPhaseDeps, type ThumbnailResult } from './import-media';
 import { listMediaEntries, readZipEntryBytes } from './archive-reader';
@@ -18,6 +25,8 @@ import { deleteMediaFile } from '../storage/media-store';
 import { IMPORT_LIMITS } from '../core/limits';
 import { PARSER_VERSION } from '../core/parser';
 import type { ImportCommitInput, ImportCommitResult } from '../storage/sqlite/import-commit';
+import type { ImportHooks } from './import-progress';
+import type { ParseStats as RunStats } from '../core/parser';
 import type { Result } from '../core/result';
 
 /** Error detail is already structured; phase modules never throw expected
@@ -129,7 +138,66 @@ function commitOverPort(
   });
 }
 
+/** The import-side end of the commit MessageChannel (§3.2), set once per
+ * pipeline run via setCommitPort. */
+let commitPort: MessagePort | null = null;
+
+/** Assembles the §9.2-step-10 commit input from the phase results. */
+function assembleCommitInput(
+  file: Blob,
+  confirmed: ConfirmedImport,
+  phases: {
+    readonly fileName: string;
+    readonly importId: string;
+    readonly run: { readonly messages: ImportCommitInput['messages'] };
+    readonly media: { readonly attachments: ImportCommitInput['attachments'] };
+  },
+): ImportCommitInput {
+  return {
+    importId: phases.importId,
+    targetChatId: confirmed.chatId,
+    newChat: {
+      title: confirmed.title,
+      isGroup: confirmed.isGroup,
+      sourcePlatform: confirmed.format.platform,
+      dateOrder: confirmed.format.dateOrder,
+    },
+    messages: phases.run.messages,
+    attachments: phases.media.attachments,
+    fileName: phases.fileName,
+    fileBytes: file.size,
+    parserVersion: PARSER_VERSION,
+  };
+}
+
+/** Builds the §9.2-step-11 report facts. */
+function buildReport(
+  run: {
+    readonly warningsByCode: Readonly<Record<string, number>>;
+    readonly stats: RunStats;
+    readonly replacementChars: number;
+  },
+  attachments: ImportCommitInput['attachments'],
+  durationMs: number,
+): RunReport {
+  const countBy = (status: 'present' | 'missing' | 'omitted'): number =>
+    attachments.filter((row) => row.status === status).length;
+  return {
+    warningsByCode: run.warningsByCode,
+    stats: run.stats,
+    replacementChars: run.replacementChars,
+    durationMs,
+    mediaStored: countBy('present'),
+    mediaMissing: countBy('missing'),
+    mediaOmitted: countBy('omitted'),
+  };
+}
+
 const api: ImportWorkerApi = {
+  setCommitPort(port: MessagePort): void {
+    commitPort = port;
+  },
+
   async detect(file, fileName, localeHint, dateOrderOverride): Promise<DetectAnswer> {
     try {
       const options =
@@ -146,8 +214,11 @@ const api: ImportWorkerApi = {
     }
   },
 
-  async begin(options: BeginOptions): Promise<BeginAnswer> {
-    const { file, fileName, confirmed, importId, commitPort, hooks } = options;
+  async begin(options: BeginOptions, hooks: ImportHooks): Promise<BeginAnswer> {
+    const { file, fileName, confirmed, importId } = options;
+    if (commitPort === null) {
+      return { ok: false, error: { code: 'INTERNAL', detail: 'commit port not set' } };
+    }
     const startedAt = Date.now();
     try {
       // §9.2 steps 1–3: re-read the archive (the detection read is not kept
@@ -183,36 +254,24 @@ const api: ImportWorkerApi = {
       await hooks.onWrittenPaths?.(media.value.writtenPaths);
 
       // §9.2 step 10: commit over the port.
-      const input: ImportCommitInput = {
-        importId,
-        targetChatId: confirmed.chatId,
-        newChat: {
-          title: confirmed.title,
-          isGroup: confirmed.isGroup,
-          sourcePlatform: confirmed.format.platform,
-          dateOrder: confirmed.format.dateOrder,
-        },
-        messages: run.value.messages,
-        attachments: media.value.attachments,
+      const input = assembleCommitInput(file, confirmed, {
         fileName,
-        fileBytes: file.size,
-        parserVersion: PARSER_VERSION,
-      };
+        importId,
+        run: run.value,
+        media: media.value,
+      });
       const committed = await commitOverPort(commitPort, input);
       if (!committed.ok) {
         return { ok: false, error: committed.error };
       }
+      commitPort.close();
+      commitPort = null;
 
       // §9.2 step 11: report facts for the UI.
       return {
         ok: true,
         commit: committed.value,
-        report: {
-          warningsByCode: run.value.warningsByCode,
-          stats: run.value.stats,
-          replacementChars: run.value.replacementChars,
-          durationMs: Date.now() - startedAt,
-        },
+        report: buildReport(run.value, media.value.attachments, Date.now() - startedAt),
       };
     } catch (error) {
       return { ok: false, error: toInternalError(error) };

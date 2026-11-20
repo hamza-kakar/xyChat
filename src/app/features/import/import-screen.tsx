@@ -79,8 +79,11 @@ function reducer(state: ImportState, action: ImportAction): ImportState {
     case 'detect-failed':
       return { ...state, step: { name: 'error', error: action.error } };
     case 'detect-done':
+      // Both the initial detection and the §12.8.4 toggle re-run end here:
+      // the reorder flag clears with the new report.
       return {
         ...state,
+        detectState: { status: 'idle' },
         step: {
           name: 'confirm',
           report: action.report,

@@ -39,9 +39,10 @@ export interface ImportRunResult {
   readonly replacementChars: number;
 }
 
-/** Messages per progress emission and cancellation check (§8.2: at most
- * every 5,000 items). */
+/** Items per progress emission (§8.2: at most every 5,000 items). */
 const PROGRESS_EVERY = 5_000;
+/** Items per cancellation poll (§9.3: small imports must cancel too). */
+const CANCEL_CHECK_EVERY = 1_000;
 
 /**
  * Parses and fingerprints the confirmed export text.
@@ -99,15 +100,13 @@ async function drainParse(
   const iterator = parseChatIterator(text, { format });
   const messages: ParsedMessage[] = [];
   let lastReported = 0;
+  let processed = 0;
   let stepped = iterator.next();
   while (stepped.done !== true) {
     const event: ParseEvent = stepped.value;
     if (event.type === 'message') {
       messages.push(event.message);
     } else if (event.type === 'progress') {
-      if (await hooks.isCancelled()) {
-        return err({ code: 'CANCELLED', detail: 'cancelled during parse' });
-      }
       if (event.linesProcessed - lastReported >= PROGRESS_EVERY) {
         lastReported = event.linesProcessed;
         hooks.onProgress({
@@ -116,6 +115,13 @@ async function drainParse(
           total: event.totalLines,
         });
       }
+    }
+    // §9.3: cancellation is polled per 1,000 processed items — throttled so
+    // the Comlink-proxy check (a worker↔main round-trip) stays cheap, but
+    // frequent enough that small imports can still cancel mid-parse.
+    processed += 1;
+    if (processed % CANCEL_CHECK_EVERY === 0 && (await hooks.isCancelled())) {
+      return err({ code: 'CANCELLED', detail: 'cancelled during parse' });
     }
     stepped = iterator.next();
   }
@@ -150,10 +156,10 @@ async function fingerprintAll(
     out.push({ fingerprint: await fingerprint(input, hashBytes), message });
     if (index - lastReported >= PROGRESS_EVERY) {
       lastReported = index;
-      if (await hooks.isCancelled()) {
-        return err({ code: 'CANCELLED', detail: 'cancelled during fingerprinting' });
-      }
       hooks.onProgress({ phase: 'fingerprinting', current: index, total: messages.length });
+    }
+    if (index % CANCEL_CHECK_EVERY === 0 && (await hooks.isCancelled())) {
+      return err({ code: 'CANCELLED', detail: 'cancelled during fingerprinting' });
     }
   }
   return ok(out);

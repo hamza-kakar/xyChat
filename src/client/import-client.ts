@@ -83,6 +83,18 @@ export function onImportProgress(listener: ProgressListener): () => void {
   };
 }
 
+/** Test seam: emits one progress event to the current subscribers (the
+ * worker path emits through the proxied hook, §9.1). */
+export function emitImportProgress(event: {
+  readonly phase: string;
+  readonly current: number;
+  readonly total: number;
+}): void {
+  for (const listener of progressListeners) {
+    listener(event);
+  }
+}
+
 /** The main-thread-facing import client. */
 export const importClient = {
   /**
@@ -127,7 +139,7 @@ export const importClient = {
     });
     const channel = new MessageChannel();
     await dbClient.connectCommitPort(Comlink.transfer(channel.port1, [channel.port1]));
-    const hooks = Comlink.proxy({
+    const hooks = {
       onProgress: (event: { phase: string; current: number; total: number }) => {
         for (const listener of progressListeners) {
           listener(event);
@@ -135,7 +147,7 @@ export const importClient = {
       },
       isCancelled: () => cancelled,
       onWrittenPaths: (paths: readonly string[]) => dbClient.recordWrittenPaths(importId, paths),
-    });
+    };
     const beginOptions: BeginOptions = {
       file: request.file,
       fileName: request.fileName,
@@ -146,11 +158,15 @@ export const importClient = {
         chatId,
       },
       importId,
-      commitPort: Comlink.transfer(channel.port2, [channel.port2]),
-      hooks,
     };
+    // Comlink honors transfer markers at the TOP level only — the port and
+    // the proxied hooks are separate arguments (§3.2).
+    await caller.call(
+      () => remote().setCommitPort(Comlink.transfer(channel.port2, [channel.port2])),
+      'setCommitPort',
+    );
     const answer = await caller.call(
-      (): Promise<BeginAnswer> => remote().begin(beginOptions),
+      (): Promise<BeginAnswer> => remote().begin(beginOptions, Comlink.proxy(hooks)),
       'begin',
     );
     if (!answer.ok) {
