@@ -11,9 +11,11 @@
  *
  * All IO is dependency-injected (§18.4): the worker passes the production
  * adapters (import.worker.ts), Node tests pass fakes. Every path is
- * recorded and flushed CUMULATIVELY before its file is created (§9.2 step
- * 8; the production hook throttles the database write), so §9.3 rollback
- * can always find it.
+ * recorded in memory before its file is created, and the CUMULATIVE list
+ * is flushed to the imports row every WRITTEN_PATHS_FLUSH_EVERY paths and
+ * once more when the phase ends or fails (§9.2 step 8). After a crash,
+ * boot rollback deletes the flushed paths; the at most 99 unflushed ones
+ * are left for the orphan sweeper (§9.3).
  */
 import { err, ok, type Result } from '../core/result';
 import { IMPORT_LIMITS } from '../core/limits';
@@ -51,6 +53,8 @@ interface MediaContext {
   /** Every OPFS path this phase has touched, recorded BEFORE the file is
    * created. Shared with the caller (see MediaPhaseOptions.writtenPaths). */
   readonly writtenPaths: string[];
+  /** How many of writtenPaths the last flush carried. */
+  readonly flushed: { count: number };
 }
 
 /** Everything writeImportMedia needs, as one options object (§18.2). */
@@ -66,6 +70,9 @@ export interface MediaPhaseOptions {
    * A fresh list is used when omitted. */
   readonly writtenPaths?: string[];
 }
+
+/** Paths per written-path flush (§9.2 step 8: every 100 files). */
+export const WRITTEN_PATHS_FLUSH_EVERY = 100;
 
 const CANCELLED: ImportError = { code: 'CANCELLED', detail: 'cancelled during media writes' };
 
@@ -108,6 +115,7 @@ export async function writeImportMedia(
     zipSizes,
     attachments: [],
     writtenPaths: options.writtenPaths ?? [],
+    flushed: { count: 0 },
   };
 
   const written = await writeAllReferenced(ctx, referenced);
@@ -118,6 +126,7 @@ export async function writeImportMedia(
     ctx.attachments.push(omittedRow(item));
     ctx.progress.mediaItemDone();
   }
+  await flushPaths(ctx);
   return ok({ attachments: ctx.attachments, writtenPaths: [...ctx.writtenPaths] });
 }
 
@@ -252,14 +261,24 @@ async function streamEntryToOpfs(
   return ok(written);
 }
 
-/** Records a path and flushes the CUMULATIVE list, so each flush replaces
- * the imports row with a superset (§9.2 step 8, §9.3). */
+/** Records a path before its file is created, flushing every
+ * WRITTEN_PATHS_FLUSH_EVERY paths (§9.2 step 8). */
 async function recordPath(ctx: MediaContext, path: string): Promise<void> {
   ctx.writtenPaths.push(path);
-  const onWrittenPaths = ctx.hooks.onWrittenPaths;
-  if (onWrittenPaths !== undefined) {
-    await onWrittenPaths([...ctx.writtenPaths]);
+  if (ctx.writtenPaths.length - ctx.flushed.count >= WRITTEN_PATHS_FLUSH_EVERY) {
+    await flushPaths(ctx);
   }
+}
+
+/** Flushes the CUMULATIVE list when it holds unflushed paths, so each flush
+ * replaces the imports row with a superset (§9.3). */
+async function flushPaths(ctx: MediaContext): Promise<void> {
+  const onWrittenPaths = ctx.hooks.onWrittenPaths;
+  if (onWrittenPaths === undefined || ctx.writtenPaths.length === ctx.flushed.count) {
+    return;
+  }
+  ctx.flushed.count = ctx.writtenPaths.length;
+  await onWrittenPaths([...ctx.writtenPaths]);
 }
 
 /** Builds the `omitted` attachment row for a parser-omitted media message
@@ -289,6 +308,8 @@ async function fail(
   ctx: MediaContext,
   error: ImportError,
 ): Promise<Result<MediaPhaseResult, ImportError>> {
+  // Flush first: if the tab dies mid-delete, boot rollback finishes the job.
+  await flushPaths(ctx);
   for (const path of ctx.writtenPaths) {
     await ctx.deps.deleteFile(path);
   }
