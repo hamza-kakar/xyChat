@@ -31,3 +31,22 @@ describe('logger', () => {
     expect(after.at(-1)?.data).toEqual({ i: 1004 });
   });
 });
+
+describe('logger snapshots and clearing', () => {
+  it('keeps the snapshot stable until the next write', () => {
+    logger.info('test.snapshot');
+    const first = logger.recent();
+    expect(logger.recent()).toBe(first);
+    logger.info('test.snapshot-2');
+    expect(logger.recent()).not.toBe(first);
+  });
+
+  it('clears the buffer and tells subscribers', () => {
+    const listener = vi.fn();
+    const unsubscribe = logger.subscribe(listener);
+    logger.clear();
+    expect(logger.recent()).toEqual([]);
+    expect(listener).toHaveBeenCalledWith(null);
+    unsubscribe();
+  });
+});

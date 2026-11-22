@@ -93,7 +93,8 @@ export default defineConfig(async () => {
           ],
         },
         workbox: {
-          globPatterns: ['**/*.{js,css,html,wasm,svg,png,webmanifest}'],
+          // licenses.json is the generated license list for Settings → About.
+          globPatterns: ['**/*.{js,css,html,wasm,svg,png,webmanifest}', 'licenses.json'],
           // ogg-opus-decoder's ML build loads only with speech enhancement,
           // which the app never enables (ADR 0013).
           globIgnores: ['**/opus-ml-*.js'],

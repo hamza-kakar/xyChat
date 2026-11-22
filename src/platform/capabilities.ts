@@ -256,7 +256,8 @@ async function runCapabilityProbe(
   return { id, reason: errorText(lastError).slice(0, 120) };
 }
 
-const CAPABILITY_ORDER: readonly CapabilityId[] = [
+/** The probed capabilities, in check order (FTS5 is checked by db.worker). */
+export const CAPABILITY_ORDER: readonly CapabilityId[] = [
   'moduleWorkers',
   'webAssembly',
   'opfs',

@@ -35,6 +35,14 @@ export function useImports(chatId: ChatId, enabled: boolean) {
   });
 }
 
+/** Chat-info statistics (§12.7). */
+export function useChatStats(chatId: ChatId) {
+  return useQuery({
+    queryKey: queryKeys.chatStats(chatId),
+    queryFn: () => dbClient.getChatStats(chatId),
+  });
+}
+
 /** Renames a chat; refreshes the list and the chat. */
 export function useRenameChat() {
   const client = useQueryClient();
@@ -59,6 +67,7 @@ export function useDeleteChat() {
       client.removeQueries({ queryKey: queryKeys.chat(chatId), exact: true });
       client.removeQueries({ queryKey: queryKeys.participants(chatId), exact: true });
       client.removeQueries({ queryKey: queryKeys.imports(chatId), exact: true });
+      client.removeQueries({ queryKey: queryKeys.chatStats(chatId), exact: true });
       client.removeQueries({ queryKey: queryKeys.messages(chatId) });
       client.removeQueries({ queryKey: queryKeys.messageDays(chatId), exact: true });
       client.removeQueries({ queryKey: queryKeys.bookmarks(chatId), exact: true });
@@ -70,6 +79,8 @@ export function useDeleteChat() {
         client.invalidateQueries({ queryKey: queryKeys.bookmarks(null), exact: true }),
         client.invalidateQueries({ queryKey: queryKeys.chats(), exact: true }),
         client.invalidateQueries({ queryKey: queryKeys.lastChatPosition(), exact: true }),
+        client.invalidateQueries({ queryKey: queryKeys.storageUsage(), exact: true }),
+        client.invalidateQueries({ queryKey: queryKeys.storageEstimate(), exact: true }),
       ]);
     },
   });
@@ -85,6 +96,9 @@ export function useInvalidateImportedChat(): (chatId: ChatId) => Promise<void> {
         client.invalidateQueries({ queryKey: queryKeys.chat(chatId), exact: true }),
         client.invalidateQueries({ queryKey: queryKeys.participants(chatId), exact: true }),
         client.invalidateQueries({ queryKey: queryKeys.imports(chatId), exact: true }),
+        client.invalidateQueries({ queryKey: queryKeys.chatStats(chatId), exact: true }),
+        client.invalidateQueries({ queryKey: queryKeys.storageUsage(), exact: true }),
+        client.invalidateQueries({ queryKey: queryKeys.storageEstimate(), exact: true }),
         client.invalidateQueries({ queryKey: queryKeys.messages(chatId) }),
         client.invalidateQueries({ queryKey: queryKeys.messageDays(chatId), exact: true }),
         // A merge renumbers seqs, which bookmarks link to.
