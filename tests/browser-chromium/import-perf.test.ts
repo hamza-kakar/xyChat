@@ -231,7 +231,6 @@ async function runLinearProbe(
   return { elapsed, mediaOk: media.ok };
 }
 
-// eslint-disable-next-line max-lines-per-function -- 100k gate + linear ratio in one suite
 describe('import scale (§22 M3 acceptance, ADR 0007 addendum)', () => {
   // Building the zip + full pipeline at 100k scale: generous but bounded
   // (the acceptance is completion without memory errors, not speed).
@@ -254,7 +253,7 @@ describe('import scale (§22 M3 acceptance, ADR 0007 addendum)', () => {
         timings.push(probe.elapsed);
         expect(probe.mediaOk).toBe(true);
       }
-      // Review Major 9 verify: streaming keeps the phase roughly linear.
+      // Streaming keeps the phase roughly linear in the entry count.
       const [first = 0, second = 0] = timings;
       expect(first).toBeGreaterThan(0);
       expect(second).toBeGreaterThan(0);

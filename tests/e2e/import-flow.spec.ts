@@ -157,7 +157,10 @@ test('flow 5: cancel mid-import — no chat created, no OPFS files left (§9.3)'
   await pickFile(page, await buildMediaCancelZip(300), 'WhatsApp Chat - Media.zip');
   await expect(page.getByText('Confirm import')).toBeVisible();
   await page.getByRole('button', { name: 'Start import' }).click();
-  await expect(page.getByText('Importing…')).toBeVisible();
+  // Wait until writing-media is UNDER WAY: the cancel must
+  // land after files have been written and recorded.
+  const writingLabel = page.getByText('Writing media');
+  await expect(writingLabel).toBeVisible({ timeout: 30_000 });
   await page.getByRole('button', { name: 'Cancel import' }).click();
   await expect(page.getByText('Import a WhatsApp export')).toBeVisible();
 
@@ -172,9 +175,9 @@ test('flow 5: cancel mid-import — no chat created, no OPFS files left (§9.3)'
   // the home shell shows no chat rows (there are none in the db).
   await expect(page.getByText('good evening all')).toHaveCount(0);
 
-  // §9.3: the OPFS media file count is back to the BASELINE (the rollback
-  // deleted the written files). The baseline before any import is 0 files
-  // under media/ — read via the app's own OPFS origin.
-  const mediaFiles = await countOpfsMediaFiles(page);
-  expect(mediaFiles).toBe(0);
+  // §9.3: the OPFS media file count returns to the
+  // BASELINE (0) — poll until the async rollback deletes everything.
+  await expect
+    .poll(async () => countOpfsMediaFiles(page), { timeout: 30_000, intervals: [250, 500] })
+    .toBe(0);
 });

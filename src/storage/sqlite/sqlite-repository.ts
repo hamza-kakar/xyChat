@@ -18,6 +18,14 @@ import {
   participantFromRow,
 } from './rows';
 import type { SqliteDatabase } from './open';
+import {
+  getAttachmentsForMessage,
+  listOrphanMedia,
+  listStoredFingerprints,
+  markImportCancelled,
+  markImportFailed,
+  recordWrittenPaths,
+} from './import-admin';
 import { listLinks, searchMessages } from './search-queries';
 import type { Participant } from '../repository';
 import type {
@@ -337,55 +345,35 @@ export class SqliteChatRepository {
 
   /** Marks one import cancelled — applies only from in_progress (§9.3). */
   markImportCancelled(importId: string): void {
-    this.db.run(
-      "UPDATE imports SET status = 'cancelled', finished_at = ? WHERE id = ? AND status = 'in_progress'",
-      [new Date().toISOString().replace(/\.\d{3}Z$/u, 'Z'), importId],
-    );
+    markImportCancelled(this.db, importId);
   }
 
   /** Marks one import failed — applies only from in_progress (§9.3). */
   markImportFailed(importId: string): void {
-    this.db.run(
-      "UPDATE imports SET status = 'failed', finished_at = ? WHERE id = ? AND status = 'in_progress'",
-      [new Date().toISOString().replace(/\.\d{3}Z$/u, 'Z'), importId],
-    );
+    markImportFailed(this.db, importId);
   }
 
   /** Replaces the recorded written-path list for one import (§9.3
    * bookkeeping; the list is cumulative, §9.2 step 8). */
   recordWrittenPaths(importId: string, paths: readonly string[]): void {
-    this.db.run('UPDATE imports SET written_paths_json = ? WHERE id = ?', [
-      JSON.stringify(paths),
-      importId,
-    ]);
+    recordWrittenPaths(this.db, importId, paths);
   }
 
   /** Fingerprints whose media the stored chat already holds (§9.2 step 8:
    * the media phase skips rewriting them). */
   listStoredFingerprints(chatId: ChatId): readonly string[] {
-    const rows = this.db.selectObjects(
-      "SELECT m.fingerprint AS fp FROM messages m JOIN attachments a ON a.message_id = m.id WHERE m.chat_id = ? AND a.status = 'present'",
-      [chatId],
-    );
-    return rows.map((row) => String(row['fp']));
+    return listStoredFingerprints(this.db, chatId);
   }
 
   /** §9.3 orphan sweep, list half: OPFS media/thumbnail paths that no
    * attachment row references. The caller deletes after confirmation. */
   listOrphanMedia(fsPaths: readonly string[]): readonly string[] {
-    const rows = this.db.selectObjects(
-      'SELECT opfs_path, thumb_path FROM attachments WHERE opfs_path IS NOT NULL OR thumb_path IS NOT NULL',
-    );
-    const known = new Set<string>();
-    for (const row of rows) {
-      for (const column of ['opfs_path', 'thumb_path']) {
-        const value = row[column];
-        if (typeof value === 'string' && value !== '') {
-          known.add(value);
-        }
-      }
-    }
-    return fsPaths.filter((path) => !known.has(path));
+    return listOrphanMedia(this.db, fsPaths);
+  }
+
+  /** Raw attachment rows for one message (media viewer, §12.5). */
+  getAttachmentsForMessage(messageId: number): readonly Attachment[] {
+    return getAttachmentsForMessage(this.db, messageId);
   }
 
   /** Formats a message timestamp for storage (canonical wall clock). */

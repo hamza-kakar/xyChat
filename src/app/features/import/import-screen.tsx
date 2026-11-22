@@ -12,7 +12,6 @@ import { ImportProgressStep } from './import-progress-step';
 import { ImportReportStep } from './import-report-step';
 import { ImportErrorStep } from './import-error-step';
 import { cancelImport } from '../../../client/import-client';
-import { requestPersistentStorage } from '../../../platform/persistence';
 import { installGateDone } from './install-gate-state';
 import { useImportFlow } from './use-import-flow';
 
@@ -79,9 +78,6 @@ function renderStep(deps: RenderDeps) {
       );
     case 'report': {
       const { outcome } = state.step;
-      // §22 M3: request persistent storage after a successful import
-      // (repeated calls are no-ops once granted).
-      void requestPersistentStorage();
       return (
         <ImportReportStep
           outcome={outcome}

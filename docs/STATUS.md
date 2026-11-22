@@ -4,9 +4,26 @@ Progress tracker for waChatBack. Updated in every PR.
 
 ## Current milestone
 
-M3 — import pipeline (PR #6, under review).
+M3 — import pipeline (PR #6, round-2 feedback being addressed).
 
-**M2 — Storage and db.worker** (complete; PR opened)
+M2 — Storage and db.worker: merged.
+
+### Round-2 fixes landed (2026-11-22)
+
+- Media phase (§9.3): every path is recorded and flushed before its file
+  is created; chunk writes are awaited and short writes detected; a throw
+  mid-entry becomes a typed error with every touched path deleted; the
+  pipeline shares the written-path list so its catch can roll back too.
+- Thumbnails (§9.4): entries over `IMPORT_LIMITS.maxThumbnailSourceBytes`
+  (50 MiB) get none; both phase bars are determinate (§9.1).
+- `deleteChatMedia` counts only the removed chat's files; the orphan-sweep
+  suite cleans OPFS after each test (fixes the CI browser failure).
+- Corrupt `written_paths_json` reads as an empty list instead of throwing.
+
+Still open from round 2: e2e flows 4–5 to the full §19.5 spec, port
+dispatch out of the db.worker shell, archive-reader per-entry reopen,
+remaining Minors/Nit, and the timing flakiness of the two perf tests when
+suites run in parallel.
 
 ## What's done (M3)
 

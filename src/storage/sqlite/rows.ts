@@ -284,13 +284,27 @@ const ImportRow = v.object({
   parser_version: v.string(),
   started_at: IsoTimestamp,
   finished_at: v.nullable(IsoTimestamp),
+  written_paths_json: v.string(),
 });
 
 type ImportParsed = v.InferOutput<typeof ImportRow>;
 
+/** Parses JSON text, or returns null when it isn't valid JSON. */
+function parseJsonOrNull(text: string): unknown {
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return null;
+  }
+}
+
 /** Validates an imports row into an {@link ImportRecord}. */
 export function importFromRow(row: Record<string, unknown>): ImportRecord {
   const r: ImportParsed = parseRow(ImportRow, row, 'imports');
+  // §18.5: the written-path list is Valibot-validated. Invalid JSON or an
+  // invalid list reads as empty (rollback deletes nothing rather than
+  // guessing).
+  const paths = v.safeParse(v.array(v.string()), parseJsonOrNull(r.written_paths_json));
   return {
     id: r.id,
     chatId: r.chat_id,
@@ -300,6 +314,7 @@ export function importFromRow(row: Record<string, unknown>): ImportRecord {
     parserVersion: r.parser_version,
     startedAt: r.started_at,
     finishedAt: r.finished_at,
+    writtenPaths: paths.success ? paths.output : [],
   };
 }
 

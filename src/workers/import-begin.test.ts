@@ -1,6 +1,6 @@
 /**
  * Pipeline orchestration tests (§9.2 steps 5–11, §9.3):
- * Majors 6/8): commit over a fake port, rollback of written paths on commit
+ * commit over a fake port, rollback of written paths on commit
  * failure and cancellation, final cancellation check, and name-free
  * diagnostics.
  */
@@ -144,7 +144,7 @@ describe('runPipeline orchestration (§9.2 steps 5–11)', () => {
     expect((sent[0] as { type: string }).type).toBe('commit');
   });
 
-  it('rolls back written paths when the commit fails (§9.3, Major 6)', async () => {
+  it('rolls back written paths when the commit fails (§9.3)', async () => {
     const { port } = fakePort({ type: 'commit-error', detail: 'SQLite3Error' });
     const { deps, deleted } = mediaDeps();
     // The empty text read fails before media; force the commit path by
