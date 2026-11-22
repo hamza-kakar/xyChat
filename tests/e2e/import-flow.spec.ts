@@ -5,9 +5,10 @@
  * storage path; WebKit skips (no OPFS in Playwright Linux builds, ADR
  * 0007). CSP + axe assertions ride along on the confirm screens.
  */
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { expectBootOrUnsupported, skipWithoutOpfs } from './helpers/skip-without-opfs';
+import { openPicker, pickFile } from './helpers/import-ui';
 import {
   buildAmbiguousZip,
   buildIosGroupZip,
@@ -27,27 +28,6 @@ test.beforeEach(async ({ page }) => {
   // storage (Chromium; WebKit skips per ADR 0007).
   test.skip(!booted, 'Engine not supported; storage flows run on Chromium.');
 });
-
-/** Navigates through the install gate to the picker (§12.8.1 bypass). */
-async function openPicker(page: Page): Promise<void> {
-  // The home screen renders after the async capability check + boot.
-  const importLink = page.getByRole('link', { name: 'Import a chat' });
-  await expect(importLink).toBeVisible({ timeout: 30_000 });
-  await importLink.click();
-  const proceed = page.getByRole('button', { name: 'Continue' });
-  const bypass = page.getByText('Continue anyway (not recommended)');
-  // The gate renders on non-standalone browsers; Chromium test contexts are
-  // never standalone, so both buttons are expected.
-  await proceed.or(bypass).first().waitFor({ state: 'visible' });
-  await bypass.click();
-  await expect(page.getByText('Import a WhatsApp export')).toBeVisible();
-}
-
-/** Uploads a fixture blob through the file input. */
-async function pickFile(page: Page, blob: Blob, name: string): Promise<void> {
-  const buffer = Buffer.from(await blob.arrayBuffer());
-  await page.setInputFiles('input[type="file"]', { name, mimeType: 'application/zip', buffer });
-}
 
 test('flow 2: import an iOS group zip — confirm, self choice, report', async ({ page }) => {
   await openPicker(page);
@@ -71,10 +51,10 @@ test('flow 2: import an iOS group zip — confirm, self choice, report', async (
   await expect(page.getByText('1 media files stored')).toBeVisible();
   await expect(page.getByText('1 media files missing from the archive')).toBeVisible();
 
-  // §12.8.6: Open chat — the button navigates; the chat view itself lands
-  // in M4 (the /chat/:chatId route currently redirects home, §12.3).
+  // §12.8.6: Open chat lands in the chat view (§12.5).
   await page.getByRole('button', { name: 'Open chat' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'waChatBack' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Family' })).toBeVisible();
+  await expect(page.getByRole('log').getByText('welcome to the family chat')).toBeVisible();
 });
 
 test('flow 3: ambiguous date order — toggle re-runs detection and preview updates', async ({
@@ -108,9 +88,7 @@ test('flow 4: re-importing the same file adds 0 and preselects the merge', async
 
   // Second run: the title-match suggestion preselects "update existing".
   await page.getByRole('button', { name: 'Done' }).click();
-  const importLink = page.getByRole('link', { name: 'Import a chat' });
-  await expect(importLink).toBeVisible({ timeout: 30_000 });
-  await importLink.click();
+  await openPicker(page);
   await pickFile(page, zip, 'WhatsApp Chat - Family.zip');
   await expect(page.getByText('Confirm import')).toBeVisible();
   await expect(page.getByText('Update existing chat: Family')).toBeVisible();
@@ -122,9 +100,7 @@ test('flow 4: re-importing the same file adds 0 and preselects the merge', async
   // §19.5 flow 4, second half: a NEWER SUPERSET (the same 6 messages plus 2
   // newer ones) adds only the new messages, in order.
   await page.getByRole('button', { name: 'Done' }).click();
-  const supersetLink = page.getByRole('link', { name: 'Import a chat' });
-  await expect(supersetLink).toBeVisible({ timeout: 30_000 });
-  await supersetLink.click();
+  await openPicker(page);
   await pickFile(page, await buildSupersetZip(), 'WhatsApp Chat - Family.zip');
   await expect(page.getByText('Confirm import')).toBeVisible();
   await page.getByRole('button', { name: 'Start import' }).click();
@@ -132,14 +108,21 @@ test('flow 4: re-importing the same file adds 0 and preselects the merge', async
   await expect(page.getByText('2 messages imported')).toBeVisible();
   await expect(page.getByText('6 duplicates skipped')).toBeVisible();
 
-  // Re-importing the superset adds nothing: all 8 are now stored. Message
-  // order can't be read from the UI until the chat view lands (M4); the
-  // 'interleaves a superset' browser contract test asserts the merged seq
-  // order through getMessageWindow on the real repository.
-  await page.getByRole('button', { name: 'Done' }).click();
-  const thirdLink = page.getByRole('link', { name: 'Import a chat' });
-  await expect(thirdLink).toBeVisible({ timeout: 30_000 });
-  await thirdLink.click();
+  // The merged chat reads in file order: the interleaved message sits
+  // between base messages 2 and 3 (§8.10).
+  await page.getByRole('button', { name: 'Open chat' }).click();
+  const log = page.getByRole('log');
+  await expect(log.getByText('newer message at the end')).toBeVisible();
+  const bodies = await log.locator('article').allTextContents();
+  const order = ['created group', 'newer message inserted after base 1', 'good evening all'].map(
+    (needle) => bodies.findIndex((text) => text.includes(needle)),
+  );
+  expect(order.every((index) => index >= 0)).toBe(true);
+  expect([...order].sort((a, b) => a - b)).toEqual(order);
+  await page.getByRole('link', { name: 'Back to chats' }).click();
+
+  // Re-importing the superset adds nothing: all 8 are now stored.
+  await openPicker(page);
   await pickFile(page, await buildSupersetZip(), 'WhatsApp Chat - Family.zip');
   await expect(page.getByText('Confirm import')).toBeVisible();
   await page.getByRole('button', { name: 'Start import' }).click();
