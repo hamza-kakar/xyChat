@@ -1,6 +1,7 @@
 /**
- * Message actions (AGENTS.md §12.5): copy text, share text and message
- * info (time with seconds, sender, kind, and the import that stored it).
+ * Message actions (AGENTS.md §12.5): copy text, bookmark (or edit its
+ * note / remove it), share text and message info (time with seconds,
+ * sender, kind, and the import that stored it).
  */
 import { useState } from 'react';
 import { formatDateTime } from '../../../core/dates';
@@ -9,12 +10,16 @@ import { en } from '../../i18n/en';
 import { formatString } from '../../i18n/format-string';
 import { Sheet, SheetButton } from '../../components/sheet';
 import { useImports } from '../../queries/chat-queries';
+import { useAddBookmark, useRemoveBookmark } from '../../queries/bookmark-queries';
+import { BookmarkNoteSheet } from '../bookmarks';
 import type { WindowMessage } from '../../../client/db-client';
 
 /** Props for {@link MessageActionsSheet}. */
 export interface MessageActionsSheetProps {
   readonly chatId: ChatId;
   readonly message: WindowMessage;
+  /** The message's bookmark, or null when it has none. */
+  readonly bookmark: { readonly id: string; readonly note: string | null } | null;
   readonly locale: string;
   readonly onClose: () => void;
 }
@@ -26,12 +31,22 @@ function copyableText(message: WindowMessage): string | null {
 
 export function MessageActionsSheet(props: MessageActionsSheetProps) {
   const { message, onClose } = props;
-  const [mode, setMode] = useState<'menu' | 'info'>('menu');
+  const [mode, setMode] = useState<'menu' | 'info' | 'note'>('menu');
   const [copied, setCopied] = useState(false);
   const text = copyableText(message);
   const canShare = typeof navigator.share === 'function';
   if (mode === 'info') {
     return <MessageInfoSheet {...props} />;
+  }
+  if (mode === 'note' && props.bookmark !== null) {
+    return (
+      <BookmarkNoteSheet
+        chatId={props.chatId}
+        bookmarkId={props.bookmark.id}
+        initialNote={props.bookmark.note}
+        onClose={onClose}
+      />
+    );
   }
   return (
     <Sheet open title={en.chatView.actionsTitle} closeLabel={en.chatView.close} onClose={onClose}>
@@ -46,6 +61,12 @@ export function MessageActionsSheet(props: MessageActionsSheetProps) {
           {copied ? en.chatView.actionCopied : en.chatView.actionCopy}
         </SheetButton>
       )}
+      <BookmarkActions
+        {...props}
+        onEditNote={() => {
+          setMode('note');
+        }}
+      />
       {text === null || !canShare ? null : (
         <SheetButton
           onClick={() => {
@@ -64,6 +85,49 @@ export function MessageActionsSheet(props: MessageActionsSheetProps) {
         {en.chatView.actionInfo}
       </SheetButton>
     </Sheet>
+  );
+}
+
+function BookmarkActions({
+  chatId,
+  message,
+  bookmark,
+  onClose,
+  onEditNote,
+}: MessageActionsSheetProps & { readonly onEditNote: () => void }) {
+  const add = useAddBookmark();
+  const remove = useRemoveBookmark();
+  const failed = add.isError || remove.isError;
+  return (
+    <>
+      {bookmark === null ? (
+        <SheetButton
+          disabled={add.isPending}
+          onClick={() => {
+            add.mutate({ chatId, messageRowId: message.rowId, note: null }, { onSuccess: onClose });
+          }}
+        >
+          {en.chatView.actionBookmark}
+        </SheetButton>
+      ) : (
+        <>
+          <SheetButton onClick={onEditNote}>{en.chatView.actionEditNote}</SheetButton>
+          <SheetButton
+            disabled={remove.isPending}
+            onClick={() => {
+              remove.mutate({ chatId, bookmarkId: bookmark.id }, { onSuccess: onClose });
+            }}
+          >
+            {en.chatView.actionRemoveBookmark}
+          </SheetButton>
+        </>
+      )}
+      {failed ? (
+        <p role="alert" className="text-danger px-3 text-sm">
+          {en.bookmarks.actionFailed}
+        </p>
+      ) : null}
+    </>
   );
 }
 

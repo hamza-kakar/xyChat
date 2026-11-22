@@ -7,7 +7,7 @@ import { memo } from 'react';
 import { formatDaySeparator, formatTime } from '../../../core/dates';
 import type { LocalDateTime } from '../../../core/model';
 import { en } from '../../i18n/en';
-import { PhoneIcon } from '../../components/icons';
+import { BookmarkIcon, PhoneIcon } from '../../components/icons';
 import { useLongPress } from '../../hooks/use-long-press';
 import type { WindowMessage } from '../../../client/db-client';
 import { layoutRow, messageLabel, type RowContext, type RowLayout } from './row-model';
@@ -24,6 +24,9 @@ export interface MessageRowProps {
   readonly total: number;
   /** Palette index per author id (§12.2). */
   readonly colors: ReadonlyMap<string, number>;
+  /** Briefly marked after a jump to this message (§11). */
+  readonly isHighlighted: boolean;
+  readonly isBookmarked: boolean;
   readonly onOpenActions: (message: WindowMessage) => void;
 }
 
@@ -48,10 +51,19 @@ function DaySeparator({
   );
 }
 
-function Pill({ message, isCall }: { readonly message: WindowMessage; readonly isCall: boolean }) {
+function Pill({
+  message,
+  isCall,
+  isBookmarked,
+}: {
+  readonly message: WindowMessage;
+  readonly isCall: boolean;
+  readonly isBookmarked: boolean;
+}) {
   return (
     <div className="flex justify-center px-6 py-1">
       <span className="bg-surface-raised text-text-muted flex max-w-full items-center gap-1.5 rounded-xl px-3 py-1 text-center text-sm">
+        {isBookmarked ? <BookmarkIcon className="h-3.5 w-3.5 shrink-0" /> : null}
         {isCall ? <PhoneIcon className="h-4 w-4 shrink-0" /> : null}
         <RichText body={message.body} />
       </span>
@@ -62,12 +74,15 @@ function Pill({ message, isCall }: { readonly message: WindowMessage; readonly i
 function BubbleMeta({
   message,
   locale,
+  isBookmarked,
 }: {
   readonly message: WindowMessage;
   readonly locale: string;
+  readonly isBookmarked: boolean;
 }) {
   return (
-    <span className="text-text-muted-on-bubble flex justify-end gap-1.5 text-[0.7rem] leading-4">
+    <span className="text-text-muted-on-bubble flex items-center justify-end gap-1.5 text-[0.7rem] leading-4">
+      {isBookmarked ? <BookmarkIcon className="h-3 w-3" /> : null}
       {message.isEdited ? <span>{en.chatView.edited}</span> : null}
       <span>{formatTime(message.tsLocal, { locale })}</span>
     </span>
@@ -79,11 +94,13 @@ function Bubble({
   layout,
   color,
   locale,
+  isBookmarked,
 }: {
   readonly message: WindowMessage;
   readonly layout: RowLayout;
   readonly color: number | undefined;
   readonly locale: string;
+  readonly isBookmarked: boolean;
 }) {
   const bare = isBareSticker(message.attachments[0]);
   const tail = layout.isOutgoing ? 'rounded-se-sm' : 'rounded-ss-sm';
@@ -105,7 +122,7 @@ function Bubble({
           </span>
         ) : null}
         <MessageContent message={message} />
-        <BubbleMeta message={message} locale={locale} />
+        <BubbleMeta message={message} locale={locale} isBookmarked={isBookmarked} />
       </div>
     </div>
   );
@@ -118,6 +135,8 @@ export const MessageRow = memo(function MessageRow({
   now,
   total,
   colors,
+  isHighlighted,
+  isBookmarked,
   onOpenActions,
 }: MessageRowProps) {
   const layout = layoutRow(prev, message, context);
@@ -131,21 +150,27 @@ export const MessageRow = memo(function MessageRow({
         <DaySeparator message={message} now={now} locale={context.locale} />
       ) : null}
       <article
-        aria-label={messageLabel(message, context)}
+        aria-label={
+          isBookmarked
+            ? `${messageLabel(message, context)}, ${en.chatView.bookmarked}`
+            : messageLabel(message, context)
+        }
         aria-posinset={message.seq + 1}
         aria-setsize={total}
+        aria-current={isHighlighted ? 'true' : undefined}
         data-seq={message.seq}
-        className="relative"
+        className={`relative rounded-lg ${isHighlighted ? 'bg-highlight/50' : ''} motion-safe:transition-colors motion-safe:duration-500`}
       >
         <div className="[-webkit-touch-callout:none] pointer-coarse:select-none" {...press}>
           {isPill ? (
-            <Pill message={message} isCall={message.kind === 'call'} />
+            <Pill message={message} isCall={message.kind === 'call'} isBookmarked={isBookmarked} />
           ) : (
             <Bubble
               message={message}
               layout={layout}
               color={message.authorId === null ? undefined : colors.get(message.authorId)}
               locale={context.locale}
+              isBookmarked={isBookmarked}
             />
           )}
         </div>

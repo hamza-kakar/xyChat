@@ -15,6 +15,7 @@ import { useLocalNow } from '../../hooks/use-local-now';
 import { blocksForRange, useMessageBlocks } from '../../queries/message-queries';
 import type { ChatId } from '../../../core/ids';
 import type { WindowMessage } from '../../../client/db-client';
+import { ChevronDownIcon } from '../../components/icons';
 import { MessageRow, PendingRow } from './message-row';
 import type { RowContext } from './row-model';
 
@@ -26,6 +27,15 @@ const OVERSCAN_ROWS = 10;
  * separators, run grouping) are known before they scroll in. */
 const PREFETCH_ROWS = 100;
 
+/** A request to scroll a message into the middle of the view. */
+export interface JumpRequest {
+  readonly seq: number;
+  readonly token: number;
+}
+
+/** Largest count shown on the jump-to-latest badge. */
+const MAX_BADGE_COUNT = 999;
+
 /** Props for {@link MessageList}. */
 export interface MessageListProps {
   readonly chatId: ChatId;
@@ -33,15 +43,25 @@ export interface MessageListProps {
   readonly total: number;
   readonly context: RowContext;
   readonly colors: ReadonlyMap<string, number>;
-  /** Seq to show at the top on first paint; null opens at the last message. */
+  /** Seq to show on first paint; null opens at the last message. */
   readonly initialTopSeq: number | null;
+  /** How the first-paint seq is placed: at the top when restoring a place,
+   * centered when opening at a linked message. */
+  readonly initialAlign: 'start' | 'center';
+  /** A requested jump; a new token scrolls again even to the same seq. */
+  readonly jump: JumpRequest | null;
+  /** Seq shown highlighted (jumped-to message), or null. */
+  readonly highlightSeq: number | null;
+  /** Row ids of bookmarked messages. */
+  readonly bookmarked: ReadonlySet<number>;
   readonly onTopSeqChange: (seq: number) => void;
   readonly onOpenActions: (message: WindowMessage) => void;
 }
 
 export function MessageList(props: MessageListProps) {
-  const { chatId, total, initialTopSeq, onTopSeqChange } = props;
+  const { chatId, total, initialTopSeq, onTopSeqChange, jump } = props;
   const scrollRef = useRef<HTMLDivElement>(null);
+  const handledJump = useRef<number | null>(null);
   const now = useLocalNow();
   const target = Math.min(initialTopSeq ?? total - 1, total - 1);
   const positioned = useRef(false);
@@ -66,20 +86,34 @@ export function MessageList(props: MessageListProps) {
   const lastRendered = positioned.current ? (items.at(-1)?.index ?? target) : target;
   const blocks = useMessageBlocks(
     chatId,
-    blocksForRange(firstRendered - PREFETCH_ROWS, lastRendered + PREFETCH_ROWS),
+    mergeBlocks(
+      blocksForRange(firstRendered - PREFETCH_ROWS, lastRendered + PREFETCH_ROWS),
+      jump === null ? [] : blocksForRange(jump.seq - PREFETCH_ROWS, jump.seq + PREFETCH_ROWS),
+    ),
   );
   const targetLoaded = blocks.bySeq.has(target);
+  const jumpLoaded = jump !== null && blocks.bySeq.has(jump.seq);
+  const initialAlign = initialTopSeq === null ? 'end' : props.initialAlign;
 
   useLayoutEffect(() => {
     if (!positioned.current && targetLoaded) {
       positioned.current = true;
-      virtualizer.scrollToIndex(target, { align: initialTopSeq === null ? 'end' : 'start' });
+      virtualizer.scrollToIndex(target, { align: initialAlign });
       // Record the landing spot too, so leaving without scrolling keeps it.
       onTopSeqChange(virtualizer.range?.startIndex ?? target);
     }
-  }, [targetLoaded, target, initialTopSeq, virtualizer, onTopSeqChange]);
+  }, [targetLoaded, target, initialAlign, virtualizer, onTopSeqChange]);
+
+  useLayoutEffect(() => {
+    if (jump !== null && jumpLoaded && positioned.current && handledJump.current !== jump.token) {
+      handledJump.current = jump.token;
+      virtualizer.scrollToIndex(jump.seq, { align: 'center' });
+    }
+  }, [jump, jumpLoaded, virtualizer]);
 
   const topSeq = virtualizer.range?.startIndex;
+  const endSeq = virtualizer.range?.endIndex;
+  const below = positioned.current && endSeq !== undefined ? total - 1 - endSeq : 0;
   const topMessage = topSeq === undefined ? undefined : blocks.bySeq.get(topSeq);
 
   return (
@@ -131,6 +165,8 @@ export function MessageList(props: MessageListProps) {
                       now={now}
                       total={total}
                       colors={props.colors}
+                      isHighlighted={props.highlightSeq === item.index}
+                      isBookmarked={props.bookmarked.has(message.rowId)}
                       onOpenActions={props.onOpenActions}
                     />
                   )}
@@ -140,6 +176,46 @@ export function MessageList(props: MessageListProps) {
           </div>
         </div>
       </div>
+      {below > 0 ? (
+        <JumpToLatest
+          count={below}
+          onClick={() => {
+            virtualizer.scrollToIndex(total - 1, { align: 'end' });
+          }}
+        />
+      ) : null}
     </div>
+  );
+}
+
+/** Union of two block lists, keeping order and dropping repeats. */
+function mergeBlocks(a: readonly number[], b: readonly number[]): readonly number[] {
+  return b.every((block) => a.includes(block)) ? a : [...new Set([...a, ...b])];
+}
+
+/** Floating "jump to the latest message" button with the count below the
+ * viewport (§12.5). */
+function JumpToLatest({
+  count,
+  onClick,
+}: {
+  readonly count: number;
+  readonly onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={formatString(en.chatView.jumpToLatestCount, { count })}
+      className="bg-surface-raised text-accent absolute end-3 bottom-3 z-10 flex min-h-11 min-w-11 items-center justify-center rounded-full shadow-md"
+      onClick={onClick}
+    >
+      <ChevronDownIcon className="h-6 w-6" />
+      <span
+        aria-hidden="true"
+        className="bg-accent text-accent-contrast absolute end-0 -top-2 min-w-5 rounded-full px-1 text-center text-xs leading-5 font-semibold"
+      >
+        {count > MAX_BADGE_COUNT ? `${String(MAX_BADGE_COUNT)}+` : count}
+      </span>
+    </button>
   );
 }
