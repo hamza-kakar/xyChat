@@ -12,7 +12,9 @@ import type {
   ChatStats,
   ChatSummary,
   ImportRecord,
+  InChatSearchQuery,
   LinkPage,
+  MatchingSeqs,
   MessageWindow,
   SearchPage,
   SearchQuery,
@@ -50,6 +52,10 @@ export interface DbApi {
   }): Promise<MessageWindow>;
   findSeqByDate(chatId: ChatId, date: LocalDateTime): Promise<number | null>;
   search(q: SearchQuery): Promise<SearchPage>;
+  /** Every matching seq of an in-chat search, ascending (§11). */
+  listMatchingSeqs(q: InChatSearchQuery): Promise<MatchingSeqs>;
+  /** Calendar days with messages, as day numbers (§12.5 jump to date). */
+  listMessageDays(chatId: ChatId): Promise<readonly number[]>;
   listAttachments(q: {
     chatId: ChatId;
     types: readonly string[];
@@ -62,7 +68,9 @@ export interface DbApi {
   renameChat(chatId: ChatId, title: string): Promise<void>;
   /** Deletes a chat; returns the OPFS paths to remove (§10.4). */
   deleteChat(chatId: ChatId): Promise<readonly string[]>;
-  addBookmark(chatId: ChatId, messageId: number, note: string | null): Promise<string>;
+  /** Bookmarks a message (or replaces its note); null when the message
+   * is not in that chat. */
+  addBookmark(chatId: ChatId, messageId: number, note: string | null): Promise<string | null>;
   updateBookmark(id: string, note: string | null): Promise<void>;
   removeBookmark(id: string): Promise<void>;
   listBookmarks(chatId: ChatId | null): Promise<readonly BookmarkView[]>;

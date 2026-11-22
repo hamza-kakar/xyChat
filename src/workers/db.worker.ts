@@ -100,6 +100,10 @@ const api: DbApi = {
       return repo().findSeqByDate(id, local);
     }),
   search: (q) => wrap(() => repo().search(rpcInput.search('search', q))),
+  listMatchingSeqs: (q) =>
+    wrap(() => repo().listMatchingSeqs(rpcInput.inChatSearch('listMatchingSeqs', q))),
+  listMessageDays: (chatId) =>
+    wrap(() => repo().listMessageDays(rpcInput.chatId('listMessageDays', chatId))),
   listAttachments: (q) =>
     wrap(() => repo().listAttachments(rpcInput.attachments('listAttachments', q))),
   listLinks: (q) => wrap(() => repo().listLinks(rpcInput.links('listLinks', q))),

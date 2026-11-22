@@ -44,13 +44,30 @@ describe('repository contract: chat management', () => {
     expect(message).toBeDefined();
     if (message === undefined) return;
     const bookmarkId = repo.addBookmark(chatId, message.rowId, 'note here');
+    expect(bookmarkId).not.toBeNull();
+    if (bookmarkId === null) return;
     repo.updateBookmark(bookmarkId, 'edited note');
     const bookmarks = repo.listBookmarks(chatId);
     expect(bookmarks).toHaveLength(1);
     expect(bookmarks[0]?.bookmark.note).toBe('edited note');
     expect(bookmarks[0]?.message.body).toBe(message.body);
+    expect(bookmarks[0]?.message.authorName).toBe(message.authorName);
+    expect(repo.listBookmarks(null)).toHaveLength(1);
     repo.removeBookmark(bookmarkId);
     expect(repo.listBookmarks(chatId)).toHaveLength(0);
+  });
+
+  it('keeps one bookmark per message and rejects a message from another chat', () => {
+    const window = repo.getMessageWindow({ chatId, anchorSeq: 0, before: 0, after: 1 });
+    const message = window.messages[0];
+    expect(message).toBeDefined();
+    if (message === undefined) return;
+    const first = repo.addBookmark(chatId, message.rowId, null);
+    const second = repo.addBookmark(chatId, message.rowId, 'second note');
+    expect(second).toBe(first);
+    expect(repo.listBookmarks(chatId).map((view) => view.bookmark.note)).toEqual(['second note']);
+    expect(repo.addBookmark(asChatId('other-chat'), message.rowId, null)).toBeNull();
+    expect(repo.listBookmarks(null)).toHaveLength(1);
   });
 
   it('lists import history and storage usage', () => {

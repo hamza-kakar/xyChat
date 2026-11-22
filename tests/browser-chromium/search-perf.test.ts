@@ -87,7 +87,33 @@ describe('search performance (§17, §22 M2)', () => {
       elapsed,
       `search 100k took ${elapsed.toFixed(0)}ms (budget ${BUDGET_MS}ms)`,
     ).toBeLessThan(BUDGET_MS);
-    // Budget enforcement is the expect() below; CI reads timings from the
-    // vitest output via the assertion message.
+  });
+
+  it('lists every in-chat match of a 100k chat in under 100 ms', () => {
+    const start = performance.now();
+    const matches = repo.listMatchingSeqs({
+      chatId,
+      query: 'needle',
+      authorId: null,
+      kinds: null,
+      dateFromTsKey: null,
+      dateToTsKey: null,
+    });
+    const elapsed = performance.now() - start;
+    expect(matches.seqs.length).toBe(10_000);
+    expect(
+      elapsed,
+      `in-chat match list took ${elapsed.toFixed(0)}ms (budget ${BUDGET_MS}ms)`,
+    ).toBeLessThan(BUDGET_MS);
+  });
+
+  it('lists the days of a 100k chat in under 100 ms', () => {
+    const start = performance.now();
+    const days = repo.listMessageDays(chatId);
+    const elapsed = performance.now() - start;
+    expect(days).toHaveLength(1);
+    expect(elapsed, `day list took ${elapsed.toFixed(0)}ms (budget ${BUDGET_MS}ms)`).toBeLessThan(
+      BUDGET_MS,
+    );
   });
 });

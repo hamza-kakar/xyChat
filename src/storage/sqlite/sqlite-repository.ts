@@ -9,7 +9,6 @@ import { tsLocalToKey } from './ts-key';
 import type { LocalDateTime } from '../../core/model';
 import {
   attachmentFromRow,
-  bookmarkFromRow,
   chatFromRow,
   chatSummaryFromRow,
   importFromRow,
@@ -27,18 +26,21 @@ import {
   markImportFailed,
   recordWrittenPaths,
 } from './import-admin';
-import { listLinks, searchMessages } from './search-queries';
+import { listLinks, listMatchingSeqs, searchMessages } from './search-queries';
+import { addBookmark, listBookmarks } from './bookmark-queries';
+import { listMessageDays } from './day-queries';
 import type { Participant } from '../repository';
 import type {
   Attachment,
   AttachmentPage,
-  Bookmark,
   BookmarkView,
   Chat,
   ChatStats,
   ChatSummary,
   ImportRecord,
+  InChatSearchQuery,
   LinkPage,
+  MatchingSeqs,
   MessageWindow,
   SearchPage,
   SearchQuery,
@@ -171,6 +173,16 @@ export class SqliteChatRepository {
     return searchMessages(this.db, q);
   }
 
+  /** Every matching seq of an in-chat search (§11 navigation). */
+  listMatchingSeqs(q: InChatSearchQuery): MatchingSeqs {
+    return listMatchingSeqs(this.db, q);
+  }
+
+  /** Calendar days with messages (§12.5 jump to date). */
+  listMessageDays(chatId: ChatId): readonly number[] {
+    return listMessageDays(this.db, chatId);
+  }
+
   /** Links page: URLs extracted at import into text bodies (§12.6). */
   listLinks(q: { chatId: ChatId; cursor: number | null; limit: number }): LinkPage {
     return listLinks(this.db, q);
@@ -271,14 +283,10 @@ export class SqliteChatRepository {
     });
   }
 
-  /** Adds a bookmark. */
-  addBookmark(chatId: ChatId, messageId: number, note: string | null): string {
-    const id = crypto.randomUUID();
-    this.db.run(
-      'INSERT INTO bookmarks (id, chat_id, message_id, note, created_at) VALUES (?, ?, ?, ?, ?)',
-      [id, chatId, messageId, note, new Date().toISOString().replace(/\.\d{3}Z$/u, 'Z')],
-    );
-    return id;
+  /** Bookmarks a message or replaces its note; null when the message is
+   * not in that chat. */
+  addBookmark(chatId: ChatId, messageId: number, note: string | null): string | null {
+    return addBookmark(this.db, { chatId, messageId, note });
   }
 
   /** Updates a bookmark note. */
@@ -293,24 +301,7 @@ export class SqliteChatRepository {
 
   /** Bookmarks for one chat, or all chats when null. */
   listBookmarks(chatId: ChatId | null): readonly BookmarkView[] {
-    const rows =
-      chatId === null
-        ? this.db.selectObjects('SELECT * FROM bookmarks ORDER BY created_at DESC')
-        : this.db.selectObjects(
-            'SELECT * FROM bookmarks WHERE chat_id = ? ORDER BY created_at DESC',
-            [chatId],
-          );
-    return rows.map((row) => {
-      const bookmark: Bookmark = bookmarkFromRow(row);
-      const messageRows = this.db.selectObjects(
-        `SELECT m.*, p.display_name AS author_name
-         FROM messages m LEFT JOIN participants p ON p.id = m.author_id
-         WHERE m.id = ?`,
-        [bookmark.messageId],
-      );
-      const first = messageRows[0];
-      return { bookmark, message: messageFromRow(first ?? {}) };
-    });
+    return listBookmarks(this.db, chatId);
   }
 
   /** Import history for one chat. */

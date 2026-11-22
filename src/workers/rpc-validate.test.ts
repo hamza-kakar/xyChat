@@ -110,6 +110,28 @@ describe('RPC validation: search input (§18.5)', () => {
     const parsed = rpcInput.search('search', base);
     expect(parsed.query).toBe('needle');
   });
+
+  it('validates in-chat match-list queries', () => {
+    const base = {
+      chatId: 'chat-1',
+      query: 'trip',
+      authorId: 'p-1',
+      kinds: ['text'],
+      dateFromTsKey: null,
+      dateToTsKey: 10,
+    };
+    const parsed = rpcInput.inChatSearch('listMatchingSeqs', base);
+    expect(parsed).toEqual(base);
+    expect(rpcInput.inChatSearch('listMatchingSeqs', { ...base, authorId: null }).authorId).toBe(
+      null,
+    );
+    expect(() => rpcInput.inChatSearch('listMatchingSeqs', { ...base, chatId: null })).toThrow(
+      RpcValidationError,
+    );
+    expect(() => rpcInput.inChatSearch('listMatchingSeqs', { ...base, kinds: ['bogus'] })).toThrow(
+      RpcValidationError,
+    );
+  });
 });
 
 describe('RPC validation: ids, windows and records (§18.5)', () => {

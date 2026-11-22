@@ -26,7 +26,7 @@ import {
 } from 'valibot';
 import { asChatId, asParticipantId, type ChatId, type ParticipantId } from '../core/ids';
 import type { LocalDateTime, MediaType } from '../core/model';
-import type { SearchQuery } from '../storage/repository';
+import type { InChatSearchQuery, SearchQuery } from '../storage/repository';
 import type { ImportRecordInput } from '../storage/sqlite/import-record';
 import type { ImportCommitInput } from '../storage/sqlite/import-commit';
 
@@ -190,6 +190,15 @@ const SEARCH_QUERY = object({
   ),
 });
 
+const IN_CHAT_SEARCH_QUERY = object({
+  chatId: ID_STRING,
+  query: pipe(string(), minLength(1), maxLength(500)),
+  authorId: nullable(ID_STRING),
+  kinds: nullable(MESSAGE_KINDS),
+  dateFromTsKey: nullable(NON_NEGATIVE_INT),
+  dateToTsKey: nullable(NON_NEGATIVE_INT),
+});
+
 const ATTACHMENTS_QUERY = object({
   chatId: ID_STRING,
   types: pipe(array(MEDIA_TYPE), maxLength(9)),
@@ -286,6 +295,17 @@ export const rpcInput = {
       dateToTsKey: parsed.dateToTsKey,
       limit: parsed.limit,
       cursor: parsed.cursor,
+    };
+  },
+  inChatSearch(method: string, input: unknown): InChatSearchQuery {
+    const parsed = withSchema(method, IN_CHAT_SEARCH_QUERY, input);
+    return {
+      chatId: asChatId(parsed.chatId),
+      query: parsed.query,
+      authorId: parsed.authorId === null ? null : asParticipantId(parsed.authorId),
+      kinds: parsed.kinds,
+      dateFromTsKey: parsed.dateFromTsKey,
+      dateToTsKey: parsed.dateToTsKey,
     };
   },
   attachments(
