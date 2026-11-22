@@ -26,6 +26,9 @@ storage or import. Record results (date, device, OS, pass/fail) per run.
 - [ ] RTL text (Urdu/Arabic) renders with correct direction.
 - [ ] Emoji-only messages render large.
 - [ ] Dark mode throughout.
+- [ ] Long-press on a bubble's text opens the message actions (no text
+      selection loupe); long-press on a chat-list row opens its actions (no
+      link preview).
 
 ## VoiceOver (from M4)
 
