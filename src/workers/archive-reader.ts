@@ -83,7 +83,7 @@ async function checkQuota(
 
 /**
  * Reads the chat text out of an export file. The file name arrives as an
- * explicit parameter — the caller's Blob is never mutated (review nit).
+ * explicit parameter — the caller's Blob is never mutated.
  *
  * @param file The user-selected blob from the import picker.
  * @param fileName The picker's file name (extension gate + title source).

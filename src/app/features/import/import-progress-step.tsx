@@ -37,15 +37,17 @@ export function ImportProgressStep({ onCancel }: ImportProgressStepProps) {
   // §12.8.5: keep the screen awake while the import
   // runs; released on unmount (done/cancel/fail) and re-acquired when the
   // tab becomes visible again.
-  const [, setWakeLock] = useState<WakeLockHandle | null>(null);
   useEffect(() => {
+    // A wake lock resolving after unmount must release immediately:
+    // `active` guards the late resolution.
     let active = true;
     let handle: WakeLockHandle | null = null;
     const acquire = (): void => {
       void acquireScreenWakeLock().then((result) => {
         if (active && result.ok && result.value !== null) {
           handle = result.value;
-          setWakeLock(result.value);
+        } else if (result.ok && result.value !== null) {
+          void result.value.release();
         }
       });
     };

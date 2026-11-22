@@ -100,6 +100,9 @@ export interface ImportRecord {
   readonly parserVersion: string;
   readonly startedAt: string;
   readonly finishedAt: string | null;
+  /** CUMULATIVE written-path list (§9.3 crash rollback bookkeeping; each
+   * flush replaces the row with a superset). Empty until the first flush. */
+  readonly writtenPaths: readonly string[];
 }
 
 /** Chat-list row: aggregates only, no message bodies. */

@@ -7,6 +7,7 @@
  */
 import { useCallback, useReducer } from 'react';
 import { installGateDone } from './install-gate-state';
+import { requestPersistentStorage } from '../../../platform/persistence';
 import { importClient, onImportProgress } from '../../../client/import-client';
 import { dbClient } from '../../../client/db-client';
 import type { DetectReport, ImportError } from '../../../workers/import-detect';
@@ -174,6 +175,10 @@ export function useImportFlow() {
             dispatch({ type: 'begin-failed', error: outcome });
             return;
           }
+          // §22 M3: request persistent storage once the
+          // import reaches done — repeated calls are no-ops once granted.
+          void requestPersistentStorage();
+
           // §12.8.4: persist the self choice; a failure here must not fail
           // the import — the commit already succeeded.
           if (choices.selfName !== null) {

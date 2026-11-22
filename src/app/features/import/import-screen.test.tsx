@@ -73,6 +73,55 @@ function pickedFile(): File {
   return new File(['zip'], 'WhatsApp Chat - Family.zip');
 }
 
+/** A successful begin() answer for chat-9. */
+function beginSuccess(counts: { readonly attachments: number; readonly stored: number }): unknown {
+  return {
+    commit: {
+      chatId: 'chat-9',
+      importId: 'imp-1',
+      messagesInserted: 5,
+      duplicatesSkipped: 0,
+      attachmentsInserted: counts.attachments,
+      mediaUpgraded: 0,
+    },
+    report: {
+      warningsByCode: {},
+      stats: { lines: 8, messages: 5, system: 0, media: counts.attachments },
+      replacementChars: 0,
+      durationMs: 900,
+      mediaStored: counts.stored,
+      mediaMissing: counts.attachments - counts.stored,
+      mediaOmitted: 0,
+    },
+    chatId: 'chat-9',
+  };
+}
+
+/** Renders the screen and picks the export file. */
+async function renderAndPick(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+  render(
+    <MemoryRouter>
+      <ImportScreen />
+    </MemoryRouter>,
+  );
+  await user.click(screen.getByRole('button', { name: 'Choose export file (.zip or .txt)' }));
+  const input = document.querySelector('input[type="file"]');
+  expect(input).not.toBeNull();
+  if (input !== null) {
+    fireEvent.change(input, { target: { files: [pickedFile()] } });
+  }
+}
+
+/** On the confirm screen: chooses Sara as "me" and starts the import. */
+async function confirmAsSara(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+  await screen.findByText('Confirm import');
+  const sara = screen.getAllByRole('button', { name: 'Sara' })[0];
+  if (sara !== undefined) {
+    await user.click(sara);
+  }
+  await user.click(screen.getByRole('button', { name: 'Start import' }));
+}
+
 describe('ImportScreen (§12.8)', () => {
   beforeEach(() => {
     detectMock.mockReset();
@@ -85,44 +134,13 @@ describe('ImportScreen (§12.8)', () => {
   it('runs pick → detect → confirm and starts the import', async () => {
     const user = userEvent.setup();
     detectMock.mockResolvedValue({ report, suggestedTargetChatId: null });
-    beginMock.mockResolvedValue({
-      commit: {
-        chatId: 'chat-9',
-        importId: 'imp-1',
-        messagesInserted: 5,
-        duplicatesSkipped: 0,
-        attachmentsInserted: 2,
-        mediaUpgraded: 0,
-      },
-      report: {
-        warningsByCode: {},
-        stats: { lines: 8, messages: 5, system: 0, media: 2 },
-        replacementChars: 0,
-        durationMs: 900,
-        mediaStored: 1,
-        mediaMissing: 1,
-        mediaOmitted: 0,
-      },
-      chatId: 'chat-9',
-    });
+    beginMock.mockResolvedValue(beginSuccess({ attachments: 2, stored: 1 }));
     getParticipantsMock.mockResolvedValue([
       { id: 'p-1', chatId: 'chat-9', displayName: 'Sara', colorIndex: 0, messageCount: 3 },
       { id: 'p-2', chatId: 'chat-9', displayName: 'Ali Khan', colorIndex: 1, messageCount: 2 },
     ]);
 
-    render(
-      <MemoryRouter>
-        <ImportScreen />
-      </MemoryRouter>,
-    );
-    await user.click(screen.getByRole('button', { name: 'Choose export file (.zip or .txt)' }));
-    const input = document.querySelector('input[type="file"]');
-    expect(input).not.toBeNull();
-    if (input === null) {
-      return;
-    }
-    fireEvent.change(input, { target: { files: [pickedFile()] } });
-
+    await renderAndPick(user);
     await waitFor(() => {
       expect(detectMock).toHaveBeenCalledWith(
         expect.anything(),
@@ -131,12 +149,7 @@ describe('ImportScreen (§12.8)', () => {
         undefined,
       );
     });
-    await screen.findByText('Confirm import');
-    const sara = screen.getAllByRole('button', { name: 'Sara' })[0];
-    if (sara !== undefined) {
-      await user.click(sara);
-    }
-    await user.click(screen.getByRole('button', { name: 'Start import' }));
+    await confirmAsSara(user);
 
     await screen.findByText('Import complete');
     expect(beginMock).toHaveBeenCalledWith(
@@ -151,19 +164,27 @@ describe('ImportScreen (§12.8)', () => {
     expect(setSelfMock).toHaveBeenCalledWith('chat-9', 'p-1');
   });
 
+  it('still shows the report when setSelf rejects', async () => {
+    const user = userEvent.setup();
+    setSelfMock.mockRejectedValue(new Error('self failed'));
+    detectMock.mockResolvedValue({ report, suggestedTargetChatId: null });
+    beginMock.mockResolvedValue(beginSuccess({ attachments: 0, stored: 0 }));
+    getParticipantsMock.mockResolvedValue([
+      { id: 'p-1', chatId: 'chat-9', displayName: 'Sara', colorIndex: 0, messageCount: 3 },
+    ]);
+
+    await renderAndPick(user);
+    await confirmAsSara(user);
+
+    // The commit succeeded, so the report shows despite the setSelf failure.
+    await screen.findByText('Import complete');
+    expect(setSelfMock).toHaveBeenCalledWith('chat-9', 'p-1');
+  });
+
   it('shows the mapped error when detection fails', async () => {
     const user = userEvent.setup();
     detectMock.mockResolvedValue({ code: 'UNRECOGNIZED_FORMAT', detail: 'no headers' });
-    render(
-      <MemoryRouter>
-        <ImportScreen />
-      </MemoryRouter>,
-    );
-    await user.click(screen.getByRole('button', { name: 'Choose export file (.zip or .txt)' }));
-    const input = document.querySelector('input[type="file"]');
-    if (input !== null) {
-      fireEvent.change(input, { target: { files: [pickedFile()] } });
-    }
+    await renderAndPick(user);
     await screen.findByText('Import failed');
     expect(screen.getByText('This doesn’t look like a WhatsApp export.')).toBeInTheDocument();
   });
@@ -172,16 +193,7 @@ describe('ImportScreen (§12.8)', () => {
     const user = userEvent.setup();
     detectMock.mockResolvedValue({ report, suggestedTargetChatId: null });
     beginMock.mockResolvedValue({ code: 'CANCELLED', detail: 'cancelled during media writes' });
-    render(
-      <MemoryRouter>
-        <ImportScreen />
-      </MemoryRouter>,
-    );
-    await user.click(screen.getByRole('button', { name: 'Choose export file (.zip or .txt)' }));
-    const input = document.querySelector('input[type="file"]');
-    if (input !== null) {
-      fireEvent.change(input, { target: { files: [pickedFile()] } });
-    }
+    await renderAndPick(user);
     await screen.findByText('Confirm import');
     await user.click(screen.getByRole('button', { name: 'Start import' }));
     await screen.findByText('Import cancelled. Nothing was imported.');

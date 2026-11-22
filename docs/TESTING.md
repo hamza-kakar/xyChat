@@ -49,3 +49,17 @@ storage or import. Record results (date, device, OS, pass/fail) per run.
 - [ ] Persistent storage granted after first import.
 - [ ] Delete chat frees storage.
 - [ ] Backup → delete → restore round-trips.
+
+## Import memory notes (M3, §17 manual targets)
+
+- The media phase STREAMS entries from the opened archive chunk-by-chunk
+  into OPFS sync-handle sinks — the largest in-memory object is one
+  decompressed chunk, never a whole entry. The 1 GB /
+  5k-media manual run should show flat memory in Xcode's memory gauge.
+- Thumbnail sources are capped at 25 MB (THUMBNAIL_SOURCE_CAP) — larger
+  images get no thumbnail (type icon instead) rather than risking a
+  decode-time memory spike.
+- The commit-phase renumbering touches only displaced rows; on a stable
+  re-import the FTS triggers are dropped for the duration of the
+  transaction and the index backfills scoped to the import's own rows
+  (ADR 0012).
