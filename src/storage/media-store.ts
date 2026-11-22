@@ -120,9 +120,10 @@ export async function deleteChatMedia(chatId: ChatId): Promise<number> {
   return removed + removedThumbs;
 }
 
-/** Recursively removes a directory and its contents. */
+/** Recursively removes a directory and its contents. Returns the number of
+ * files in the removed directory itself (not its parent, which would count
+ * other chats' files too). An absent directory counts as zero removals. */
 async function deleteDirRecursive(path: string): Promise<number> {
-  let count = 0;
   try {
     const root = await navigator.storage.getDirectory();
     const segments = path.split('/');
@@ -134,12 +135,14 @@ async function deleteDirRecursive(path: string): Promise<number> {
     for (const segment of segments) {
       dir = await dir.getDirectoryHandle(segment);
     }
-    count = await countFiles(dir);
+    const target = await dir.getDirectoryHandle(name);
+    const count = await countFiles(target);
     await dir.removeEntry(name, { recursive: true });
+    return count;
   } catch {
     // Absent directory: nothing to remove.
+    return 0;
   }
-  return count;
 }
 
 /** Counts files under a directory handle (recursive). */
