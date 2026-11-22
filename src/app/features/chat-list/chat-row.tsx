@@ -38,7 +38,7 @@ export const ChatRow = memo(function ChatRow({
       <Link
         to={`/chat/${chat.id}`}
         aria-current={isActive ? 'page' : undefined}
-        className={`flex min-h-16 min-w-0 flex-1 items-center gap-3 py-2 ps-4 select-none ${
+        className={`flex min-h-16 min-w-0 flex-1 items-center gap-3 py-2 ps-4 select-none [-webkit-touch-callout:none] ${
           isActive ? 'bg-surface-raised' : ''
         }`}
         {...press}

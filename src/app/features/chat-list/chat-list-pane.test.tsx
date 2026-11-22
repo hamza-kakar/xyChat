@@ -135,6 +135,12 @@ describe('ChatListPane (§12.4)', () => {
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('That didn’t work.');
   });
 
+  it('keeps the iOS link callout off rows so a long press opens our actions', async () => {
+    renderList();
+    const row = await screen.findByRole('link', { name: /Family/u });
+    expect(row).toHaveClass('select-none', '[-webkit-touch-callout:none]');
+  });
+
   it('opens the actions with a right-click and closes them', async () => {
     const user = userEvent.setup();
     renderList();
