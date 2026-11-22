@@ -200,6 +200,7 @@ function ChatViewBody({
   return (
     <main className="bg-surface safe-sides-bottom flex h-dvh min-w-0 flex-1 flex-col">
       <ChatHeader
+        chatId={chat.id}
         title={chat.title}
         participantCount={chat.isGroup ? (participants.data?.length ?? null) : null}
         headingRef={headingRef}

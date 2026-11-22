@@ -3,6 +3,7 @@ import { ImportScreen } from './features/import';
 import { ChatViewScreen } from './features/chat-view';
 import { SearchScreen } from './features/search';
 import { BookmarksScreen } from './features/bookmarks';
+import { MediaScreen } from './features/media';
 import { AppErrorBoundary, ChatsLayout } from './features/shell';
 
 /**
@@ -22,6 +23,14 @@ export function AppRoutes() {
         element={
           <AppErrorBoundary>
             <ImportScreen />
+          </AppErrorBoundary>
+        }
+      />
+      <Route
+        path="/chat/:chatId/media"
+        element={
+          <AppErrorBoundary>
+            <MediaScreen />
           </AppErrorBoundary>
         }
       />

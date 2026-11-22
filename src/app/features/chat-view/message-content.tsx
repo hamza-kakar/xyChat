@@ -86,7 +86,7 @@ export function MessageContent({ message }: MessageContentProps) {
     case 'media':
       return (
         <div className="flex flex-col gap-1">
-          <MediaContent attachment={attachment} />
+          <MediaContent message={message} attachment={attachment} />
           {message.body === '' ? null : <RichText body={message.body} />}
         </div>
       );
