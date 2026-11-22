@@ -13,6 +13,7 @@ import { migrate } from '../../src/storage/sqlite/migrate';
 import { commitImport, type ImportCommitInput } from '../../src/storage/sqlite/import-commit';
 import type { ParsedMessage } from '../../src/core/model';
 import type { ChatId } from '../../src/core/ids';
+import { RUN_FACTS } from './contract-helpers';
 
 const ROWS = 100_000;
 /** Stable case: duplicates only — no inserts, no renumbering (ADR 0012). */
@@ -131,6 +132,7 @@ function supersetInput(importId: string, fileName: string): ImportCommitInput {
     fileName,
     fileBytes: 10_000_000,
     parserVersion: '1.0.0',
+    report: RUN_FACTS,
   };
 }
 
@@ -219,6 +221,7 @@ describe('import-commit performance (§17, ADR 0007)', () => {
       fileName: 'perf2.txt',
       fileBytes: 10_000_000,
       parserVersion: '1.0.0',
+      report: RUN_FACTS,
     };
     // One untimed warm-up, then the median of TIMED_RUNS identical
     // re-imports: each is idempotent, so every run does the same work.

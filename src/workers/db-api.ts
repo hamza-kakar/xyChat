@@ -24,6 +24,8 @@ import type {
 } from '../storage/repository';
 import type { ImportCommitInput, ImportCommitResult } from '../storage/sqlite/import-commit';
 import type { ImportRecordInput } from '../storage/sqlite/import-record';
+import type { LockState, PinCheck } from '../storage/sqlite/app-lock-store';
+import type { PersistedLogEntry } from '../storage/sqlite/persisted-logs';
 import type { ChatId, ParticipantId } from '../core/ids';
 import type { LocalDateTime } from '../core/model';
 
@@ -117,4 +119,18 @@ export interface DbApi {
     width: number;
     height: number;
   }): Promise<string | null>;
+  /** Schema version of the open database (§12.9 diagnostics). */
+  getSchemaVersion(): Promise<number>;
+  /** App-lock state (§15.3): PIN set, auto-lock delay, active lockout. */
+  getLockState(): Promise<LockState>;
+  /** Checks a PIN, counting failures (§15.3). */
+  verifyPin(pin: string): Promise<PinCheck>;
+  /** Sets, changes or removes the PIN; `current` must match a set PIN. */
+  changePin(input: { current: string | null; next: string | null }): Promise<PinCheck>;
+  /** Stores the auto-lock delay in minutes (0 = immediately). */
+  setAutoLock(minutes: number): Promise<void>;
+  /** The persisted warn/error log entries, oldest first (§18.7). */
+  listPersistedLogs(): Promise<readonly PersistedLogEntry[]>;
+  /** Replaces the persisted log entries (empty clears them). */
+  savePersistedLogs(entries: readonly PersistedLogEntry[]): Promise<void>;
 }

@@ -29,6 +29,7 @@ import type { LocalDateTime, MediaType } from '../core/model';
 import type { InChatSearchQuery, SearchQuery } from '../storage/repository';
 import type { ImportRecordInput } from '../storage/sqlite/import-record';
 import type { ImportCommitInput } from '../storage/sqlite/import-commit';
+import { ImportRunFactsSchema } from '../storage/sqlite/import-report';
 
 /** Validation failure for one RPC call (§18.5). */
 export class RpcValidationError extends Error {}
@@ -235,6 +236,7 @@ const COMMIT_IMPORT_INPUT = object({
   fileName: pipe(string(), minLength(1), maxLength(255)),
   fileBytes: NON_NEGATIVE_INT,
   parserVersion: pipe(string(), minLength(1), maxLength(32)),
+  report: ImportRunFactsSchema,
 });
 
 /** OPFS paths are worker-generated; traversal and absolute forms are

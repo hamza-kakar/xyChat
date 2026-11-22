@@ -14,6 +14,7 @@ import {
   openContractDb,
   presentMediaInput,
   recordInput,
+  RUN_FACTS,
   threeMsgInput,
 } from './contract-helpers';
 import type { SqliteDatabase } from '../../src/storage/sqlite/open';
@@ -92,6 +93,7 @@ describe('repository contract: merge plan (§8.10)', () => {
       fileName: 'contract.txt',
       fileBytes: 100,
       parserVersion: '1.0.0',
+      report: RUN_FACTS,
     });
     expect(second.messagesInserted).toBe(2);
     expect(second.duplicatesSkipped).toBe(3);

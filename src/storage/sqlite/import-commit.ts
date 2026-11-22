@@ -7,6 +7,7 @@
 import type { ParsedMessage, SourcePlatform } from '../../core/model';
 import type { SqliteDatabase } from './open';
 import { applyPlan, loadStoredEntries } from './import-commit-apply';
+import type { ImportReport, ImportRunFacts } from './import-report';
 
 /** A message prepared for insertion (fingerprint already §8.10-complete). */
 export interface InsertableMessage {
@@ -46,6 +47,8 @@ export interface ImportCommitInput {
   readonly fileName: string;
   readonly fileBytes: number;
   readonly parserVersion: string;
+  /** Run facts for the stored report (§9.2 step 11). */
+  readonly report: ImportRunFacts;
 }
 
 /** Outcome counts for the import report (§9.2 step 11). */
@@ -136,10 +139,16 @@ export function commitImport(db: SqliteDatabase, input: ImportCommitInput): Impo
     const stored = loadStoredEntries(db, chatId);
     const counts = applyPlan(db, input, chatId, stored);
     updateChatAggregates(db, chatId, now);
-    db.run("UPDATE imports SET status = 'complete', finished_at = ? WHERE id = ?", [
-      now,
-      input.importId,
-    ]);
+    const report: ImportReport = {
+      ...input.report,
+      messagesAdded: counts.messagesInserted,
+      duplicatesSkipped: counts.duplicatesSkipped,
+      mediaUpgraded: counts.mediaUpgraded,
+    };
+    db.run(
+      "UPDATE imports SET status = 'complete', finished_at = ?, report_json = ? WHERE id = ?",
+      [now, JSON.stringify(report), input.importId],
+    );
     return {
       chatId,
       importId: input.importId,

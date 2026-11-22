@@ -129,6 +129,15 @@ export const dbClient = {
   listOrphanMedia: () => caller.call(() => remote().listOrphanMedia(), 'listOrphanMedia'),
   deleteOrphanMedia: (paths: readonly string[]) =>
     caller.call(() => remote().deleteOrphanMedia(paths), 'deleteOrphanMedia'),
+  getSchemaVersion: () => caller.call(() => remote().getSchemaVersion(), 'getSchemaVersion'),
+  getLockState: () => caller.call(() => remote().getLockState(), 'getLockState'),
+  verifyPin: (pin: string) => caller.call(() => remote().verifyPin(pin), 'verifyPin'),
+  changePin: (input: Parameters<DbApi['changePin']>[0]) =>
+    caller.call(() => remote().changePin(input), 'changePin'),
+  setAutoLock: (minutes: number) => caller.call(() => remote().setAutoLock(minutes), 'setAutoLock'),
+  listPersistedLogs: () => caller.call(() => remote().listPersistedLogs(), 'listPersistedLogs'),
+  savePersistedLogs: (entries: Parameters<DbApi['savePersistedLogs']>[0]) =>
+    caller.call(() => remote().savePersistedLogs(entries), 'savePersistedLogs'),
   /** Takes the db-side end of the commit MessageChannel (§3.2, transferred). */
   connectCommitPort: (port: MessagePort) =>
     caller.call(
@@ -167,6 +176,17 @@ export type LinkMessageView = Awaited<ReturnType<DbApi['listLinks']>>['messages'
 export type LinkPageView = Awaited<ReturnType<DbApi['listLinks']>>;
 /** One import run (chat info, message info). */
 export type ImportRecordView = Awaited<ReturnType<DbApi['listImports']>>[number];
+
+/** App-lock state (§15.3). */
+export type LockStateView = Awaited<ReturnType<DbApi['getLockState']>>;
+/** The outcome of a PIN check. */
+export type PinCheckView = Awaited<ReturnType<DbApi['verifyPin']>>;
+/** One persisted log entry (§18.7). */
+export type PersistedLogEntryView = Awaited<ReturnType<DbApi['listPersistedLogs']>>[number];
+/** Per-chat statistics (§12.7). */
+export type ChatStatsView = Awaited<ReturnType<DbApi['getChatStats']>>;
+/** Media bytes per chat (§12.9). */
+export type StorageUsageView = Awaited<ReturnType<DbApi['storageUsage']>>;
 
 /** Test seam: resets the cached worker (contract tests spawn their own). */
 export function resetDbClientForTests(): void {

@@ -96,3 +96,44 @@ describe('repository contract: media path reads (§9.2 step 8, §10.4)', () => {
     ]);
   });
 });
+
+describe('repository contract: import history reports (§9.2 step 11, §12.7)', () => {
+  it('stores the run facts with the commit counts and reads them back', () => {
+    createImportRecord(db, recordInput('imp-r1'));
+    const first = presentMediaInput('imp-r1', null);
+    const chatId = asChatId(
+      commitImport(db, {
+        ...first,
+        report: { ...first.report, warningsByCode: { INVALID_DATE: 2 }, mediaStored: 1 },
+      }).chatId,
+    );
+    createImportRecord(db, recordInput('imp-r2'));
+    commitImport(db, presentMediaInput('imp-r2', chatId));
+
+    const history = repo.listImports(chatId);
+    expect(history.map((record) => record.id)).toContain('imp-r1');
+    const firstRecord = history.find((record) => record.id === 'imp-r1');
+    expect(firstRecord?.report).toEqual({
+      warningsByCode: { INVALID_DATE: 2 },
+      mediaStored: 1,
+      mediaMissing: 0,
+      mediaOmitted: 0,
+      durationMs: 1,
+      messagesAdded: first.messages.length,
+      duplicatesSkipped: 0,
+      mediaUpgraded: 0,
+    });
+    const second = history.find((record) => record.id === 'imp-r2');
+    expect(second?.report?.messagesAdded).toBe(0);
+    expect(second?.report?.duplicatesSkipped).toBe(first.messages.length);
+  });
+
+  it('reads a missing or corrupt report as null', () => {
+    createImportRecord(db, recordInput('imp-r3'));
+    const chatId = asChatId(commitImport(db, presentMediaInput('imp-r3', null)).chatId);
+    db.run("UPDATE imports SET report_json = '{\"messagesAdded\":-1}' WHERE id = 'imp-r3'");
+    expect(repo.listImports(chatId)[0]?.report).toBeNull();
+    db.run("UPDATE imports SET report_json = 'not json' WHERE id = 'imp-r3'");
+    expect(repo.listImports(chatId)[0]?.report).toBeNull();
+  });
+});
