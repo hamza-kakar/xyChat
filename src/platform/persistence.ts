@@ -21,3 +21,19 @@ export async function requestPersistentStorage(): Promise<boolean> {
     return false;
   }
 }
+
+/** Bytes used and available to this origin (§12.9). */
+export interface StorageEstimateBytes {
+  readonly usage: number;
+  readonly quota: number;
+}
+
+/** The browser's storage estimate; null when unavailable. */
+export async function estimateStorage(): Promise<StorageEstimateBytes | null> {
+  try {
+    const estimate = await navigator.storage.estimate();
+    return { usage: estimate.usage ?? 0, quota: estimate.quota ?? 0 };
+  } catch {
+    return null;
+  }
+}

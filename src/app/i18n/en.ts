@@ -4,7 +4,10 @@
  * (`Record<StringKey, string>` shape). The app name is interpolated from
  * APP_NAME via `{appName}` — it is never hard-coded here.
  */
+import { enSettings } from './en-settings';
+
 export const en = {
+  ...enSettings,
   tagline: 'Your chats, kept private on this device.',
   boot: {
     checkingCapabilities: 'Checking browser support…',

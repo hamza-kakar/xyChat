@@ -18,6 +18,8 @@ export const queryKeys = {
   chat: (chatId: string) => ['chat', chatId] as const,
   participants: (chatId: string) => ['participants', chatId] as const,
   imports: (chatId: string) => ['imports', chatId] as const,
+  /** Chat-info statistics (§12.7). */
+  chatStats: (chatId: string) => ['chat-stats', chatId] as const,
   /** All message blocks of one chat (prefix for invalidation). */
   messages: (chatId: string) => ['messages', chatId] as const,
   messageBlock: (chatId: string, block: number) => ['messages', chatId, block] as const,
@@ -41,4 +43,15 @@ export const queryKeys = {
   links: (chatId: string) => ['media', chatId, 'links'] as const,
   /** Bookmarks of one chat, or of all chats (`null`). */
   bookmarks: (chatId: string | null) => ['bookmarks', chatId] as const,
+  /** App-lock state (§15.3). */
+  lockState: () => ['lock-state'] as const,
+  /** Media bytes per chat (§12.9). */
+  storageUsage: () => ['storage-usage'] as const,
+  /** The browser's usage/quota estimate (§12.9). */
+  storageEstimate: () => ['storage-estimate'] as const,
+  /** Whether storage is persistent (§12.9). */
+  storagePersisted: () => ['storage-persisted'] as const,
+  schemaVersion: () => ['schema-version'] as const,
+  capabilities: () => ['capabilities'] as const,
+  licenses: () => ['licenses'] as const,
 };

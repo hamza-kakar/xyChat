@@ -2,7 +2,7 @@
  * Persistent-storage wrapper tests (§12.9, §22 M3).
  */
 import { describe, expect, it, vi } from 'vitest';
-import { isStoragePersisted, requestPersistentStorage } from './persistence';
+import { estimateStorage, isStoragePersisted, requestPersistentStorage } from './persistence';
 
 describe('persistent storage (§12.9)', () => {
   it('requests persistence and reports the grant', async () => {
@@ -31,6 +31,24 @@ describe('persistent storage (§12.9)', () => {
     });
     expect(await requestPersistentStorage()).toBe(false);
     expect(await isStoragePersisted()).toBe(false);
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('storage estimate (§12.9)', () => {
+  it('reports usage and quota, with zero for missing fields', async () => {
+    vi.stubGlobal('navigator', {
+      storage: { estimate: () => Promise.resolve({ usage: 10 }) },
+    });
+    expect(await estimateStorage()).toEqual({ usage: 10, quota: 0 });
+    vi.unstubAllGlobals();
+  });
+
+  it('returns null when the API throws', async () => {
+    vi.stubGlobal('navigator', {
+      storage: { estimate: () => Promise.reject(new Error('no')) },
+    });
+    expect(await estimateStorage()).toBeNull();
     vi.unstubAllGlobals();
   });
 });

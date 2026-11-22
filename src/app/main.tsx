@@ -3,8 +3,12 @@ import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import { App } from './app';
 import { installRpcErrorSink } from './logging/rpc-sink';
+import { applyThemePreference, readThemePreference } from './hooks/use-theme-preference';
 import './styles/tailwind.css';
 import './styles/tokens.css';
+
+// The theme applies before the first paint (§12.1, §15.4).
+applyThemePreference(readThemePreference());
 
 // Failed worker RPCs log through the app logger with diagnostic ids (§18.7).
 installRpcErrorSink();
