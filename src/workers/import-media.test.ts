@@ -320,7 +320,9 @@ describe('writeImportMedia: rollback (§9.3)', () => {
     if (!result.ok) {
       expect(result.error.code).toBe('QUOTA_EXCEEDED');
     }
-    expect(deleted).toHaveLength(1);
-    expect(deleted[0]?.endsWith('.jpg')).toBe(true);
+    // The failed path is deleted too: opening a sink can create the file
+    // before the failure, so it is recorded before the open.
+    expect(deleted).toHaveLength(2);
+    expect(deleted.every((path) => path.endsWith('.jpg'))).toBe(true);
   });
 });

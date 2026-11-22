@@ -40,9 +40,9 @@ function classify(error: unknown): MediaWriteErrorCode {
  * @param bytes Media bytes to write.
  * @returns The written path and byte count, or a typed failure.
  */
-/** A streaming writer over one OPFS file's sync access handle (review
- * Major 9: entries stream chunk-by-chunk — the largest in-memory object is
- * one decompressed chunk, §9.2 step 8). */
+/** A streaming writer over one OPFS file's sync access handle: entries
+ * stream chunk by chunk, so the largest in-memory object is one
+ * decompressed chunk (§9.2 step 8). */
 export interface MediaWriteSink {
   /** Appends one chunk at the tracked position. */
   write(chunk: Uint8Array): Promise<void>;
@@ -82,8 +82,11 @@ export async function openMediaWriteSink(
         if (closed) {
           return Promise.reject(new Error('sink closed'));
         }
-        access.write(chunk, { at: position });
-        position += chunk.byteLength;
+        const written = access.write(chunk, { at: position });
+        position += written;
+        if (written !== chunk.byteLength) {
+          return Promise.reject(new Error('short write'));
+        }
         return Promise.resolve();
       },
       close,

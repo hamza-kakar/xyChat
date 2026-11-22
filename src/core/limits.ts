@@ -21,6 +21,9 @@ export const IMPORT_LIMITS = {
   maxUncompressedTotalBytes: 20 * GIB,
   /** Abort an entry whose compression ratio exceeds this value. */
   maxCompressionRatio: 1000,
+  /** Larger image entries get no thumbnail: decoding needs the whole entry
+   * in memory, which iOS can't afford for huge files (§9.4, §9.2 step 9). */
+  maxThumbnailSourceBytes: 50 * MIB,
   /** Thumbnail long edge in pixels (§9.2 step 9). */
   thumbnailLongEdge: 320,
   /** Thumbnail JPEG quality (§9.2 step 9). */
