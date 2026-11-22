@@ -76,11 +76,20 @@ export class SqliteChatRepository {
     return this.db;
   }
 
-  /** Chat-list rows sorted by recency (§12.4). */
+  /** Chat-list rows sorted by recency (§12.4). The last message (by seq,
+   * via the UNIQUE(chat_id, seq) index) supplies the preview's sender and
+   * media-type label; no aggregate is computed here. */
   listChats(): readonly ChatSummary[] {
     return this.db
       .selectObjects(
-        'SELECT id, title, is_group, message_count, last_ts_key, last_message_preview FROM chats ORDER BY last_ts_key DESC',
+        `SELECT c.id, c.title, c.is_group, c.message_count, c.last_ts_key, c.last_message_preview,
+                m.kind AS last_kind, p.display_name AS last_author,
+                (SELECT a.media_type FROM attachments a WHERE a.message_id = m.id LIMIT 1) AS last_media_type
+         FROM chats c
+         LEFT JOIN messages m
+           ON m.chat_id = c.id AND m.seq = (SELECT MAX(seq) FROM messages WHERE chat_id = c.id)
+         LEFT JOIN participants p ON p.id = m.author_id
+         ORDER BY c.last_ts_key DESC`,
       )
       .map(chatSummaryFromRow);
   }

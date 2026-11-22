@@ -167,6 +167,29 @@ export function participantFromRow(row: Record<string, unknown>): Participant {
   };
 }
 
+const MessageKindSchema = v.picklist([
+  'text',
+  'media',
+  'system',
+  'deleted',
+  'call',
+  'location',
+  'contact',
+  'poll',
+]);
+
+const MediaTypeSchema = v.picklist([
+  'image',
+  'video',
+  'audio',
+  'voice',
+  'sticker',
+  'gif',
+  'document',
+  'contact-card',
+  'other',
+]);
+
 const MessageRow = v.object({
   id: v.number(),
   chat_id: ChatIdSchema,
@@ -176,10 +199,11 @@ const MessageRow = v.object({
   ts_key: v.number(),
   author_id: v.nullable(ParticipantIdSchema),
   author_name: v.nullable(v.string()),
-  kind: v.picklist(['text', 'media', 'system', 'deleted', 'call', 'location', 'contact', 'poll']),
+  kind: MessageKindSchema,
   body: v.string(),
   is_edited: BooleanInt,
   extra_json: v.nullable(v.string()),
+  import_id: ImportIdSchema,
 });
 
 type MessageParsed = v.InferOutput<typeof MessageRow>;
@@ -202,6 +226,7 @@ export function messageFromRow(row: Record<string, unknown>): Message {
     isEdited: r.is_edited,
     poll: r.kind === 'poll' ? (extra as ParsedPoll | null) : null,
     location: r.kind === 'location' ? (extra as ParsedLocation | null) : null,
+    importId: r.import_id,
   };
 }
 
@@ -210,17 +235,7 @@ const AttachmentRow = v.object({
   message_id: v.number(),
   chat_id: ChatIdSchema,
   file_name: v.nullable(v.string()),
-  media_type: v.picklist([
-    'image',
-    'video',
-    'audio',
-    'voice',
-    'sticker',
-    'gif',
-    'document',
-    'contact-card',
-    'other',
-  ]),
+  media_type: MediaTypeSchema,
   mime: v.nullable(v.string()),
   byte_size: v.nullable(v.number()),
   opfs_path: v.nullable(v.string()),
@@ -331,6 +346,9 @@ const ChatSummaryRow = v.object({
   message_count: v.number(),
   last_ts_key: v.nullable(v.number()),
   last_message_preview: v.nullable(v.string()),
+  last_kind: v.nullable(MessageKindSchema),
+  last_author: v.nullable(v.string()),
+  last_media_type: v.nullable(MediaTypeSchema),
 });
 
 type ChatSummaryParsed = v.InferOutput<typeof ChatSummaryRow>;
@@ -345,5 +363,8 @@ export function chatSummaryFromRow(row: Record<string, unknown>): ChatSummary {
     messageCount: r.message_count,
     lastTsKey: r.last_ts_key,
     lastMessagePreview: r.last_message_preview,
+    lastMessageKind: r.last_kind,
+    lastAuthorName: r.last_author,
+    lastMediaType: r.last_media_type,
   };
 }
