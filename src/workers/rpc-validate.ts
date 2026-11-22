@@ -58,7 +58,7 @@ function parseId(method: string, input: unknown): string {
 }
 
 /** Parses `input` against `schema`, failing with a method-tagged error. */
-function withSchema<S extends GenericSchema>(
+export function withSchema<S extends GenericSchema>(
   method: string,
   schema: S,
   input: unknown,

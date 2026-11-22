@@ -112,6 +112,14 @@ export const dbClient = {
     caller.call(() => remote().setLastChatPosition(chatId, seq), 'setLastChatPosition'),
   readContactName: (messageId: number) =>
     caller.call(() => remote().readContactName(messageId), 'readContactName'),
+  setAttachmentDuration: (input: Parameters<DbApi['setAttachmentDuration']>[0]) =>
+    caller.call(() => remote().setAttachmentDuration(input), 'setAttachmentDuration'),
+  /** Saves a video thumbnail; the JPEG buffer is transferred (§9.4). */
+  saveVideoThumbnail: (input: Parameters<DbApi['saveVideoThumbnail']>[0]) =>
+    caller.call(
+      () => remote().saveVideoThumbnail(Comlink.transfer(input, [input.jpeg.buffer])),
+      'saveVideoThumbnail',
+    ),
   markImportCancelled: (importId: string) =>
     caller.call(() => remote().markImportCancelled(importId), 'markImportCancelled'),
   markImportFailed: (importId: string) =>
@@ -149,6 +157,14 @@ export type SearchQueryInput = Parameters<DbApi['search']>[0];
 export type InChatSearchInput = Parameters<DbApi['listMatchingSeqs']>[0];
 /** One bookmark joined with its message. */
 export type BookmarkViewItem = Awaited<ReturnType<DbApi['listBookmarks']>>[number];
+/** One stored media file with its message context (§12.6). */
+export type GalleryItemView = Awaited<ReturnType<DbApi['listAttachments']>>['items'][number];
+/** A gallery page. */
+export type GalleryPageView = Awaited<ReturnType<DbApi['listAttachments']>>;
+/** One link-bearing message (§12.6 Links tab). */
+export type LinkMessageView = Awaited<ReturnType<DbApi['listLinks']>>['messages'][number];
+/** A links page. */
+export type LinkPageView = Awaited<ReturnType<DbApi['listLinks']>>;
 /** One import run (chat info, message info). */
 export type ImportRecordView = Awaited<ReturnType<DbApi['listImports']>>[number];
 

@@ -1,18 +1,11 @@
 /**
- * Search and link queries (AGENTS.md §11, §12.6 Links tab). The only SQL
- * touching messages_fts lives here; user input is always escaped into an
- * FTS phrase or a LIKE with ESCAPE.
+ * Search queries (AGENTS.md §11). The only SQL touching messages_fts
+ * lives here; user input is always escaped into an FTS phrase or a LIKE
+ * with ESCAPE.
  */
-import type { ChatId } from '../../core/ids';
 import { messageFromRow } from './rows';
 import type { SqliteDatabase } from './open';
-import type {
-  InChatSearchQuery,
-  LinkPage,
-  MatchingSeqs,
-  SearchPage,
-  SearchQuery,
-} from '../repository';
+import type { InChatSearchQuery, MatchingSeqs, SearchPage, SearchQuery } from '../repository';
 
 /** §11: LIKE fallback result cap (in-chat, 1–2 char queries). */
 const LIKE_RESULT_CAP = 500;
@@ -178,40 +171,4 @@ export function listMatchingSeqs(db: SqliteDatabase, q: InChatSearchQuery): Matc
   const all = unpackIntegers(rows[0]?.[0]);
   const seqs = all.slice(0, cap);
   return { seqs, isCapped: all.length > cap };
-}
-
-/** Lists link-bearing text messages with extracted URLs (§12.6). */
-export function listLinks(
-  db: SqliteDatabase,
-  q: { chatId: ChatId; cursor: number | null; limit: number },
-): LinkPage {
-  const conditions: string[] = ['m.chat_id = ?', "m.kind = 'text'", "m.body LIKE '%http%'"];
-  const params: (string | number | null)[] = [q.chatId];
-  if (q.cursor !== null) {
-    conditions.push('m.id < ?');
-    params.push(q.cursor);
-  }
-  const rows = db.selectObjects(
-    `SELECT m.id, m.chat_id, m.body FROM messages m WHERE ${conditions.join(' AND ')} ORDER BY m.id DESC LIMIT ?`,
-    [...params, q.limit],
-  );
-  const links = rows
-    .map((row) => {
-      const body = String(row['body']);
-      const urlMatch = /https?:\/\/[^\s<>"]+/u.exec(body);
-      return urlMatch === null
-        ? null
-        : {
-            messageRowId: Number(row['id']),
-            chatId: row['chat_id'] as LinkPage['links'][number]['chatId'],
-            url: urlMatch[0],
-            snippet: buildSnippet(body, urlMatch[0]),
-          };
-    })
-    .filter((l): l is NonNullable<typeof l> => l !== null);
-  const last = rows.at(-1);
-  return {
-    links,
-    nextCursor: rows.length === q.limit && last !== undefined ? Number(last['id']) : null,
-  };
 }

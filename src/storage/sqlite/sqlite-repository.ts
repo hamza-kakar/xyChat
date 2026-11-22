@@ -3,8 +3,8 @@
  * Parameterized statements exclusively; every row passes through rows.ts
  * validation. Runs inside db.worker — never on the main thread.
  */
-import type { ChatId, ParticipantId } from '../../core/ids';
-import { formatLocalDateTime, parseLocalDateTime } from './local-date-time-parse';
+import type { AttachmentId, ChatId, ParticipantId } from '../../core/ids';
+import { parseLocalDateTime } from './local-date-time-parse';
 import { tsLocalToKey } from './ts-key';
 import type { LocalDateTime } from '../../core/model';
 import {
@@ -26,7 +26,16 @@ import {
   markImportFailed,
   recordWrittenPaths,
 } from './import-admin';
-import { listLinks, listMatchingSeqs, searchMessages } from './search-queries';
+import { listMatchingSeqs, searchMessages } from './search-queries';
+import {
+  getAttachment,
+  listChatAudioCachePaths,
+  listGalleryItems,
+  listKnownAudioCachePaths,
+  listLinkMessages,
+  setAttachmentDuration,
+  setVideoThumbnail,
+} from './media-queries';
 import { addBookmark, listBookmarks } from './bookmark-queries';
 import { listMessageDays } from './day-queries';
 import type { Participant } from '../repository';
@@ -183,37 +192,39 @@ export class SqliteChatRepository {
     return listMessageDays(this.db, chatId);
   }
 
-  /** Links page: URLs extracted at import into text bodies (§12.6). */
+  /** Links page: text messages carrying a link, newest first (§12.6). */
   listLinks(q: { chatId: ChatId; cursor: number | null; limit: number }): LinkPage {
-    return listLinks(this.db, q);
+    return listLinkMessages(this.db, q);
   }
 
-  /** Attachment-gallery page for one chat and media types (§12.6). */
+  /** Gallery page: stored media of the given types, newest first (§12.6). */
   listAttachments(q: {
     chatId: ChatId;
     types: readonly string[];
     cursor: number | null;
     limit: number;
   }): AttachmentPage {
-    const conditions: string[] = [
-      'chat_id = ?',
-      `media_type IN (${q.types.map(() => '?').join(',')})`,
-    ];
-    const params: (string | number | null)[] = [q.chatId, ...q.types];
-    if (q.cursor !== null) {
-      conditions.push('rowid < ?');
-      params.push(q.cursor);
-    }
-    const rows = this.db.selectObjects(
-      `SELECT rowid AS row_id, * FROM attachments WHERE ${conditions.join(' AND ')} ORDER BY rowid DESC LIMIT ?`,
-      [...params, q.limit],
-    );
-    const attachments = rows.map(attachmentFromRow);
-    const lastRowId = rows.at(-1)?.['row_id'];
-    return {
-      attachments,
-      nextCursor: rows.length === q.limit && typeof lastRowId === 'number' ? lastRowId : null,
-    };
+    return listGalleryItems(this.db, q);
+  }
+
+  /** One attachment by id, or null (§13). */
+  getAttachment(attachmentId: AttachmentId): Attachment | null {
+    return getAttachment(this.db, attachmentId);
+  }
+
+  /** Stores a duration measured on first play (§13.2). */
+  setAttachmentDuration(attachmentId: AttachmentId, durationMs: number): void {
+    setAttachmentDuration(this.db, attachmentId, durationMs);
+  }
+
+  /** Records a lazily generated video thumbnail (§13.3). */
+  setVideoThumbnail(input: {
+    readonly attachmentId: AttachmentId;
+    readonly thumbPath: string;
+    readonly width: number;
+    readonly height: number;
+  }): boolean {
+    return setVideoThumbnail(this.db, input);
   }
 
   /** Chat-info statistics (§12.7). */
@@ -372,7 +383,8 @@ export class SqliteChatRepository {
   /** §9.3 orphan sweep, list half: OPFS media/thumbnail paths that no
    * attachment row references. The caller deletes after confirmation. */
   listOrphanMedia(fsPaths: readonly string[]): readonly string[] {
-    return listOrphanMedia(this.db, fsPaths);
+    const knownAudio = new Set(listKnownAudioCachePaths(this.db));
+    return listOrphanMedia(this.db, fsPaths).filter((path) => !knownAudio.has(path));
   }
 
   /** Raw attachment rows for one message (media viewer, §12.5). */
@@ -380,11 +392,9 @@ export class SqliteChatRepository {
     return getAttachmentsForMessage(this.db, messageId);
   }
 
-  /** Every stored file path of one chat, for removal after deleteChat. */
+  /** Every stored file path of one chat (media, thumbnails and decoded
+   * audio), for removal after deleteChat (§10.4). */
   listChatMediaPaths(chatId: ChatId): readonly string[] {
-    return listChatMediaPaths(this.db, chatId);
+    return [...listChatMediaPaths(this.db, chatId), ...listChatAudioCachePaths(this.db, chatId)];
   }
-
-  /** Formats a message timestamp for storage (canonical wall clock). */
-  static formatTsLocal = formatLocalDateTime;
 }

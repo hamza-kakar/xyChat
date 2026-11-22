@@ -20,6 +20,7 @@ import type {
   ChatSummary,
   ImportRecord,
   Message,
+  MessageContext,
   Participant,
 } from '../repository';
 import type { ParsedLocation, ParsedPoll } from '../../core/model';
@@ -265,6 +266,25 @@ export function attachmentFromRow(row: Record<string, unknown>): Attachment {
     height: r.height,
     durationMs: r.duration_ms,
     status: r.status,
+  };
+}
+
+/** Message columns joined onto gallery and link rows (`m_*` aliases). */
+const MessageContextRow = v.object({
+  m_id: v.number(),
+  m_seq: v.number(),
+  m_ts_local: TsLocal,
+  m_author_name: v.nullable(v.string()),
+});
+
+/** Validates the joined message columns into a {@link MessageContext}. */
+export function messageContextFromRow(row: Record<string, unknown>): MessageContext {
+  const r = parseRow(MessageContextRow, row, 'messages');
+  return {
+    messageRowId: r.m_id,
+    seq: r.m_seq,
+    tsLocal: r.m_ts_local,
+    authorName: r.m_author_name,
   };
 }
 
