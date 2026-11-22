@@ -24,3 +24,19 @@ export const SEARCH = {
 
 /** How long a jumped-to message stays highlighted (§11, §12.5). */
 export const JUMP_HIGHLIGHT_MS = 2500;
+
+/** Media gallery and playback tuning (AGENTS.md §12.6, §13). */
+export const MEDIA = {
+  /** Gallery and links page size. */
+  PAGE_SIZE: 120,
+  /** Lazy video thumbnails made at once (§13.3). */
+  VIDEO_THUMB_CONCURRENCY: 2,
+  /** Longest thumbnail edge (§9.2 step 9, §13.3). */
+  THUMB_MAX_EDGE: 320,
+  /** JPEG quality of lazy video thumbnails. */
+  THUMB_QUALITY: 0.8,
+  /** Seek target for a video thumbnail, capped at half the duration (s). */
+  VIDEO_THUMB_SEEK_S: 1,
+  /** Playback speeds the audio player cycles through (§13.2). */
+  PLAYBACK_RATES: [1, 1.5, 2],
+} as const;

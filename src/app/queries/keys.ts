@@ -32,6 +32,13 @@ export const queryKeys = {
   /** Every matching seq of an in-chat search (§11). */
   matches: (chatId: string, query: string) => ['matches', chatId, query] as const,
   messageDays: (chatId: string) => ['message-days', chatId] as const,
+  /** Every gallery and link list of one chat (prefix for invalidation). */
+  mediaOfChat: (chatId: string) => ['media', chatId] as const,
+  /** Gallery pages of one tab's media types (§12.6). */
+  gallery: (chatId: string, types: readonly string[]) =>
+    ['media', chatId, 'gallery', types] as const,
+  /** Link-bearing messages of one chat (§12.6). */
+  links: (chatId: string) => ['media', chatId, 'links'] as const,
   /** Bookmarks of one chat, or of all chats (`null`). */
   bookmarks: (chatId: string | null) => ['bookmarks', chatId] as const,
 };
