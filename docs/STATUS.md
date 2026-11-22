@@ -334,6 +334,9 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
   libraries, no sudo); it runs in CI via `playwright install-deps`.
 - Lighthouse 12 removed the PWA category; installability is gated by the
   manifest e2e instead (ADR 0009).
+- A voice note playing in a bubble stops when its row scrolls far out of
+  the virtualized list (the row unmounts). The gallery's Audio tab keeps
+  playing in the full-screen player.
 - Bare domains (`example.com` without a scheme) are not linked: linkify-it
   runs with its defaults and only explicit http/https/mailto/tel links
   render as anchors.
@@ -377,6 +380,8 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
 - M6: voice notes and audio play inside their bubbles and gallery rows
   open the full-screen player; stickers are not tappable.
 - M6: two described `jsx-a11y/media-has-caption` disables on `<audio>` and
-  `<video>`: exported chats carry no caption tracks.
+  `<video>` (exported chats carry no caption tracks), and the same
+  described `react-hooks/incompatible-library` disable as M4 on the
+  gallery's `useVirtualizer`.
 - ADR 0013: workers bundle as ES modules; the unused Opus ML chunk is not
   precached.
