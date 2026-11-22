@@ -136,6 +136,20 @@ describe('MediaScreen (§12.6)', () => {
     );
   });
 
+  it('loads the next page when the viewer reaches the last loaded item', async () => {
+    const user = userEvent.setup();
+    db.listAttachments
+      .mockResolvedValueOnce({ items: [item(3), item(2)], nextCursor: 2 })
+      .mockResolvedValueOnce({ items: [item(1)], nextCursor: null });
+    renderMedia(`/chat/${CHAT_ID}/media`);
+    const tiles = await screen.findAllByRole('button', { name: /^Photo, Sara/u });
+    const lastTile = tiles.at(-1);
+    if (lastTile === undefined) return;
+    await user.click(lastTile);
+    expect(await screen.findByRole('dialog', { name: /^Photo 2 of 3$/u })).toBeInTheDocument();
+    expect(db.listAttachments).toHaveBeenLastCalledWith(expect.objectContaining({ cursor: 2 }));
+  });
+
   it('shows the empty state of a tab', async () => {
     db.listAttachments.mockResolvedValue({ items: [], nextCursor: null });
     renderMedia(`/chat/${CHAT_ID}/media?tab=videos`);
