@@ -4,82 +4,69 @@ Progress tracker for waChatBack. Updated in every PR.
 
 ## Current milestone
 
-M3 — import pipeline (PR #6, round-2 feedback being addressed).
+M4 — Chat list and chat view (branch `m4-chat-list-view`, PR open).
 
-M2 — Storage and db.worker: merged.
+M3 — Import pipeline: merged (PR #6).
 
-### Round-2 fixes landed (2026-11-22)
+## What's done (M4)
 
-- Media phase (§9.3): every path is recorded and flushed before its file
-  is created; chunk writes are awaited and short writes detected; a throw
-  mid-entry becomes a typed error with every touched path deleted; the
-  pipeline shares the written-path list so its catch can roll back too.
-- Thumbnails (§9.4): entries over `IMPORT_LIMITS.maxThumbnailSourceBytes`
-  (50 MiB) get none; both phase bars are determinate (§9.1).
-- `deleteChatMedia` counts only the removed chat's files; the orphan-sweep
-  suite cleans OPFS after each test (fixes the CI browser failure).
-- Corrupt `written_paths_json` reads as an empty list instead of throwing.
+- Chat list (§12.4): avatar initials and colour from the title hash, group
+  icon, last-message preview with sender prefix in groups and media-type
+  labels, relative dates (time today, weekday this week, short date
+  otherwise), sorted by last message, instant local title filter, empty
+  state with install hint, long-press/context menu with Rename, Delete
+  (confirmation shows message/media counts and bytes; media folders are
+  deleted after the DB commit, §10.4).
+- Chat view (§12.5): `@tanstack/react-virtual` list with dynamic
+  measurement, 300-message windows loaded around an anchor seq in both
+  directions, opens at the last message, scroll position remembered per
+  chat for the session and in `meta` for the last chat; day separators and
+  a sticky day pill; incoming/outgoing alignment by self; group sender
+  names in the participant palette on the first bubble of a 5-minute run;
+  grouped bubbles; time and "edited" label; `dir="auto"` +
+  `unicode-bidi: plaintext`; jumbomoji for 1–3 emoji.
+- Formatting renderer over the `core/text-format` AST (bold, italic,
+  strike, inline code, monospace blocks, quotes, lists) and linkify-it
+  links limited to http/https/mailto/tel. No HTML strings anywhere.
+- Every message kind: system pill, deleted, call, location card (Apple
+  Maps link, no tiles), poll card, contact card (name from the `.vcf` `FN:`
+  line read in db.worker with the §15.2 1 MB cap), media bubbles (image and
+  sticker thumbnails with `aspect-ratio` from stored size, video tile with
+  a type icon, voice/audio as a non-interactive row until M6, documents,
+  omitted/missing placeholders). Object URLs come from an LRU cache (200
+  entries, revoked on eviction and route change).
+- Self banner ("Choose which person is you") with a participant sheet;
+  message actions sheet: copy, share (`navigator.share`), message info
+  (timestamp, sender, kind, import file).
+- Themes: light/dark tokens extended for bubbles and the participant
+  palette, all pairs WCAG-AA checked by unit test. Two-pane layout at
+  ≥ 768 px.
+- Storage: chat-list preview fields, last-chat position in `meta`, contact
+  names; migration `0002` adds `idx_attachments_message`, and a message
+  window reads its attachments in one statement (100k chat opens in
+  ~150 ms on Chromium).
+- Fix carried from M3: `.txt` exports (no zip) failed with
+  `CORRUPT_ARCHIVE`; they now open as an archive with no media.
+- E2E (Chromium): rendering of an imported group with axe light/dark, copy
+  and message info, rename and delete with OPFS cleanup, self banner, RTL
+  direction (flow 17), and the 100k chat: first bubbles ≤ 300 ms after
+  opening, no long task > 50 ms in a scripted fast scroll, place restored
+  after leaving.
 
-Also landed:
+Screenshots (iPhone viewport, light and dark): `docs/screenshots/m4/`.
 
-- db.worker holds no SQL: import marks, written paths, attachment and
-  chat-path reads go through repository methods with Valibot-validated
-  rows; contract tests cover the in_progress-only transitions and corrupt
-  path lists; commit-port dispatch has unit tests.
-- E2E flow 4 uses a true superset (6 stored + 2 new); flow 5 cancels only
-  once media files exist and fails if rollback skips the deletes.
-- The import flow hook lives in `features/import/hooks/`, owns cancel,
-  and requests persistent storage once, only when not already persisted.
-- The stable commit perf case times the median of 3 runs after a warm-up.
+## Previously (M3)
 
-Round-3 fixes:
-
-- Written paths are flushed to the imports row every 100 paths and once
-  when the media phase ends or fails, not on every file (§9.2 step 8).
-  After a crash, at most 99 unflushed files are left for the orphan
-  sweeper.
-- Cancel waits for the worker's CANCELLED answer instead of flashing the
-  picker first. E2E flow 5 then re-picks the export and checks no
-  "Update existing chat" option appears, so no chat was created.
-- Wake-lock tests cover a lock granted after the progress step unmounts.
-
-Round-4 fix:
-
-- Tapping Cancel disables the button and shows "Cancelling…" until the
-  worker answers. If the import committed before the worker saw the
-  cancel, the report says it finished before it could be cancelled.
-
-Known limits: message order after a superset merge is asserted by the
-browser contract test, not E2E, until the chat view lands (M4). The two
-perf tests can exceed budget when suites run in parallel on one machine;
-serial runs and CI pass.
-
-## What's done (M3)
-
-- Archive reading with §15.2 safety (ratio/entry caps, quota check,
-  traversal rejection) — archive-reader.ts + opened-archive.ts (streaming
-  handle, review Major 9) + 15 node tests.
-- Detection + confirmation (§9.2 step 4, §12.8.4): DetectReport with
-  participants/group/title/media counts/free bytes; DMY/MDY override
-  re-runs detection.
-- Parse + §8.10 fingerprints (§9.2 steps 6–7) with §8.2 progress and §9.3
-  cancellation polling per 1,000 items.
-- Media phase (§9.2 steps 8–9): STREAMED writes through opened-archive
-  sync-handle sinks (review Major 9 — nothing buffered whole), thumbnails
-  with determinate §9.1 progress, skip-stored fingerprints (§9.2 step 8),
-  §9.3 rollback of exactly the written paths.
-- Commit over the §3.2 MessagePort (commit-port.ts page module, Valibot
-  union validation); markImport* via repository methods; import-begin.ts
-  page module owns the orchestration incl. post-media rollback (review
-  Majors 6/7/8).
-- Import UI (§12.8): install gate with bypass, picker, confirm (DMY/MDY
-  toggle, self choice, merge preselect, summary with archive/free-storage
-  bytes), progress (§9.1 phases + wake lock §12.8.5 + cancel), report
-  (media split, plain-language warnings), mapped errors with safe
-  diagnostics (§15.4).
+- import.worker with every §9.1 phase, confirmation handshake, streamed
+  media writes through sync access handles, image thumbnails, merge and
+  re-import, cancellation with rollback of exactly the written paths
+  (flushed every 100 paths), boot rollback of `in_progress` imports,
+  orphan sweeper API, persistent-storage request after the first import.
+- Import UI (§12.8): install gate with bypass, picker, confirm screen with
+  DMY/MDY live preview, progress with wake lock and cancel, report with
+  plain-language warnings and safe diagnostics.
 - §22 M3 scale gate: 100k messages + 2k media imported without memory
-  errors (browser test); e2e flows 2–5 on Chromium (WebKit skips per ADR
-  0007).
+  errors (browser test); e2e flows 2–5 on Chromium.
 
 ## Previously (M2)
 
@@ -178,14 +165,11 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
 
 ## What's next
 
-- M3 — import pipeline (§9, §12.8): COMPLETE on branch m3-import (8
-  ordered commits, each passing typecheck + tests). **One PR, not
-  sub-PRs** — owner decision (2026-11-20), an explicit exception to §0
-  rule 12; reviewability kept via the ordered commit structure.
-  Acceptance: e2e flows 2–5 pass on Chromium (WebKit skips per ADR
-  0007); the §22 scale gate imports a 100k-message + 2k-media synthetic
-  zip in CI Chromium without memory errors. Commit map (§9/§12.8 →
-  commits) lives in the PR description.
+- M5 — search, jump to date, bookmarks (§11, §12.5 search/jump UI,
+  bookmarks screen; e2e flows 6, 7, 10). The chat header's search,
+  jump-to-date and info buttons and the list toolbar's Search, Bookmarks
+  and Settings entries arrive with the milestones that build those
+  screens.
 
 ## Verified results (M2 + audit rounds 2–3)
 
@@ -252,8 +236,9 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
   libraries, no sudo); it runs in CI via `playwright install-deps`.
 - Lighthouse 12 removed the PWA category; installability is gated by the
   manifest e2e instead (ADR 0009).
-- `pnpm test:browser` and `pnpm bench` pass with no tests until milestones
-  M2 / M1 land their suites.
+- Bare domains (`example.com` without a scheme) are not linked: linkify-it
+  runs with its defaults and only explicit http/https/mailto/tel links
+  render as anchors.
 
 ## Deviations from spec
 
@@ -266,3 +251,14 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
   reviewer-approved approach requested in round 1).
 - ADR 0009: PWA installability gate replaced (Lighthouse 12 removed the
   audit).
+- M4: the chat header and list toolbar omit the search, jump-to-date,
+  chat-info, bookmarks and settings entry points until M5/M7 build those
+  screens (no buttons that lead nowhere, §0 rule 4).
+- M4: each bubble has a "Message actions" button for keyboard and switch
+  users; it is visually hidden until focused, since touch users long-press
+  and mouse users right-click.
+- M4: one described `eslint-disable-next-line react-hooks/incompatible-library`
+  on `useVirtualizer` (TanStack Virtual returns a mutable instance by
+  design).
+- M4: migration `0002` (index on `attachments.message_id`) added for the
+  §17 open-chat budget.
