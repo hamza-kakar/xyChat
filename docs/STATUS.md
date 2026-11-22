@@ -42,6 +42,12 @@ M4 — Chat list and chat view: merged (PR #7).
   jump-to-date buttons in the chat header (disabled for an empty chat).
 - New `highlight` colour token for matches and the jumped-to row, AA
   checked against text in both themes.
+- Fix carried from earlier milestones: `.safe-area` was an unlayered rule,
+  so it silently replaced every Tailwind padding utility on the same
+  element (and padded headers with the home-indicator inset). The insets
+  are now layered utilities on outer boxes, with spacing on inner boxes;
+  the chat list, chat view, search and bookmarks screens take the side and
+  home-indicator insets.
 - E2E (Chromium): flow 6 (global search → open hit → highlighted in
   view), flow 7 (in-chat previous/next, jump to date, jump to latest,
   first message), flow 10 (bookmark, edit note, bookmarks screen, show in
