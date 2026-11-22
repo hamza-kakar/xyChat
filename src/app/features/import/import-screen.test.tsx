@@ -3,12 +3,12 @@
  * begin flow with both worker clients mocked (§18.4); the report and
  * error branches.
  */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { installGateDone } from './install-gate-state';
 import { ImportScreen } from './import-screen';
+import { renderWithProviders } from '../../test/providers';
 import type { DetectReport } from '../../../workers/import-detect';
 
 const detectMock = vi.hoisted(() => vi.fn());
@@ -105,11 +105,7 @@ function beginSuccess(counts: { readonly attachments: number; readonly stored: n
 
 /** Renders the screen and picks the export file. */
 async function renderAndPick(user: ReturnType<typeof userEvent.setup>): Promise<void> {
-  render(
-    <MemoryRouter>
-      <ImportScreen />
-    </MemoryRouter>,
-  );
+  renderWithProviders(<ImportScreen />);
   await user.click(screen.getByRole('button', { name: 'Choose export file (.zip or .txt)' }));
   const input = document.querySelector('input[type="file"]');
   expect(input).not.toBeNull();
