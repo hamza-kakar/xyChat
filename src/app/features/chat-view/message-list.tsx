@@ -104,12 +104,20 @@ export function MessageList(props: MessageListProps) {
     }
   }, [targetLoaded, target, initialAlign, virtualizer, onTopSeqChange]);
 
+  // Runs after the landing effect above, also in the commit that lands the
+  // list: a jump requested before the first block arrived waits for it.
   useLayoutEffect(() => {
-    if (jump !== null && jumpLoaded && positioned.current && handledJump.current !== jump.token) {
+    if (
+      jump !== null &&
+      jumpLoaded &&
+      targetLoaded &&
+      positioned.current &&
+      handledJump.current !== jump.token
+    ) {
       handledJump.current = jump.token;
       virtualizer.scrollToIndex(jump.seq, { align: 'center' });
     }
-  }, [jump, jumpLoaded, virtualizer]);
+  }, [jump, jumpLoaded, targetLoaded, virtualizer]);
 
   const topSeq = virtualizer.range?.startIndex;
   const endSeq = virtualizer.range?.endIndex;
