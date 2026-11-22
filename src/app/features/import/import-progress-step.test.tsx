@@ -32,6 +32,13 @@ describe('ImportProgressStep (§12.8.5)', () => {
     await user.click(screen.getByRole('button', { name: 'Cancel import' }));
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
+
+  it('disables the button and says so while a cancel is pending', () => {
+    render(<ImportProgressStep onCancel={() => undefined} isCancelling />);
+    const button = screen.getByRole('button', { name: 'Cancelling…' });
+    expect(button).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Cancel import' })).toBeNull();
+  });
 });
 
 /** A fake `navigator.wakeLock` whose request resolves only when told to. */

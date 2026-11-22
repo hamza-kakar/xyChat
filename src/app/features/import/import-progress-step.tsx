@@ -6,6 +6,8 @@ import { onImportProgress } from '../../../client/import-client';
 /** Props for {@link ImportProgressStep}. */
 export interface ImportProgressStepProps {
   readonly onCancel: () => void;
+  /** Cancel was tapped and the worker hasn't answered yet. */
+  readonly isCancelling?: boolean;
 }
 
 /** Progress phases in §9.1 order with their i18n labels. */
@@ -20,7 +22,7 @@ const PHASES: readonly { readonly id: string; readonly label: string }[] = [
 
 /** Progress step (§12.8.5): per-phase step indicator plus a determinate
  * bar for the active phase, and the Cancel button (§9.3). */
-export function ImportProgressStep({ onCancel }: ImportProgressStepProps) {
+export function ImportProgressStep({ onCancel, isCancelling = false }: ImportProgressStepProps) {
   const [current, setCurrent] = useState<{ phase: string; current: number; total: number }>({
     phase: 'reading-archive',
     current: 0,
@@ -102,10 +104,11 @@ export function ImportProgressStep({ onCancel }: ImportProgressStepProps) {
       <p className="text-text-muted text-sm">{en.import.progressKeepOpen}</p>
       <button
         type="button"
-        className="text-text border-border min-h-11 rounded-lg border px-4 py-2"
+        className="text-text border-border min-h-11 rounded-lg border px-4 py-2 disabled:opacity-60"
+        disabled={isCancelling}
         onClick={onCancel}
       >
-        {en.import.progressCancelButton}
+        {isCancelling ? en.import.progressCancellingButton : en.import.progressCancelButton}
       </button>
     </main>
   );

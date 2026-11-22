@@ -225,4 +225,38 @@ describe('ImportScreen (§12.8)', () => {
     await user.click(screen.getByRole('button', { name: 'Start import' }));
     await screen.findByText('Import cancelled. Nothing was imported.');
   });
+
+  it('shows Cancelling… until begin answers, then notes a commit that won the race', async () => {
+    const user = userEvent.setup();
+    detectMock.mockResolvedValue({ report, suggestedTargetChatId: null });
+    let finish: (value: unknown) => void = () => undefined;
+    beginMock.mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    await renderAndPick(user);
+    await screen.findByText('Confirm import');
+    await user.click(screen.getByRole('button', { name: 'Start import' }));
+    await user.click(await screen.findByRole('button', { name: 'Cancel import' }));
+
+    expect(screen.getByRole('button', { name: 'Cancelling…' })).toBeDisabled();
+
+    finish(beginSuccess({ attachments: 0, stored: 0 }));
+    await screen.findByText('Import complete');
+    expect(
+      screen.getByText('The import finished before it could be cancelled.'),
+    ).toBeInTheDocument();
+  });
+
+  it('omits the cancel note on a normal successful import', async () => {
+    const user = userEvent.setup();
+    detectMock.mockResolvedValue({ report, suggestedTargetChatId: null });
+    beginMock.mockResolvedValue(beginSuccess({ attachments: 0, stored: 0 }));
+    await renderAndPick(user);
+    await screen.findByText('Confirm import');
+    await user.click(screen.getByRole('button', { name: 'Start import' }));
+    await screen.findByText('Import complete');
+    expect(screen.queryByText('The import finished before it could be cancelled.')).toBeNull();
+  });
 });
