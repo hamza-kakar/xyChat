@@ -66,6 +66,13 @@ export function GalleryTab({ chatId, tab }: GalleryTabProps) {
   const open = useCallback((index: number) => {
     setOpenIndex(index);
   }, []);
+  // Paging through the viewer near the end loads the next page, so "Next"
+  // keeps going past what the grid has shown.
+  useEffect(() => {
+    if (openIndex !== null && openIndex >= items.length - 2 && hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage();
+    }
+  }, [openIndex, items.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   let body;
   if (gallery.isPending) {
