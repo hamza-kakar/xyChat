@@ -30,6 +30,19 @@ storage or import. Record results (date, device, OS, pass/fail) per run.
       selection loupe); long-press on a chat-list row opens its actions (no
       link preview).
 
+## Search, jump and bookmarks (from M5)
+
+- [ ] Global search on a 100k-message chat returns results quickly; the
+      keyboard's Search key does not reload the page.
+- [ ] Tapping a result opens the chat at that message, highlighted.
+- [ ] In-chat search: counter and up/down arrows walk the matches; the
+      on-screen keyboard does not cover the bar.
+- [ ] Jump to date: only days with messages are tappable; the week starts
+      on the phone's usual first day.
+- [ ] Jump-to-latest button appears when scrolled up and returns to the end.
+- [ ] Bookmark a message, add a note, find it under Bookmarks, show it in
+      the chat, remove it.
+
 ## VoiceOver (from M4)
 
 - [ ] Navigate chat list; rows announce title + preview.
