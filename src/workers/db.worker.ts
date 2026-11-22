@@ -12,7 +12,6 @@ import { deleteMediaFile, listFilesUnder } from '../storage/media-store';
 import type { DbApi, WorkerError } from './db-api';
 import { RpcValidationError, rpcInput } from './rpc-validate';
 import { handleCommitMessage } from './commit-port';
-import { attachmentFromRow } from '../storage/sqlite/rows';
 
 let repository: SqliteChatRepository | null = null;
 
@@ -112,19 +111,7 @@ const api: DbApi = {
   deleteChat: (chatId) =>
     wrap(() => {
       const id = rpcInput.chatId('deleteChat', chatId);
-      const attachments = repo().database.selectObjects(
-        'SELECT opfs_path, thumb_path FROM attachments WHERE chat_id = ?',
-        [id],
-      );
-      const paths: string[] = [];
-      for (const row of attachments) {
-        for (const col of ['opfs_path', 'thumb_path']) {
-          const value = row[col];
-          if (typeof value === 'string' && value !== '') {
-            paths.push(value);
-          }
-        }
-      }
+      const paths = repo().listChatMediaPaths(id);
       repo().deleteChat(id);
       return paths;
     }),
@@ -160,33 +147,19 @@ const api: DbApi = {
     wrap(() => commitImport(repo().database, rpcInput.commitImport('commitImport', input))),
   recordWrittenPaths: (importId, paths) =>
     wrap(() => {
-      const id = rpcInput.id('recordWrittenPaths', importId);
-      const validated = rpcInput.writtenPaths('recordWrittenPaths', paths);
-      repo().database.run('UPDATE imports SET written_paths_json = ? WHERE id = ?', [
-        JSON.stringify(validated),
-        id,
-      ]);
+      repo().recordWrittenPaths(
+        rpcInput.id('recordWrittenPaths', importId),
+        rpcInput.writtenPaths('recordWrittenPaths', paths),
+      );
     }),
   rollbackInProgressImports: () => wrap(() => repo().rollbackInProgressImports()),
   markImportCancelled: (importId) =>
     wrap(() => {
-      repo().database.run(
-        "UPDATE imports SET status = 'cancelled', finished_at = ? WHERE id = ? AND status = 'in_progress'",
-        [
-          new Date().toISOString().replace(/\.\d{3}Z$/u, 'Z'),
-          rpcInput.id('markImportCancelled', importId),
-        ],
-      );
+      repo().markImportCancelled(rpcInput.id('markImportCancelled', importId));
     }),
   markImportFailed: (importId) =>
     wrap(() => {
-      repo().database.run(
-        "UPDATE imports SET status = 'failed', finished_at = ? WHERE id = ? AND status = 'in_progress'",
-        [
-          new Date().toISOString().replace(/\.\d{3}Z$/u, 'Z'),
-          rpcInput.id('markImportFailed', importId),
-        ],
-      );
+      repo().markImportFailed(rpcInput.id('markImportFailed', importId));
     }),
   listStoredFingerprints: (chatId) =>
     wrap(() => repo().listStoredFingerprints(rpcInput.chatId('listStoredFingerprints', chatId))),
@@ -205,9 +178,8 @@ const api: DbApi = {
       return results.filter(Boolean).length;
     }),
   connectCommitPort: (port) => {
-    // §3.2: the ONLY place beyond db.worker methods that executes commits.
-    // Messages: { type: 'commit', requestId, input } and
-    // { type: 'written-paths', requestId, importId, paths }.
+    // §3.2: the only place beyond db.worker methods that executes commits.
+    // commit-port validates every message; anything but a commit is ignored.
     port.onmessage = (event: MessageEvent) => {
       const answer = handleCommitMessage(
         { commit: (input) => commitImport(repo().database, input) },
@@ -220,14 +192,11 @@ const api: DbApi = {
     port.start();
   },
   getAttachmentsForMessage: (messageId) =>
-    wrap(() => {
-      const rowId = rpcInput.nonNegativeInt('getAttachmentsForMessage', messageId);
-      const rows = repo().database.selectObjects(
-        'SELECT * FROM attachments WHERE message_id = ? ORDER BY id',
-        [rowId],
-      );
-      return rows.map(attachmentFromRow);
-    }),
+    wrap(() =>
+      repo().getAttachmentsForMessage(
+        rpcInput.nonNegativeInt('getAttachmentsForMessage', messageId),
+      ),
+    ),
 };
 
 // Expose the API. Comlink's expose returns void; the worker stays alive

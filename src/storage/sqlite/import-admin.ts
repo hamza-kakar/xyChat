@@ -4,6 +4,7 @@
  * attachment reads. Split from sqlite-repository.ts for the §18.2 file-
  * size limit; all SQL lives here per §10.5.
  */
+import * as v from 'valibot';
 import type { Attachment } from '../repository';
 import type { ChatId } from '../../core/ids';
 import { attachmentFromRow } from './rows';
@@ -42,31 +43,70 @@ export function recordWrittenPaths(
   ]);
 }
 
+/** A row holding one fingerprint (§18.5: validated before use). */
+const FingerprintRow = v.object({ fp: v.string() });
+
+/** A row holding an attachment's file paths (§18.5). */
+const PathRow = v.object({
+  opfs_path: v.nullable(v.string()),
+  thumb_path: v.nullable(v.string()),
+});
+
+/** Validates a row, throwing on a schema mismatch: a bad row means a
+ * corrupt database, which the worker boundary reports (§18.7). */
+function parseAdminRow<T extends v.GenericSchema>(
+  schema: T,
+  row: Record<string, unknown>,
+): v.InferOutput<T> {
+  const parsed = v.safeParse(schema, row);
+  if (!parsed.success) {
+    throw new Error('invalid admin row');
+  }
+  return parsed.output;
+}
+
+/** The non-empty file paths of validated path rows. */
+function pathsOf(rows: readonly Record<string, unknown>[]): readonly string[] {
+  const paths: string[] = [];
+  for (const raw of rows) {
+    const row = parseAdminRow(PathRow, raw);
+    for (const path of [row.opfs_path, row.thumb_path]) {
+      if (path !== null && path !== '') {
+        paths.push(path);
+      }
+    }
+  }
+  return paths;
+}
+
 /** Fingerprints whose media the stored chat already holds (§9.2 step 8). */
 export function listStoredFingerprints(db: SqliteDatabase, chatId: ChatId): readonly string[] {
   const rows = db.selectObjects(
     "SELECT m.fingerprint AS fp FROM messages m JOIN attachments a ON a.message_id = m.id WHERE m.chat_id = ? AND a.status = 'present'",
     [chatId],
   );
-  return rows.map((row) => String(row['fp']));
+  return rows.map((row) => parseAdminRow(FingerprintRow, row).fp);
 }
 
 /** §9.3 orphan sweep, list half: OPFS media/thumbnail paths that no
  * attachment row references. The caller deletes after confirmation. */
 export function listOrphanMedia(db: SqliteDatabase, fsPaths: readonly string[]): readonly string[] {
-  const rows = db.selectObjects(
-    'SELECT opfs_path, thumb_path FROM attachments WHERE opfs_path IS NOT NULL OR thumb_path IS NOT NULL',
+  const known = new Set(
+    pathsOf(
+      db.selectObjects(
+        'SELECT opfs_path, thumb_path FROM attachments WHERE opfs_path IS NOT NULL OR thumb_path IS NOT NULL',
+      ),
+    ),
   );
-  const known = new Set<string>();
-  for (const row of rows) {
-    for (const column of ['opfs_path', 'thumb_path']) {
-      const value = row[column];
-      if (typeof value === 'string' && value !== '') {
-        known.add(value);
-      }
-    }
-  }
   return fsPaths.filter((path) => !known.has(path));
+}
+
+/** Every stored file path of one chat (media and thumbnails), read before
+ * the chat is deleted so its files can be removed afterwards (§10.4). */
+export function listChatMediaPaths(db: SqliteDatabase, chatId: ChatId): readonly string[] {
+  return pathsOf(
+    db.selectObjects('SELECT opfs_path, thumb_path FROM attachments WHERE chat_id = ?', [chatId]),
+  );
 }
 
 /** Raw attachment rows for one message (media viewer, §12.5). */
