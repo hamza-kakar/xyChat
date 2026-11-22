@@ -52,3 +52,22 @@ export function largeChatText(count: number): string {
   }
   return lines.join('\n');
 }
+
+/** An Android 1:1 export for the search and jump flows: `count` messages,
+ * 400 per day from 13 Jan 2025 (day > 12, so the date order is
+ * unambiguous), with a "trip idea" message every 250th. */
+export function searchChatText(count: number): string {
+  const lines: string[] = [];
+  for (let i = 0; i < count; i += 1) {
+    const day = 13 + Math.floor(i / 400);
+    const hour = Math.floor((i % 400) / 20);
+    const minute = (i % 20) * 3;
+    const author = i % 2 === 0 ? 'Sara' : 'Ali Khan';
+    const body =
+      i % 250 === 0 ? `trip idea number ${String(i)}` : `note ${String(i)} about the weekly plan`;
+    lines.push(
+      `${String(day)}/01/2025, ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')} - ${author}: ${body}`,
+    );
+  }
+  return lines.join('\n');
+}
