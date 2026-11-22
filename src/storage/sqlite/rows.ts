@@ -289,22 +289,28 @@ const ImportRow = v.object({
 
 type ImportParsed = v.InferOutput<typeof ImportRow>;
 
-/** Parses JSON text, or returns null when it isn't valid JSON. */
-function parseJsonOrNull(text: string): unknown {
+/**
+ * Reads a stored written-path list (§9.3 bookkeeping). Invalid JSON or an
+ * invalid list reads as empty: rollback then deletes nothing rather than
+ * guessing (§18.5).
+ *
+ * @param text The `written_paths_json` column value.
+ * @returns The validated path list, or an empty list.
+ */
+export function parseWrittenPaths(text: string): readonly string[] {
+  let json: unknown;
   try {
-    return JSON.parse(text) as unknown;
+    json = JSON.parse(text) as unknown;
   } catch {
-    return null;
+    return [];
   }
+  const paths = v.safeParse(v.array(v.string()), json);
+  return paths.success ? paths.output : [];
 }
 
 /** Validates an imports row into an {@link ImportRecord}. */
 export function importFromRow(row: Record<string, unknown>): ImportRecord {
   const r: ImportParsed = parseRow(ImportRow, row, 'imports');
-  // §18.5: the written-path list is Valibot-validated. Invalid JSON or an
-  // invalid list reads as empty (rollback deletes nothing rather than
-  // guessing).
-  const paths = v.safeParse(v.array(v.string()), parseJsonOrNull(r.written_paths_json));
   return {
     id: r.id,
     chatId: r.chat_id,
@@ -314,7 +320,7 @@ export function importFromRow(row: Record<string, unknown>): ImportRecord {
     parserVersion: r.parser_version,
     startedAt: r.started_at,
     finishedAt: r.finished_at,
-    writtenPaths: paths.success ? paths.output : [],
+    writtenPaths: parseWrittenPaths(r.written_paths_json),
   };
 }
 

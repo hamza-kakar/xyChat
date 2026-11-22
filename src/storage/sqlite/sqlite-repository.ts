@@ -4,7 +4,6 @@
  * validation. Runs inside db.worker — never on the main thread.
  */
 import type { ChatId, ParticipantId } from '../../core/ids';
-import * as v from 'valibot';
 import { formatLocalDateTime, parseLocalDateTime } from './local-date-time-parse';
 import { tsLocalToKey } from './ts-key';
 import type { LocalDateTime } from '../../core/model';
@@ -15,11 +14,13 @@ import {
   chatSummaryFromRow,
   importFromRow,
   messageFromRow,
+  parseWrittenPaths,
   participantFromRow,
 } from './rows';
 import type { SqliteDatabase } from './open';
 import {
   getAttachmentsForMessage,
+  listChatMediaPaths,
   listOrphanMedia,
   listStoredFingerprints,
   markImportCancelled,
@@ -327,14 +328,7 @@ export class SqliteChatRepository {
     const paths: string[] = [];
     for (const row of rows) {
       const raw = row['written_paths_json'];
-      const parsed: unknown = JSON.parse(typeof raw === 'string' ? raw : '[]');
-      // §18.5: worker RPC inputs (and stored JSON) are validated — an
-      // invalid written_paths list is treated as empty (rollback deletes
-      // nothing rather than guessing).
-      const validated = v.safeParse(v.array(v.string()), parsed);
-      if (validated.success) {
-        paths.push(...validated.output);
-      }
+      paths.push(...parseWrittenPaths(typeof raw === 'string' ? raw : '[]'));
       this.db.run("UPDATE imports SET status = 'rolled_back', finished_at = ? WHERE id = ?", [
         new Date().toISOString().replace(/\.\d{3}Z$/u, 'Z'),
         String(row['id']),
@@ -374,6 +368,11 @@ export class SqliteChatRepository {
   /** Raw attachment rows for one message (media viewer, §12.5). */
   getAttachmentsForMessage(messageId: number): readonly Attachment[] {
     return getAttachmentsForMessage(this.db, messageId);
+  }
+
+  /** Every stored file path of one chat, for removal after deleteChat. */
+  listChatMediaPaths(chatId: ChatId): readonly string[] {
+    return listChatMediaPaths(this.db, chatId);
   }
 
   /** Formats a message timestamp for storage (canonical wall clock). */
