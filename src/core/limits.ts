@@ -29,3 +29,23 @@ export const IMPORT_LIMITS = {
   /** Thumbnail JPEG quality (§9.2 step 9). */
   thumbnailQuality: 0.8,
 } as const;
+
+/** App-lock parameters (AGENTS.md §15.3). */
+export const APP_LOCK = {
+  /** PBKDF2-SHA-256 iterations for the PIN hash. */
+  pinHashIterations: 600_000,
+  /** Salt length in bytes. */
+  pinSaltBytes: 16,
+  /** Derived key length in bytes (SHA-256 output size). */
+  pinHashBytes: 32,
+  /** Failed attempts allowed before the backoff starts. */
+  freeAttempts: 5,
+  /** The first backoff after the free attempts are used up. */
+  firstLockoutMs: 30_000,
+  /** The backoff stops doubling at one day, so it never overflows. */
+  maxLockoutMs: 24 * 60 * 60 * 1000,
+  /** Doublings beyond this already exceed the one-day cap. */
+  maxDoublings: 32,
+  /** The auto-lock choices offered in Settings, in minutes (0 = immediately). */
+  autoLockMinutes: [0, 1, 5, 15],
+} as const;

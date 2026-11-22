@@ -38,6 +38,7 @@ function validCommitInput(overrides: {
     fileName: 'chat.txt',
     fileBytes: 100,
     parserVersion: '1.0.0',
+    report: { warningsByCode: {}, mediaStored: 0, mediaMissing: 0, mediaOmitted: 0, durationMs: 1 },
   };
 }
 

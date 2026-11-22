@@ -13,6 +13,16 @@ import { migrate } from '../../src/storage/sqlite/migrate';
 import { SqliteChatRepository } from '../../src/storage/sqlite/sqlite-repository';
 import type { ImportCommitInput } from '../../src/storage/sqlite/import-commit';
 import type { ParsedMessage } from '../../src/core/model';
+import type { ImportRunFacts } from '../../src/storage/sqlite/import-report';
+
+/** Run facts for commits made by tests (§9.2 step 11 report). */
+export const RUN_FACTS: ImportRunFacts = {
+  warningsByCode: {},
+  mediaStored: 0,
+  mediaMissing: 0,
+  mediaOmitted: 0,
+  durationMs: 1,
+};
 
 export interface ContractDb {
   readonly db: SqliteDatabase;
@@ -101,6 +111,7 @@ export function threeMsgInput(importId: string, chatIdToTarget: string | null): 
     fileName: 'contract.txt',
     fileBytes: 100,
     parserVersion: '1.0.0',
+    report: RUN_FACTS,
   };
 }
 
@@ -133,6 +144,7 @@ export function omittedMediaInput(
     fileName: 'media.txt',
     fileBytes: 50,
     parserVersion: '1.0.0',
+    report: RUN_FACTS,
   };
 }
 
@@ -165,6 +177,7 @@ export function presentMediaInput(
     fileName: 'media.txt',
     fileBytes: 50,
     parserVersion: '1.0.0',
+    report: RUN_FACTS,
   };
 }
 

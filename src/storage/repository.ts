@@ -4,6 +4,7 @@
  * SQLite rows into these types at every read.
  */
 import type { Brand } from '../core/ids';
+import type { ImportReport } from './sqlite/import-report';
 import type {
   AttachmentStatus,
   ClockFormat,
@@ -105,6 +106,8 @@ export interface ImportRecord {
   /** CUMULATIVE written-path list (§9.3 crash rollback bookkeeping; each
    * flush replaces the row with a superset). Empty until the first flush. */
   readonly writtenPaths: readonly string[];
+  /** Counts from a completed import (§9.2 step 11), else null. */
+  readonly report: ImportReport | null;
 }
 
 /** Chat-list row: aggregates only, no message bodies. */

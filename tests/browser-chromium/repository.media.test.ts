@@ -8,7 +8,7 @@ import { commitImport, type ImportCommitInput } from '../../src/storage/sqlite/i
 import { createImportRecord } from '../../src/storage/sqlite/import-record';
 import { asAttachmentId, asChatId, type ChatId } from '../../src/core/ids';
 import type { MediaType, ParsedMessage } from '../../src/core/model';
-import { openContractDb, recordInput } from './contract-helpers';
+import { openContractDb, recordInput, RUN_FACTS } from './contract-helpers';
 import type { SqliteDatabase } from '../../src/storage/sqlite/open';
 import type { SqliteChatRepository } from '../../src/storage/sqlite/sqlite-repository';
 
@@ -96,6 +96,7 @@ function galleryInput(importId: string): ImportCommitInput {
     fileName: 'gallery.zip',
     fileBytes: 1000,
     parserVersion: '1.0.0',
+    report: RUN_FACTS,
   };
 }
 

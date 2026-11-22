@@ -25,6 +25,7 @@ import type {
 } from '../repository';
 import type { ParsedLocation, ParsedPoll } from '../../core/model';
 import { parseLocalDateTime } from './local-date-time-parse';
+import { parseImportReport } from './import-report';
 
 /** String branded as a chat id. */
 const ChatIdSchema = v.pipe(v.string(), v.nonEmpty(), v.transform(asChatId));
@@ -320,6 +321,7 @@ const ImportRow = v.object({
   started_at: IsoTimestamp,
   finished_at: v.nullable(IsoTimestamp),
   written_paths_json: v.string(),
+  report_json: v.nullable(v.string()),
 });
 
 type ImportParsed = v.InferOutput<typeof ImportRow>;
@@ -356,6 +358,7 @@ export function importFromRow(row: Record<string, unknown>): ImportRecord {
     startedAt: r.started_at,
     finishedAt: r.finished_at,
     writtenPaths: parseWrittenPaths(r.written_paths_json),
+    report: parseImportReport(r.report_json),
   };
 }
 

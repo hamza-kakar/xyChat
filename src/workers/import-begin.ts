@@ -74,6 +74,7 @@ export function assembleCommitInput(
     readonly importId: string;
     readonly messages: ImportCommitInput['messages'];
     readonly attachments: ImportCommitInput['attachments'];
+    readonly report: RunReport;
   },
 ): ImportCommitInput {
   return {
@@ -90,6 +91,13 @@ export function assembleCommitInput(
     fileName: phases.fileName,
     fileBytes: file.size,
     parserVersion: PARSER_VERSION,
+    report: {
+      warningsByCode: phases.report.warningsByCode,
+      mediaStored: phases.report.mediaStored,
+      mediaMissing: phases.report.mediaMissing,
+      mediaOmitted: phases.report.mediaOmitted,
+      durationMs: phases.report.durationMs,
+    },
   };
 }
 
@@ -189,8 +197,9 @@ async function finishAfterMedia(
     return { ok: false, error: { code: 'CANCELLED', detail: 'cancelled before commit' } };
   }
 
-  // §9.2 step 10: commit over the port.
-  const input = assembleCommitInput(file, confirmed, state);
+  // §9.2 step 10: commit over the port, with the report it stores.
+  const report = buildReport(state, state.attachments, Date.now() - state.startedAt);
+  const input = assembleCommitInput(file, confirmed, { ...state, report });
   const committed = await commitOverPort(state.commitPort, input);
   if (!committed.ok) {
     // §9.3: the commit failed — the written files would be orphans (the
@@ -201,11 +210,7 @@ async function finishAfterMedia(
   state.commitPort.close();
 
   // §9.2 step 11: report facts for the UI.
-  return {
-    ok: true,
-    commit: committed.value,
-    report: buildReport(state, state.attachments, Date.now() - state.startedAt),
-  };
+  return { ok: true, commit: committed.value, report };
 }
 
 /**

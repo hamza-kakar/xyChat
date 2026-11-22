@@ -23,6 +23,20 @@ import { rpcMediaInput } from './rpc-validate-media';
 import type { DbApi, WorkerError } from './db-api';
 import { RpcValidationError, rpcInput } from './rpc-validate';
 import { handleCommitMessage } from './commit-port';
+import { rpcSettingsInput } from './rpc-validate-settings';
+import {
+  changePin,
+  readLockState,
+  setAutoLockMinutes,
+  verifyPin,
+  type PinDeps,
+} from '../storage/sqlite/app-lock-store';
+import { readPersistedLogs, writePersistedLogs } from '../storage/sqlite/persisted-logs';
+import { readSchemaVersion } from '../storage/sqlite/meta';
+import { derivePinHash, randomPinSalt } from '../platform/pin-hash';
+
+/** Production crypto and clock for the app lock (§15.3). */
+const pinDeps: PinDeps = { derive: derivePinHash, randomSalt: randomPinSalt, now: Date.now };
 
 let repository: SqliteChatRepository | null = null;
 
@@ -262,6 +276,21 @@ const api: DbApi = {
         return null;
       }
       return path;
+    }),
+  getSchemaVersion: () => wrap(() => readSchemaVersion(repo().database)),
+  getLockState: () => wrap(() => readLockState(repo().database, Date.now())),
+  verifyPin: (pin) =>
+    wrap(() => verifyPin(repo().database, rpcSettingsInput.pinAttempt('verifyPin', pin), pinDeps)),
+  changePin: (input) =>
+    wrap(() => changePin(repo().database, rpcSettingsInput.changePin('changePin', input), pinDeps)),
+  setAutoLock: (minutes) =>
+    wrap(() => {
+      setAutoLockMinutes(repo().database, rpcSettingsInput.autoLockMinutes('setAutoLock', minutes));
+    }),
+  listPersistedLogs: () => wrap(() => readPersistedLogs(repo().database)),
+  savePersistedLogs: (entries) =>
+    wrap(() => {
+      writePersistedLogs(repo().database, rpcSettingsInput.logs('savePersistedLogs', entries));
     }),
 };
 
