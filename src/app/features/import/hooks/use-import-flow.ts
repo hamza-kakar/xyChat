@@ -6,14 +6,14 @@
  * is only logged.
  */
 import { useCallback, useReducer } from 'react';
-import { installGateDone } from './install-gate-state';
-import { requestPersistentStorage } from '../../../platform/persistence';
-import { importClient, onImportProgress } from '../../../client/import-client';
-import { dbClient } from '../../../client/db-client';
-import type { DetectReport, ImportError } from '../../../workers/import-detect';
-import type { BeginOutcome } from '../../../client/import-client';
-import type { ChatId } from '../../../core/ids';
-import type { ConfirmChoices } from './import-confirm-step';
+import { installGateDone } from '../install-gate-state';
+import { isStoragePersisted, requestPersistentStorage } from '../../../../platform/persistence';
+import { cancelImport, importClient, onImportProgress } from '../../../../client/import-client';
+import { dbClient } from '../../../../client/db-client';
+import type { DetectReport, ImportError } from '../../../../workers/import-detect';
+import type { BeginOutcome } from '../../../../client/import-client';
+import type { ChatId } from '../../../../core/ids';
+import type { ConfirmChoices } from '../import-confirm-step';
 
 /** The §12.8 flow states. */
 type ImportStep =
@@ -147,7 +147,10 @@ export function useImportFlow() {
         }
       })
       .catch((error: unknown) => {
-        dispatch({ type: 'detect-failed', error: { code: 'INTERNAL', detail: String(error) } });
+        dispatch({
+          type: 'detect-failed',
+          error: { code: 'INTERNAL', detail: errorNameOf(error) },
+        });
       });
   }, []);
 
@@ -175,9 +178,9 @@ export function useImportFlow() {
             dispatch({ type: 'begin-failed', error: outcome });
             return;
           }
-          // §22 M3: request persistent storage once the
-          // import reaches done — repeated calls are no-ops once granted.
-          void requestPersistentStorage();
+          // §12.9: ask for persistent storage after a successful import,
+          // once, and only while the origin doesn't already have it.
+          void requestPersistenceIfNeeded();
 
           // §12.8.4: persist the self choice; a failure here must not fail
           // the import — the commit already succeeded.
@@ -198,11 +201,31 @@ export function useImportFlow() {
         })
         .catch((error: unknown) => {
           unsubscribe();
-          dispatch({ type: 'begin-failed', error: { code: 'INTERNAL', detail: String(error) } });
+          dispatch({
+            type: 'begin-failed',
+            error: { code: 'INTERNAL', detail: errorNameOf(error) },
+          });
         });
     },
     [],
   );
 
-  return { state, dispatch, runDetect, startImport };
+  const cancel = useCallback((): void => {
+    cancelImport();
+    dispatch({ type: 'back-to-pick' });
+  }, []);
+
+  return { state, dispatch, runDetect, startImport, cancel };
+}
+
+/** Requests persistent storage unless the origin already holds it. */
+async function requestPersistenceIfNeeded(): Promise<void> {
+  if (!(await isStoragePersisted())) {
+    await requestPersistentStorage();
+  }
+}
+
+/** Diagnostics keep only the error class name, never its text (§15.4). */
+function errorNameOf(error: unknown): string {
+  return error instanceof Error ? error.name : 'unknown error';
 }

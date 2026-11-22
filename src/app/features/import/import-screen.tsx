@@ -1,7 +1,7 @@
 /**
  * The #/import screen (AGENTS.md §12.8): install gate → pick → detect →
  * confirm → progress → report. The state machine and client calls live in
- * use-import-flow.ts (§18.4); this component renders only.
+ * hooks/use-import-flow.ts (§18.4); this component renders only.
  */
 import { useNavigate } from 'react-router';
 import { en } from '../../i18n/en';
@@ -11,9 +11,8 @@ import { ImportConfirmStep } from './import-confirm-step';
 import { ImportProgressStep } from './import-progress-step';
 import { ImportReportStep } from './import-report-step';
 import { ImportErrorStep } from './import-error-step';
-import { cancelImport } from '../../../client/import-client';
 import { installGateDone } from './install-gate-state';
-import { useImportFlow } from './use-import-flow';
+import { useImportFlow } from './hooks/use-import-flow';
 
 /** Props for the pure step renderer. */
 interface RenderDeps {
@@ -21,12 +20,13 @@ interface RenderDeps {
   readonly dispatch: (action: Parameters<ReturnType<typeof useImportFlow>['dispatch']>[0]) => void;
   readonly runDetect: ReturnType<typeof useImportFlow>['runDetect'];
   readonly startImport: ReturnType<typeof useImportFlow>['startImport'];
+  readonly cancel: ReturnType<typeof useImportFlow>['cancel'];
   readonly navigate: (path: string) => void;
 }
 
 /** Renders the current §12.8 step (pure: deps injected, §18.4). */
 function renderStep(deps: RenderDeps) {
-  const { state, dispatch, runDetect, startImport, navigate } = deps;
+  const { state, dispatch, runDetect, startImport, cancel, navigate } = deps;
   switch (state.step.name) {
     case 'gate':
       return (
@@ -68,14 +68,7 @@ function renderStep(deps: RenderDeps) {
       );
     }
     case 'progress':
-      return (
-        <ImportProgressStep
-          onCancel={() => {
-            cancelImport();
-            dispatch({ type: 'back-to-pick' });
-          }}
-        />
-      );
+      return <ImportProgressStep onCancel={cancel} />;
     case 'report': {
       const { outcome } = state.step;
       return (
@@ -102,7 +95,7 @@ function renderStep(deps: RenderDeps) {
 }
 
 export function ImportScreen() {
-  const { state, dispatch, runDetect, startImport } = useImportFlow();
+  const { state, dispatch, runDetect, startImport, cancel } = useImportFlow();
   const navigate = useNavigate();
   return renderStep({
     state,
@@ -112,5 +105,6 @@ export function ImportScreen() {
     },
     runDetect,
     startImport,
+    cancel,
   });
 }

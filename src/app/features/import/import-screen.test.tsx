@@ -15,6 +15,13 @@ const detectMock = vi.hoisted(() => vi.fn());
 const beginMock = vi.hoisted(() => vi.fn());
 const getParticipantsMock = vi.hoisted(() => vi.fn());
 const setSelfMock = vi.hoisted(() => vi.fn());
+const persistedMock = vi.hoisted(() => vi.fn());
+const persistMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../../../platform/persistence', () => ({
+  isStoragePersisted: () => persistedMock() as Promise<boolean>,
+  requestPersistentStorage: () => persistMock() as Promise<boolean>,
+}));
 
 vi.mock('../../../client/import-client', () => ({
   importClient: {
@@ -35,8 +42,7 @@ vi.mock('../../../client/db-client', () => ({
       return getParticipantsMock(...args) as Promise<unknown>;
     },
     setSelf: (...args: unknown[]) => {
-      setSelfMock(...args);
-      return Promise.resolve();
+      return setSelfMock(...args) as Promise<unknown>;
     },
   },
 }));
@@ -128,6 +134,11 @@ describe('ImportScreen (§12.8)', () => {
     beginMock.mockReset();
     getParticipantsMock.mockReset();
     setSelfMock.mockReset();
+    setSelfMock.mockResolvedValue(undefined);
+    persistedMock.mockReset();
+    persistedMock.mockResolvedValue(false);
+    persistMock.mockReset();
+    persistMock.mockResolvedValue(true);
     installGateDone(true);
   });
 
@@ -162,6 +173,22 @@ describe('ImportScreen (§12.8)', () => {
     );
     // §12.8.4: the self choice persists via setSelf after the commit.
     expect(setSelfMock).toHaveBeenCalledWith('chat-9', 'p-1');
+    // §12.9: persistent storage is requested exactly once after success.
+    expect(persistMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not request persistent storage when the origin already has it', async () => {
+    const user = userEvent.setup();
+    persistedMock.mockResolvedValue(true);
+    detectMock.mockResolvedValue({ report, suggestedTargetChatId: null });
+    beginMock.mockResolvedValue(beginSuccess({ attachments: 0, stored: 0 }));
+    getParticipantsMock.mockResolvedValue([]);
+
+    await renderAndPick(user);
+    await confirmAsSara(user);
+    await screen.findByText('Import complete');
+    expect(persistedMock).toHaveBeenCalledTimes(1);
+    expect(persistMock).not.toHaveBeenCalled();
   });
 
   it('still shows the report when setSelf rejects', async () => {
