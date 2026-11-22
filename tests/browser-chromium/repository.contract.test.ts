@@ -43,6 +43,11 @@ describe('repository contract: boot and import', () => {
     chatId = asChatId(result.chatId);
     const chat = repo.listChats().find((c) => c.title === 'Contract Test Chat');
     expect(chat?.messageCount).toBe(3);
+    // The last message by seq feeds the preview label (§12.4).
+    expect(chat?.lastMessagePreview).toBe('goodbye');
+    expect(chat?.lastMessageKind).toBe('text');
+    expect(chat?.lastAuthorName).not.toBeNull();
+    expect(chat?.lastMediaType).toBeNull();
     expect(repo.getChat(chatId)?.sourcePlatform).toBe('android');
     const participants = repo.getParticipants(chatId);
     expect(participants.map((p) => p.displayName)).toEqual(['Sara', 'Ali Khan']);

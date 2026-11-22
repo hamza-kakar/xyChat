@@ -18,6 +18,7 @@ import type {
   SearchQuery,
   StorageUsage,
   Participant,
+  ChatPosition,
 } from '../storage/repository';
 import type { ImportCommitInput, ImportCommitResult } from '../storage/sqlite/import-commit';
 import type { ImportRecordInput } from '../storage/sqlite/import-record';
@@ -91,4 +92,10 @@ export interface DbApi {
   connectCommitPort(port: MessagePort): void;
   /** Raw attachment rows for a message (media viewer, §12.5). */
   getAttachmentsForMessage(messageId: number): Promise<readonly Attachment[]>;
+  /** The last opened chat and its top-visible seq (§12.5), or null. */
+  getLastChatPosition(): Promise<ChatPosition | null>;
+  /** Remembers the last opened chat's position (§12.5). */
+  setLastChatPosition(chatId: ChatId, seq: number): Promise<void>;
+  /** Display name from a message's stored `.vcf` (§12.5), or null. */
+  readContactName(messageId: number): Promise<string | null>;
 }

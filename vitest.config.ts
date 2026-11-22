@@ -28,6 +28,7 @@ export default defineConfig({
             'src/core/**/*.test.ts',
             'tests/fixtures/**/*.test.ts',
             'scripts/**/*.test.ts',
+            'src/storage/*.test.ts',
             'src/storage/sqlite/*.test.ts',
             'src/client/*.test.ts',
             'src/workers/*.test.ts',

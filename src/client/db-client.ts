@@ -102,6 +102,12 @@ export const dbClient = {
     caller.call(() => remote().recordWrittenPaths(importId, paths), 'recordWrittenPaths'),
   getAttachmentsForMessage: (messageId: number) =>
     caller.call(() => remote().getAttachmentsForMessage(messageId), 'getAttachmentsForMessage'),
+  getLastChatPosition: () =>
+    caller.call(() => remote().getLastChatPosition(), 'getLastChatPosition'),
+  setLastChatPosition: (chatId: Parameters<DbApi['setLastChatPosition']>[0], seq: number) =>
+    caller.call(() => remote().setLastChatPosition(chatId, seq), 'setLastChatPosition'),
+  readContactName: (messageId: number) =>
+    caller.call(() => remote().readContactName(messageId), 'readContactName'),
   markImportCancelled: (importId: string) =>
     caller.call(() => remote().markImportCancelled(importId), 'markImportCancelled'),
   markImportFailed: (importId: string) =>
@@ -118,6 +124,21 @@ export const dbClient = {
       'connectCommitPort',
     ),
 };
+
+/** Chat-list row (§12.4), as served by the worker. */
+export type ChatSummaryView = Awaited<ReturnType<DbApi['listChats']>>[number];
+/** One full chat. */
+export type ChatView = NonNullable<Awaited<ReturnType<DbApi['getChat']>>>;
+/** A chat participant with its palette index. */
+export type ParticipantView = Awaited<ReturnType<DbApi['getParticipants']>>[number];
+/** A message window around an anchor seq (§12.5). */
+export type MessageWindowView = Awaited<ReturnType<DbApi['getMessageWindow']>>;
+/** One message with its attachments. */
+export type WindowMessage = MessageWindowView['messages'][number];
+/** One attachment row. */
+export type AttachmentView = WindowMessage['attachments'][number];
+/** One import run (chat info, message info). */
+export type ImportRecordView = Awaited<ReturnType<DbApi['listImports']>>[number];
 
 /** Test seam: resets the cached worker (contract tests spawn their own). */
 export function resetDbClientForTests(): void {

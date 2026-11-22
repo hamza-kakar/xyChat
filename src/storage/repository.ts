@@ -62,6 +62,8 @@ export interface Message {
   readonly isEdited: boolean;
   readonly poll: ParsedPoll | null;
   readonly location: ParsedLocation | null;
+  /** The import run that first stored this message. */
+  readonly importId: Brand<string, 'ImportId'>;
 }
 
 /** A persisted attachment record (bytes live in OPFS, not SQLite). */
@@ -113,6 +115,12 @@ export interface ChatSummary {
   readonly messageCount: number;
   readonly lastTsKey: number | null;
   readonly lastMessagePreview: string | null;
+  /** Kind of the last message by seq (null for an empty chat). */
+  readonly lastMessageKind: MessageKind | null;
+  /** Author display name of the last message (null for system messages). */
+  readonly lastAuthorName: string | null;
+  /** Media type of the last message's attachment, if it has one. */
+  readonly lastMediaType: MediaType | null;
 }
 
 /** A window of messages around an anchor seq (§12.5). */
@@ -191,6 +199,13 @@ export interface ChatStats {
 export interface StorageUsage {
   readonly totalBytes: number;
   readonly perChat: readonly { readonly chatId: Brand<string, 'ChatId'>; readonly bytes: number }[];
+}
+
+/** Where the user last was in a chat (§12.5: restored on return). */
+export interface ChatPosition {
+  readonly chatId: Brand<string, 'ChatId'>;
+  /** Seq of the first message visible at the top of the list. */
+  readonly seq: number;
 }
 
 /** Bookmark joined with its message for the bookmarks screen. */

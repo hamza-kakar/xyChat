@@ -8,7 +8,14 @@ import { openDatabase } from '../storage/sqlite/open';
 import { SqliteChatRepository } from '../storage/sqlite/sqlite-repository';
 import { commitImport } from '../storage/sqlite/import-commit';
 import { createImportRecord } from '../storage/sqlite/import-record';
-import { deleteMediaFile, listFilesUnder } from '../storage/media-store';
+import {
+  deleteChatMedia,
+  deleteMediaFile,
+  listFilesUnder,
+  readMediaFile,
+} from '../storage/media-store';
+import { getLastChatPosition, setLastChatPosition } from '../storage/sqlite/view-state';
+import { readContactName } from '../storage/contact-card';
 import type { DbApi, WorkerError } from './db-api';
 import { RpcValidationError, rpcInput } from './rpc-validate';
 import { handleCommitMessage } from './commit-port';
@@ -109,10 +116,13 @@ const api: DbApi = {
       repo().renameChat(rpcInput.chatId('renameChat', chatId), rpcInput.title('renameChat', title));
     }),
   deleteChat: (chatId) =>
-    wrap(() => {
+    wrap(async () => {
       const id = rpcInput.chatId('deleteChat', chatId);
       const paths = repo().listChatMediaPaths(id);
       repo().deleteChat(id);
+      // §10.4: files go after the DB commit; a failure here leaves orphans
+      // for the sweeper (§9.3), never rows pointing at missing files.
+      await deleteChatMedia(id);
       return paths;
     }),
   addBookmark: (chatId, messageId, note) =>
@@ -197,6 +207,19 @@ const api: DbApi = {
         rpcInput.nonNegativeInt('getAttachmentsForMessage', messageId),
       ),
     ),
+  getLastChatPosition: () => wrap(() => getLastChatPosition(repo().database)),
+  setLastChatPosition: (chatId, seq) =>
+    wrap(() => {
+      setLastChatPosition(repo().database, {
+        chatId: rpcInput.chatId('setLastChatPosition', chatId),
+        seq: rpcInput.nonNegativeInt('setLastChatPosition', seq),
+      });
+    }),
+  readContactName: (messageId) =>
+    wrap(() => {
+      const rowId = rpcInput.nonNegativeInt('readContactName', messageId);
+      return readContactName(repo().getAttachmentsForMessage(rowId), readMediaFile);
+    }),
 };
 
 // Expose the API. Comlink's expose returns void; the worker stays alive
