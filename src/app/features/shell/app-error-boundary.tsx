@@ -38,19 +38,18 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
     const { error } = this.state;
     if (error !== null) {
       return (
-        <main
-          className="safe-area bg-surface flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center"
-          role="alert"
-        >
-          <h1 className="text-text text-xl font-bold">{en.errorBoundary.title}</h1>
-          <p className="text-text-muted max-w-md">{en.errorBoundary.description}</p>
-          <button
-            type="button"
-            onClick={this.handleReload}
-            className="bg-accent text-accent-contrast focus-visible:outline-focus-ring min-h-11 rounded-lg px-5 focus-visible:outline-2"
-          >
-            {en.errorBoundary.reloadButton}
-          </button>
+        <main className="safe-area bg-surface flex min-h-dvh" role="alert">
+          <div className="flex w-full flex-col items-center justify-center gap-4 px-6 text-center">
+            <h1 className="text-text text-xl font-bold">{en.errorBoundary.title}</h1>
+            <p className="text-text-muted max-w-md">{en.errorBoundary.description}</p>
+            <button
+              type="button"
+              onClick={this.handleReload}
+              className="bg-accent text-accent-contrast focus-visible:outline-focus-ring min-h-11 rounded-lg px-5 focus-visible:outline-2"
+            >
+              {en.errorBoundary.reloadButton}
+            </button>
+          </div>
         </main>
       );
     }

@@ -35,46 +35,48 @@ export function ChatHeader({
   onJump,
 }: ChatHeaderProps) {
   return (
-    <header className="border-border bg-surface safe-area flex items-center gap-1 border-b py-1 ps-1 pe-2">
-      <Link to="/" aria-label={en.chatView.backLabel} className={`${iconButtonClass} md:hidden`}>
-        <BackIcon className="h-6 w-6 rtl:-scale-x-100" />
-      </Link>
-      <div className="flex min-w-0 flex-1 flex-col ps-2 md:ps-3">
-        <h1
-          ref={headingRef}
-          tabIndex={-1}
-          className="text-text truncate text-lg font-semibold outline-none"
-          dir="auto"
+    <header className="border-border bg-surface safe-top border-b">
+      <div className="flex items-center gap-1 py-1 ps-1 pe-2">
+        <Link to="/" aria-label={en.chatView.backLabel} className={`${iconButtonClass} md:hidden`}>
+          <BackIcon className="h-6 w-6 rtl:-scale-x-100" />
+        </Link>
+        <div className="flex min-w-0 flex-1 flex-col ps-2 md:ps-3">
+          <h1
+            ref={headingRef}
+            tabIndex={-1}
+            className="text-text truncate text-lg font-semibold outline-none"
+            dir="auto"
+          >
+            {title}
+          </h1>
+          {participantCount === null ? null : (
+            <p className="text-text-muted text-xs">
+              {formatString(en.chatView.participants, { count: participantCount })}
+            </p>
+          )}
+        </div>
+        <button
+          ref={searchButtonRef}
+          type="button"
+          aria-label={en.chatView.searchButton}
+          aria-expanded={isSearchOpen}
+          disabled={!canJump}
+          className={`${iconButtonClass} disabled:opacity-40`}
+          onClick={onSearch}
         >
-          {title}
-        </h1>
-        {participantCount === null ? null : (
-          <p className="text-text-muted text-xs">
-            {formatString(en.chatView.participants, { count: participantCount })}
-          </p>
-        )}
+          <SearchIcon className="h-6 w-6" />
+        </button>
+        <button
+          type="button"
+          aria-label={en.chatView.jumpButton}
+          aria-haspopup="dialog"
+          disabled={!canJump}
+          className={`${iconButtonClass} disabled:opacity-40`}
+          onClick={onJump}
+        >
+          <CalendarIcon className="h-6 w-6" />
+        </button>
       </div>
-      <button
-        ref={searchButtonRef}
-        type="button"
-        aria-label={en.chatView.searchButton}
-        aria-expanded={isSearchOpen}
-        disabled={!canJump}
-        className={`${iconButtonClass} disabled:opacity-40`}
-        onClick={onSearch}
-      >
-        <SearchIcon className="h-6 w-6" />
-      </button>
-      <button
-        type="button"
-        aria-label={en.chatView.jumpButton}
-        aria-haspopup="dialog"
-        disabled={!canJump}
-        className={`${iconButtonClass} disabled:opacity-40`}
-        onClick={onJump}
-      >
-        <CalendarIcon className="h-6 w-6" />
-      </button>
     </header>
   );
 }

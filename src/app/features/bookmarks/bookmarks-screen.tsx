@@ -19,22 +19,24 @@ import { bookmarkSummary, shortSummary } from './bookmark-summary';
 export function BookmarksScreen() {
   const headingRef = useFocusHeading<HTMLHeadingElement>();
   return (
-    <main className="bg-surface flex min-h-dvh flex-col">
-      <header className="border-border safe-area flex items-center gap-1 border-b py-1 ps-1 pe-4">
-        <Link
-          to="/"
-          aria-label={en.bookmarks.backLabel}
-          className="text-accent flex min-h-11 min-w-11 items-center justify-center rounded-full"
-        >
-          <BackIcon className="h-6 w-6 rtl:-scale-x-100" />
-        </Link>
-        <h1
-          ref={headingRef}
-          tabIndex={-1}
-          className="text-text ps-2 text-lg font-semibold outline-none"
-        >
-          {en.bookmarks.title}
-        </h1>
+    <main className="bg-surface safe-sides-bottom flex min-h-dvh flex-col">
+      <header className="border-border safe-top border-b">
+        <div className="flex items-center gap-1 py-1 ps-1 pe-4">
+          <Link
+            to="/"
+            aria-label={en.bookmarks.backLabel}
+            className="text-accent flex min-h-11 min-w-11 items-center justify-center rounded-full"
+          >
+            <BackIcon className="h-6 w-6 rtl:-scale-x-100" />
+          </Link>
+          <h1
+            ref={headingRef}
+            tabIndex={-1}
+            className="text-text ps-2 text-lg font-semibold outline-none"
+          >
+            {en.bookmarks.title}
+          </h1>
+        </div>
       </header>
       <BookmarkList />
     </main>

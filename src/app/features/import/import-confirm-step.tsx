@@ -97,127 +97,129 @@ export function ImportConfirmStep({
     .replace('{media}', String(report.mediaFilesFound + missing));
 
   return (
-    <main className="safe-area bg-surface mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-6 py-6">
-      <h1 className="text-text text-2xl font-bold">{en.import.confirmTitle}</h1>
+    <main className="safe-area bg-surface flex min-h-dvh">
+      <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-6 py-6">
+        <h1 className="text-text text-2xl font-bold">{en.import.confirmTitle}</h1>
 
-      {ambiguous ? (
-        <fieldset className="flex flex-col gap-2">
-          <legend className="text-text-muted text-sm">{en.import.confirmDateOrderHint}</legend>
-          <div className="flex gap-2">
-            <ChoiceButton
-              selected={report.format.dateOrder === 'DMY'}
-              label={en.import.dateOrderDmy}
-              onSelect={() => {
-                onDateOrder('DMY');
-              }}
-            />
-            <ChoiceButton
-              selected={report.format.dateOrder === 'MDY'}
-              label={en.import.dateOrderMdy}
-              onSelect={() => {
-                onDateOrder('MDY');
-              }}
-            />
-          </div>
-        </fieldset>
-      ) : null}
+        {ambiguous ? (
+          <fieldset className="flex flex-col gap-2">
+            <legend className="text-text-muted text-sm">{en.import.confirmDateOrderHint}</legend>
+            <div className="flex gap-2">
+              <ChoiceButton
+                selected={report.format.dateOrder === 'DMY'}
+                label={en.import.dateOrderDmy}
+                onSelect={() => {
+                  onDateOrder('DMY');
+                }}
+              />
+              <ChoiceButton
+                selected={report.format.dateOrder === 'MDY'}
+                label={en.import.dateOrderMdy}
+                onSelect={() => {
+                  onDateOrder('MDY');
+                }}
+              />
+            </div>
+          </fieldset>
+        ) : null}
 
-      <MessagePreview report={report} locale={locale} />
+        <MessagePreview report={report} locale={locale} />
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-text-muted">{en.import.confirmTitleField}</span>
-        <input
-          type="text"
-          value={title}
-          onChange={(event) => {
-            setTitle(event.target.value);
-          }}
-          className="border-border text-text bg-surface-raised min-h-11 rounded-lg border px-3"
-        />
-      </label>
-
-      <fieldset className="flex flex-col gap-1">
-        <legend className="text-text-muted text-sm">{en.import.confirmSelfHeading}</legend>
-        <div className="flex flex-wrap gap-2">
-          {report.participants.map((name) => (
-            <ChoiceButton
-              key={name}
-              selected={selfName === name}
-              label={name}
-              onSelect={() => {
-                setSelfName(selfName === name ? null : name);
-              }}
-            />
-          ))}
-          <ChoiceButton
-            selected={selfName === null}
-            label={en.import.confirmSelfSkip}
-            onSelect={() => {
-              setSelfName(null);
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-text-muted">{en.import.confirmTitleField}</span>
+          <input
+            type="text"
+            value={title}
+            onChange={(event) => {
+              setTitle(event.target.value);
             }}
+            className="border-border text-text bg-surface-raised min-h-11 rounded-lg border px-3"
           />
-        </div>
-      </fieldset>
+        </label>
 
-      {suggestedTargetChatId !== null ? (
         <fieldset className="flex flex-col gap-1">
-          <legend className="text-text-muted text-sm">{en.import.confirmTargetHeading}</legend>
-          <div className="flex gap-2">
+          <legend className="text-text-muted text-sm">{en.import.confirmSelfHeading}</legend>
+          <div className="flex flex-wrap gap-2">
+            {report.participants.map((name) => (
+              <ChoiceButton
+                key={name}
+                selected={selfName === name}
+                label={name}
+                onSelect={() => {
+                  setSelfName(selfName === name ? null : name);
+                }}
+              />
+            ))}
             <ChoiceButton
-              selected={targetChatId === null}
-              label={en.import.confirmTargetNew}
+              selected={selfName === null}
+              label={en.import.confirmSelfSkip}
               onSelect={() => {
-                setTargetChatId(null);
-              }}
-            />
-            <ChoiceButton
-              selected={targetChatId !== null}
-              label={en.import.confirmTargetMerge.replace('{title}', report.title)}
-              onSelect={() => {
-                setTargetChatId(suggestedTargetChatId);
+                setSelfName(null);
               }}
             />
           </div>
         </fieldset>
-      ) : null}
 
-      <p className="text-text-muted text-sm">
-        {summary}
-        {missing > 0
-          ? ` · ${en.import.confirmMissingMedia.replace('{missing}', String(missing))}`
-          : ''}
-      </p>
-      <p className="text-text-muted text-xs">
-        {en.import.confirmQuota
-          .replace('{archive}', formatBytes(file.size))
-          .replace('{uncompressed}', formatBytes(report.uncompressedTotalBytes))}
-        {report.freeBytes !== null
-          ? ` · ${en.import.confirmFreeStorage.replace('{free}', formatBytes(report.freeBytes))}`
-          : ''}
-      </p>
+        {suggestedTargetChatId !== null ? (
+          <fieldset className="flex flex-col gap-1">
+            <legend className="text-text-muted text-sm">{en.import.confirmTargetHeading}</legend>
+            <div className="flex gap-2">
+              <ChoiceButton
+                selected={targetChatId === null}
+                label={en.import.confirmTargetNew}
+                onSelect={() => {
+                  setTargetChatId(null);
+                }}
+              />
+              <ChoiceButton
+                selected={targetChatId !== null}
+                label={en.import.confirmTargetMerge.replace('{title}', report.title)}
+                onSelect={() => {
+                  setTargetChatId(suggestedTargetChatId);
+                }}
+              />
+            </div>
+          </fieldset>
+        ) : null}
 
-      <div className="mt-auto flex gap-2">
-        <button
-          type="button"
-          className="text-text border-border min-h-11 flex-1 rounded-lg border px-3"
-          onClick={onBack}
-        >
-          {en.import.confirmBackButton}
-        </button>
-        <button
-          type="button"
-          disabled={reorderRunning || title.trim() === ''}
-          className="bg-accent text-surface min-h-11 flex-1 rounded-lg px-3 font-semibold disabled:opacity-50"
-          onClick={() => {
-            onStart(report, file, {
-              confirmedTitle: title.trim(),
-              targetChatId,
-              selfName,
-            });
-          }}
-        >
-          {en.import.confirmStartButton}
-        </button>
+        <p className="text-text-muted text-sm">
+          {summary}
+          {missing > 0
+            ? ` · ${en.import.confirmMissingMedia.replace('{missing}', String(missing))}`
+            : ''}
+        </p>
+        <p className="text-text-muted text-xs">
+          {en.import.confirmQuota
+            .replace('{archive}', formatBytes(file.size))
+            .replace('{uncompressed}', formatBytes(report.uncompressedTotalBytes))}
+          {report.freeBytes !== null
+            ? ` · ${en.import.confirmFreeStorage.replace('{free}', formatBytes(report.freeBytes))}`
+            : ''}
+        </p>
+
+        <div className="mt-auto flex gap-2">
+          <button
+            type="button"
+            className="text-text border-border min-h-11 flex-1 rounded-lg border px-3"
+            onClick={onBack}
+          >
+            {en.import.confirmBackButton}
+          </button>
+          <button
+            type="button"
+            disabled={reorderRunning || title.trim() === ''}
+            className="bg-accent text-surface min-h-11 flex-1 rounded-lg px-3 font-semibold disabled:opacity-50"
+            onClick={() => {
+              onStart(report, file, {
+                confirmedTitle: title.trim(),
+                targetChatId,
+                selfName,
+              });
+            }}
+          >
+            {en.import.confirmStartButton}
+          </button>
+        </div>
       </div>
     </main>
   );

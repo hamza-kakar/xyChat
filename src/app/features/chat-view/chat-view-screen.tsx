@@ -197,7 +197,7 @@ function ChatViewBody({
   }, []);
   const hasRange = chat.firstTsKey !== null && chat.lastTsKey !== null;
   return (
-    <main className="bg-surface flex h-dvh min-w-0 flex-1 flex-col">
+    <main className="bg-surface safe-sides-bottom flex h-dvh min-w-0 flex-1 flex-col">
       <ChatHeader
         title={chat.title}
         participantCount={chat.isGroup ? (participants.data?.length ?? null) : null}

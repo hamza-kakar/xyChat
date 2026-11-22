@@ -26,81 +26,88 @@ export function ImportReportStep({
   const warningCount = warningEntries.reduce((sum, [, count]) => sum + count, 0);
 
   return (
-    <main className="safe-area bg-surface mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-4 px-6">
-      <h1 className="text-text text-2xl font-bold">{en.import.reportTitle}</h1>
-      {finishedBeforeCancel ? (
-        <p className="text-text text-sm">{en.import.reportFinishedBeforeCancel}</p>
-      ) : null}
-      <ul className="text-text flex flex-col gap-1 text-sm">
-        <li>{en.import.reportAdded.replace('{count}', String(outcome.commit.messagesInserted))}</li>
-        <li>
-          {en.import.reportDuplicates.replace('{count}', String(outcome.commit.duplicatesSkipped))}
-        </li>
-        <li>
-          {en.import.reportMediaStored.replace('{count}', String(outcome.report.mediaStored))}
-        </li>
-        {outcome.report.mediaMissing > 0 ? (
+    <main className="safe-area bg-surface flex min-h-dvh">
+      <div className="mx-auto flex w-full max-w-md flex-col justify-center gap-4 px-6">
+        <h1 className="text-text text-2xl font-bold">{en.import.reportTitle}</h1>
+        {finishedBeforeCancel ? (
+          <p className="text-text text-sm">{en.import.reportFinishedBeforeCancel}</p>
+        ) : null}
+        <ul className="text-text flex flex-col gap-1 text-sm">
           <li>
-            {en.import.reportMediaMissing.replace('{count}', String(outcome.report.mediaMissing))}
+            {en.import.reportAdded.replace('{count}', String(outcome.commit.messagesInserted))}
           </li>
-        ) : null}
-        {outcome.report.mediaOmitted > 0 ? (
           <li>
-            {en.import.reportMediaOmitted.replace('{count}', String(outcome.report.mediaOmitted))}
+            {en.import.reportDuplicates.replace(
+              '{count}',
+              String(outcome.commit.duplicatesSkipped),
+            )}
           </li>
-        ) : null}
-        {outcome.commit.mediaUpgraded > 0 ? (
           <li>
-            {en.import.reportUpgraded.replace('{count}', String(outcome.commit.mediaUpgraded))}
+            {en.import.reportMediaStored.replace('{count}', String(outcome.report.mediaStored))}
           </li>
-        ) : null}
-        <li>
-          {en.import.reportDuration.replace(
-            '{seconds}',
-            (outcome.report.durationMs / 1000).toFixed(1),
-          )}
-        </li>
-        {outcome.report.replacementChars > 0 ? (
-          <li className="text-text-muted">
-            {en.import.reportDecoding.replace('{count}', String(outcome.report.replacementChars))}
+          {outcome.report.mediaMissing > 0 ? (
+            <li>
+              {en.import.reportMediaMissing.replace('{count}', String(outcome.report.mediaMissing))}
+            </li>
+          ) : null}
+          {outcome.report.mediaOmitted > 0 ? (
+            <li>
+              {en.import.reportMediaOmitted.replace('{count}', String(outcome.report.mediaOmitted))}
+            </li>
+          ) : null}
+          {outcome.commit.mediaUpgraded > 0 ? (
+            <li>
+              {en.import.reportUpgraded.replace('{count}', String(outcome.commit.mediaUpgraded))}
+            </li>
+          ) : null}
+          <li>
+            {en.import.reportDuration.replace(
+              '{seconds}',
+              (outcome.report.durationMs / 1000).toFixed(1),
+            )}
           </li>
-        ) : null}
-        <li className={warningCount > 0 ? 'text-text' : 'text-text-muted'}>
-          {warningCount > 0
-            ? en.import.reportWarnings.replace('{count}', String(warningCount))
-            : en.import.reportNoWarnings}
-        </li>
-      </ul>
-      {warningEntries.length > 0 ? (
-        <ul className="text-text-muted flex flex-col gap-1 text-xs">
-          {warningEntries.map(([code, count]) => {
-            const explanation = warningExplanations[code] ?? code;
-            return (
-              <li key={code}>
-                {en.import.reportWarningsCount
-                  .replace('{count}', String(count))
-                  .replace('{text}', explanation)}
-              </li>
-            );
-          })}
+          {outcome.report.replacementChars > 0 ? (
+            <li className="text-text-muted">
+              {en.import.reportDecoding.replace('{count}', String(outcome.report.replacementChars))}
+            </li>
+          ) : null}
+          <li className={warningCount > 0 ? 'text-text' : 'text-text-muted'}>
+            {warningCount > 0
+              ? en.import.reportWarnings.replace('{count}', String(warningCount))
+              : en.import.reportNoWarnings}
+          </li>
         </ul>
-      ) : null}
-      <button
-        type="button"
-        className="bg-accent text-surface min-h-11 rounded-lg px-4 py-2 font-semibold"
-        onClick={onOpenChat}
-      >
-        {en.import.reportOpenChat}
-      </button>
-      <button
-        type="button"
-        className="text-text-muted min-h-11 px-4 py-2 text-sm"
-        onClick={() => {
-          void navigate('/');
-        }}
-      >
-        {en.import.reportDoneButton}
-      </button>
+        {warningEntries.length > 0 ? (
+          <ul className="text-text-muted flex flex-col gap-1 text-xs">
+            {warningEntries.map(([code, count]) => {
+              const explanation = warningExplanations[code] ?? code;
+              return (
+                <li key={code}>
+                  {en.import.reportWarningsCount
+                    .replace('{count}', String(count))
+                    .replace('{text}', explanation)}
+                </li>
+              );
+            })}
+          </ul>
+        ) : null}
+        <button
+          type="button"
+          className="bg-accent text-surface min-h-11 rounded-lg px-4 py-2 font-semibold"
+          onClick={onOpenChat}
+        >
+          {en.import.reportOpenChat}
+        </button>
+        <button
+          type="button"
+          className="text-text-muted min-h-11 px-4 py-2 text-sm"
+          onClick={() => {
+            void navigate('/');
+          }}
+        >
+          {en.import.reportDoneButton}
+        </button>
+      </div>
     </main>
   );
 }
