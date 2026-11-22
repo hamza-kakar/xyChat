@@ -104,6 +104,8 @@ describe('in-chat search (§11)', () => {
     renderChat('?q=zz');
     const field = await screen.findByRole('searchbox', { name: 'Search in this chat' });
     expect(field).toHaveValue('zz');
+    // Opened by the link, not the user: focus stays on the page heading.
+    expect(screen.getByRole('heading', { level: 1, name: 'Family' })).toHaveFocus();
     expect(await screen.findByText('No matches')).toBeInTheDocument();
     expect(screen.getByText('Short searches show at most 500 matches.')).toBeInTheDocument();
     await user.type(field, '{Escape}');

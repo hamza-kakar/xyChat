@@ -124,6 +124,19 @@ test('in-chat search steps through matches; jump to date and to latest (flow 7)'
   await page.getByRole('button', { name: 'Jump to date' }).click();
   await page.getByRole('button', { name: 'First message' }).click();
   await expect(log.getByText('trip idea number 0', { exact: true })).toBeInViewport();
+
+  // A `?q=` link opens the chat with the search filled in and lands on the
+  // newest match, even though the chat itself opens at its last message.
+  const chatPath = new URL(page.url()).hash.replace(/\?.*$/u, '');
+  await page.goto('./');
+  await page.goto(`./${chatPath}?q=number%20250`);
+  await expect(page.getByRole('searchbox', { name: 'Search in this chat' })).toHaveValue(
+    'number 250',
+  );
+  await expect(page.getByText('1 of 1')).toBeVisible();
+  await expect(highlightedRow(page)).toContainText('trip idea number 250');
+  await expect(highlightedRow(page)).toBeInViewport();
+  await expect(page.getByRole('heading', { level: 1, name: 'Plans' })).toBeFocused();
 });
 
 test('bookmark a message, edit its note, find it and remove it (flow 10)', async ({ page }) => {

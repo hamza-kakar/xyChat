@@ -169,6 +169,7 @@ function ChatViewBody({
   const searchButtonRef = useRef<HTMLButtonElement>(null);
   const [actionsFor, setActionsFor] = useState<WindowMessage | null>(null);
   const [isSearchOpen, setSearchOpen] = useState(initialQuery !== null);
+  const [focusSearch, setFocusSearch] = useState(false);
   const [isJumpOpen, setJumpOpen] = useState(false);
   const { jump, highlightSeq, jumpTo } = useJumps(linkedSeq);
   usePersistPosition(chat.id);
@@ -206,6 +207,7 @@ function ChatViewBody({
         isSearchOpen={isSearchOpen}
         canJump={chat.messageCount > 0 && hasRange}
         onSearch={() => {
+          setFocusSearch(true);
           setSearchOpen((open) => !open);
         }}
         onJump={() => {
@@ -216,6 +218,7 @@ function ChatViewBody({
         <InChatSearch
           chatId={chat.id}
           initialQuery={initialQuery ?? ''}
+          focusOnOpen={focusSearch}
           onJump={jumpTo}
           onClose={() => {
             setSearchOpen(false);
