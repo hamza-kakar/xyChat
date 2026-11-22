@@ -49,8 +49,6 @@ interface Recorder {
   readonly flushes: (readonly string[])[];
   readonly buffered: string[];
   readonly progress: ImportProgressEvent[];
-  /** For each path: was it in the latest flush when its first chunk landed? */
-  readonly flushedBeforeFirstWrite: Map<string, boolean>;
 }
 
 function harness(knobs: Knobs): { deps: MediaPhaseDeps; rec: Recorder } {
@@ -59,7 +57,6 @@ function harness(knobs: Knobs): { deps: MediaPhaseDeps; rec: Recorder } {
     flushes: [],
     buffered: [],
     progress: [],
-    flushedBeforeFirstWrite: new Map(),
   };
   let opened = 0;
   const deps: MediaPhaseDeps = {
@@ -81,7 +78,7 @@ function harness(knobs: Knobs): { deps: MediaPhaseDeps; rec: Recorder } {
       close: () => Promise.resolve(),
     },
     listEntries: () => Promise.resolve(ok([...knobs.zip].map(([name, size]) => ({ name, size })))),
-    openWriteSink: (path) => {
+    openWriteSink: () => {
       opened += 1;
       const fileNumber = opened;
       let chunks = 0;
@@ -89,9 +86,6 @@ function harness(knobs: Knobs): { deps: MediaPhaseDeps; rec: Recorder } {
         ok({
           write: () => {
             chunks += 1;
-            if (chunks === 1) {
-              rec.flushedBeforeFirstWrite.set(path, rec.flushes.at(-1)?.includes(path) === true);
-            }
             const fail = knobs.throwOn;
             if (fail?.file === fileNumber && fail.chunk === chunks) {
               const error = new Error('simulated');
@@ -161,11 +155,12 @@ describe('writeImportMedia: write failures (§9.3)', () => {
     if (!result.ok) {
       expect(result.error.code).toBe('QUOTA_EXCEEDED');
     }
-    // Both the complete first file and the partial second file are deleted.
+    // Both the complete first file and the partial second file are deleted,
+    // and the full list was flushed before deleting, so boot rollback could
+    // finish the job after a crash.
     expect(shared).toHaveLength(2);
     expect(rec.deleted).toEqual(shared);
-    // Every path was flushed before its first chunk was written.
-    expect([...rec.flushedBeforeFirstWrite.values()]).toEqual([true, true]);
+    expect(rec.flushes.at(-1)).toEqual(shared);
   });
 
   it('maps an unexpected throw to INTERNAL with only the error name', async () => {

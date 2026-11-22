@@ -247,33 +247,39 @@ describe('writeImportMedia: classification (§9.2 steps 8–9)', () => {
 });
 
 describe('writeImportMedia: written-path flushes (§9.2 step 8, §9.3)', () => {
-  it('flushes the CUMULATIVE written-path list after every write', async () => {
+  it('flushes the cumulative list every 100 paths and once at the end', async () => {
+    const count = 250;
+    const names = Array.from({ length: count }, (_, i) => `IMG-${String(i).padStart(4, '0')}.jpg`);
     const { deps, hooks, flushes, written } = harness({
-      zip: new Map([
-        ['IMG-0001.jpg', 12],
-        ['IMG-0002.jpg', 12],
-      ]),
-      thumbnail: () =>
-        Promise.resolve({ data: new TextEncoder().encode('thumb'), width: 10, height: 8 }),
+      zip: new Map(names.map((name) => [name, 12])),
     });
     const result = await writeImportMedia({
       chatId: CHAT_ID,
-      messages: [referenced('fp-1', 'IMG-0001.jpg'), referenced('fp-2', 'IMG-0002.jpg')],
+      messages: names.map((name, i) => referenced(`fp-${i}`, name)),
       alreadyStored: new Set(),
       deps,
       hooks,
     });
     expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
-    // Every flush is a PREFIX of the final written list (cumulative, never
-    // a partial replacement) and the last flush equals it (§9.3).
+    // 100, 200, then the final 250: never one database write per file.
+    expect(flushes.map((flush) => flush.length)).toEqual([100, 200, 250]);
+    // Every flush is a prefix of the final list (cumulative, §9.3).
     for (const flush of flushes) {
       expect(written.slice(0, flush.length)).toEqual(flush);
     }
     expect(flushes.at(-1)).toEqual(written);
-    expect(flushes.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('makes no flush when nothing was written', async () => {
+    const { deps, hooks, flushes } = harness({ zip: new Map() });
+    await writeImportMedia({
+      chatId: CHAT_ID,
+      messages: [omitted('fp-1')],
+      alreadyStored: new Set(),
+      deps,
+      hooks,
+    });
+    expect(flushes).toEqual([]);
   });
 });
 
