@@ -6,6 +6,7 @@
  */
 import { setRpcErrorSink } from '../../client/db-client';
 import { setImportErrorSink } from '../../client/import-client';
+import { setAudioRpcErrorSink } from '../../client/audio-client';
 import type { RpcErrorEvent } from '../../client/rpc-call';
 import { logger } from './logger';
 
@@ -19,9 +20,10 @@ export function rpcErrorSink(event: RpcErrorEvent): void {
   });
 }
 
-/** Registers the logger-backed sink on both worker clients (db + import).
- * Called once at app boot (main.tsx). */
+/** Registers the logger-backed sink on every worker client (db, import,
+ * audio). Called once at app boot (main.tsx). */
 export function installRpcErrorSink(): void {
   setRpcErrorSink(rpcErrorSink);
   setImportErrorSink(rpcErrorSink);
+  setAudioRpcErrorSink(rpcErrorSink);
 }

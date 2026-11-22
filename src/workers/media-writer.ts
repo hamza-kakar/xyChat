@@ -121,3 +121,50 @@ export async function writeMediaFile(path: string, bytes: Uint8Array): Promise<M
     return err({ code: classify(error), detail: String(error).slice(0, 200) });
   }
 }
+
+/** A positional writer over one OPFS file (decoded audio, §13.2): the
+ * payload streams in first and the header is patched in at the end. */
+export interface RandomAccessSink {
+  /** Writes bytes at a byte offset. */
+  writeAt(bytes: Uint8Array, at: number): void;
+  /** Flushes and releases the handle; idempotent. */
+  close(): void;
+}
+
+/** Opens (creating or emptying) one OPFS file for positional writes. */
+export async function openRandomAccessSink(
+  path: string,
+): Promise<Result<RandomAccessSink, MediaWriteError>> {
+  try {
+    const root = await navigator.storage.getDirectory();
+    const segments = path.split('/');
+    const fileName = segments.pop();
+    if (fileName === undefined || fileName === '') {
+      return err({ code: 'EMPTY_NAME' as const, detail: path });
+    }
+    let dir = root;
+    for (const segment of segments) {
+      dir = await dir.getDirectoryHandle(segment, { create: true });
+    }
+    const fileHandle = await dir.getFileHandle(fileName, { create: true });
+    const access = await fileHandle.createSyncAccessHandle();
+    access.truncate(0);
+    let closed = false;
+    return ok({
+      writeAt: (bytes: Uint8Array, at: number) => {
+        if (closed || access.write(bytes, { at }) !== bytes.byteLength) {
+          throw new Error('short write');
+        }
+      },
+      close: () => {
+        if (!closed) {
+          closed = true;
+          access.flush();
+          access.close();
+        }
+      },
+    });
+  } catch (error) {
+    return err({ code: classify(error), detail: String(error).slice(0, 200) });
+  }
+}

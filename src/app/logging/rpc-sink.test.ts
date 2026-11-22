@@ -8,6 +8,7 @@ import { logger } from './logger';
 
 const setRpcErrorSinkMock = vi.hoisted(() => vi.fn());
 const setImportErrorSinkMock = vi.hoisted(() => vi.fn());
+const setAudioErrorSinkMock = vi.hoisted(() => vi.fn());
 
 vi.mock('../../client/db-client', () => ({
   setRpcErrorSink: (...args: unknown[]) => {
@@ -21,20 +22,28 @@ vi.mock('../../client/import-client', () => ({
   },
 }));
 
+vi.mock('../../client/audio-client', () => ({
+  setAudioRpcErrorSink: (...args: unknown[]) => {
+    setAudioErrorSinkMock(...args);
+  },
+}));
+
 import { installRpcErrorSink, rpcErrorSink } from './rpc-sink';
 
 describe('logger-backed RPC failure sink (§18.7)', () => {
   beforeEach(() => {
     setRpcErrorSinkMock.mockClear();
     setImportErrorSinkMock.mockClear();
+    setAudioErrorSinkMock.mockClear();
   });
 
-  it('registers the sink on both worker clients at install', () => {
+  it('registers the sink on every worker client at install', () => {
     installRpcErrorSink();
     expect(setRpcErrorSinkMock).toHaveBeenCalledTimes(1);
     expect(setRpcErrorSinkMock.mock.calls[0]?.[0]).toBe(rpcErrorSink);
     expect(setImportErrorSinkMock).toHaveBeenCalledTimes(1);
     expect(setImportErrorSinkMock.mock.calls[0]?.[0]).toBe(rpcErrorSink);
+    expect(setAudioErrorSinkMock.mock.calls[0]?.[0]).toBe(rpcErrorSink);
   });
 
   it('logs a failed RPC with code, method and diagnostic id', () => {
