@@ -42,3 +42,17 @@ describe('AppRoutes (§12.3)', () => {
     expect(screen.getByRole('heading', { level: 1, name: APP_NAME })).toBeInTheDocument();
   });
 });
+
+describe('AppRoutes: settings and chat info (§12.3)', () => {
+  it('renders Settings', async () => {
+    vi.stubGlobal('fetch', () => Promise.resolve(new Response('[]')));
+    renderWithProviders(<AppRoutes />, { route: '/settings' });
+    expect(await screen.findByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+
+  it('renders Chat info, with "Not found" for an invalid id', async () => {
+    renderWithProviders(<AppRoutes />, { route: '/chat/not a chat/info' });
+    expect(await screen.findByRole('alert')).toHaveTextContent('This chat doesn’t exist.');
+  });
+});
