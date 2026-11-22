@@ -227,7 +227,9 @@ export async function runPipeline(
 > {
   const { file, fileName, confirmed, importId, commitPort, hooks, mediaIO, hashBytes } = options;
   const startedAt = Date.now();
-  let writtenPaths: readonly string[] = [];
+  // Shared with the media phase, so the catch below sees every touched
+  // path even when the phase throws (§9.3).
+  const writtenPaths: string[] = [];
   try {
     // §9.2 steps 1–3: re-read the archive (the detection read is not kept —
     // the worker stays stateless between detect and begin).
@@ -252,11 +254,11 @@ export async function runPipeline(
       alreadyStored: confirmed.alreadyStored,
       deps: mediaIO,
       hooks,
+      writtenPaths,
     });
     if (!media.ok) {
       return { ok: false, error: media.error };
     }
-    writtenPaths = media.value.writtenPaths;
     return await finishAfterMedia(file, confirmed, {
       fileName,
       importId,
@@ -272,8 +274,8 @@ export async function runPipeline(
       startedAt,
     });
   } catch (error) {
-    // §9.3: an unexpected exception after the media phase must still roll
-    // the written files back.
+    // §9.3: an unexpected exception during or after the media phase must
+    // still roll the touched files back.
     await rollbackWritten(mediaIO, writtenPaths);
     return { ok: false, error: { code: 'INTERNAL', detail: errorNameOf(error) } };
   }
