@@ -1,15 +1,17 @@
 /**
- * Media bubbles (AGENTS.md §12.5, §13.1). Images show their stored
+ * Media bubbles (AGENTS.md §12.5, §13). Images show their stored
  * thumbnail with space reserved from the original size, so rows never
- * jump. Stickers show without bubble chrome. Video, audio and documents
- * show a labeled tile; playback and viewers come with the media milestone,
- * so nothing here pretends to be a control.
+ * jump; stickers show without bubble chrome. Videos show a lazily made
+ * thumbnail (§13.3), voice notes and audio play in place (§13.2), and
+ * photos, videos and documents open the full-screen viewer.
  */
+import { useState, type ReactNode } from 'react';
 import { en } from '../../i18n/en';
-import { formatBytes } from '../../i18n/format-string';
-import { DocumentIcon, MicIcon, PhotoIcon, VideoIcon } from '../../components/icons';
+import { formatBytes, formatString } from '../../i18n/format-string';
+import { DocumentIcon, MicIcon, PhotoIcon, PlayIcon, VideoIcon } from '../../components/icons';
 import { useMediaUrl } from '../../hooks/use-media-url';
-import type { AttachmentView } from '../../../client/db-client';
+import type { AttachmentView, WindowMessage } from '../../../client/db-client';
+import { AudioPlayer, MediaViewer, useVideoThumbnail } from '../media';
 
 /** Largest sticker edge (§13.1). */
 const STICKER_MAX_PX = 160;
@@ -62,50 +64,160 @@ function MediaTile({ attachment }: { readonly attachment: AttachmentView }) {
   );
 }
 
-/** A stored image or sticker; falls back to the tile when it can't load. */
-function StoredImage({
+/** The bubble box of an image or video, sized from the stored dimensions. */
+function MediaBox({
   attachment,
   isSticker,
+  children,
 }: {
   readonly attachment: AttachmentView;
   readonly isSticker: boolean;
+  readonly children: ReactNode;
 }) {
-  const path = isSticker ? (attachment.opfsPath ?? attachment.thumbPath) : attachment.thumbPath;
+  return (
+    <div
+      className={
+        isSticker ? 'w-40 max-w-full' : 'relative w-64 max-w-full overflow-hidden rounded-lg'
+      }
+      style={{
+        aspectRatio: aspectOf(attachment) ?? (isSticker ? '1 / 1' : '4 / 3'),
+        maxHeight: isSticker ? STICKER_MAX_PX : undefined,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function BoxImage({ url, label }: { readonly url: string | null; readonly label: string }) {
+  return url === null ? (
+    <div className="bg-surface/50 h-full w-full" />
+  ) : (
+    <img
+      src={url}
+      alt={label}
+      loading="lazy"
+      decoding="async"
+      className="h-full w-full object-cover"
+    />
+  );
+}
+
+/** A sticker: the file itself, no chrome, not a control. */
+function Sticker({ attachment }: { readonly attachment: AttachmentView }) {
+  const path = attachment.opfsPath ?? attachment.thumbPath;
   const url = useMediaUrl(path);
   if (path === null) {
     return <MediaTile attachment={attachment} />;
   }
-  const label = en.chatView.mediaLabels[attachment.mediaType];
   return (
-    <div
-      className={isSticker ? 'w-40 max-w-full' : 'w-64 max-w-full overflow-hidden rounded-lg'}
-      style={{
-        aspectRatio: aspectOf(attachment) ?? '1 / 1',
-        maxHeight: isSticker ? STICKER_MAX_PX : undefined,
-      }}
-    >
-      {url === null ? (
-        <div className="bg-surface/50 h-full w-full" />
+    <MediaBox attachment={attachment} isSticker>
+      <BoxImage url={url} label={en.chatView.mediaLabels.sticker} />
+    </MediaBox>
+  );
+}
+
+/** A photo thumbnail; falls back to the tile without one. */
+function PhotoPreview({ attachment }: { readonly attachment: AttachmentView }) {
+  const url = useMediaUrl(attachment.thumbPath);
+  if (attachment.thumbPath === null) {
+    return <MediaTile attachment={attachment} />;
+  }
+  return (
+    <MediaBox attachment={attachment} isSticker={false}>
+      <BoxImage url={url} label={en.chatView.mediaLabels[attachment.mediaType]} />
+    </MediaBox>
+  );
+}
+
+/** A video thumbnail (stored, or made on first sight) with a play badge. */
+function VideoPreview({ attachment }: { readonly attachment: AttachmentView }) {
+  const path = useVideoThumbnail(attachment);
+  const url = useMediaUrl(path);
+  return (
+    <MediaBox attachment={attachment} isSticker={false}>
+      {path === null ? (
+        <div className="bg-surface/50 flex h-full w-full items-center justify-center">
+          <VideoIcon className="h-8 w-8" />
+        </div>
       ) : (
-        <img
-          src={url}
-          alt={label}
-          loading="lazy"
-          decoding="async"
-          className="h-full w-full object-cover"
-        />
+        <BoxImage url={url} label={en.chatView.mediaLabels[attachment.mediaType]} />
       )}
-    </div>
+      <span className="absolute inset-0 flex items-center justify-center">
+        <span className="rounded-full bg-black/60 p-2 text-white">
+          <PlayIcon className="h-6 w-6" />
+        </span>
+      </span>
+    </MediaBox>
+  );
+}
+
+/** The preview inside a viewer button, by media type. */
+function Preview({ attachment }: { readonly attachment: AttachmentView }) {
+  const { mediaType } = attachment;
+  if (mediaType === 'image') {
+    return <PhotoPreview attachment={attachment} />;
+  }
+  // GIFs from WhatsApp are usually MP4 files; a real GIF shows as a photo.
+  const isVideoFile = mediaType === 'video' || attachment.mime?.startsWith('video/') === true;
+  if (mediaType === 'gif' || mediaType === 'video') {
+    return isVideoFile ? (
+      <VideoPreview attachment={attachment} />
+    ) : (
+      <PhotoPreview attachment={attachment} />
+    );
+  }
+  return <MediaTile attachment={attachment} />;
+}
+
+/** A preview that opens the full-screen viewer on this one item. */
+function ViewerButton({
+  message,
+  attachment,
+}: {
+  readonly message: WindowMessage;
+  readonly attachment: AttachmentView;
+}) {
+  const [isOpen, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        aria-label={formatString(en.chatView.openMedia, {
+          label: en.chatView.mediaLabels[attachment.mediaType],
+        })}
+        aria-haspopup="dialog"
+        className="block max-w-full text-start"
+        onClick={() => {
+          setOpen(true);
+        }}
+      >
+        <Preview attachment={attachment} />
+      </button>
+      {isOpen ? (
+        <MediaViewer
+          chatId={message.chatId}
+          items={[{ attachment, message }]}
+          index={0}
+          onIndexChange={() => undefined}
+          onClose={() => {
+            setOpen(false);
+          }}
+          showInChat={false}
+        />
+      ) : null}
+    </>
   );
 }
 
 /** Props for {@link MediaContent}. */
 export interface MediaContentProps {
+  readonly message: WindowMessage;
   readonly attachment: AttachmentView | undefined;
 }
 
 /** The media part of a media message (the caption renders below it). */
-export function MediaContent({ attachment }: MediaContentProps) {
+export function MediaContent({ message, attachment }: MediaContentProps) {
   if (attachment === undefined || attachment.status === 'omitted') {
     return <p className="text-text-muted-on-bubble italic">{en.chatView.mediaOmitted}</p>;
   }
@@ -117,8 +229,12 @@ export function MediaContent({ attachment }: MediaContentProps) {
       </div>
     );
   }
-  if (attachment.mediaType === 'image' || attachment.mediaType === 'sticker') {
-    return <StoredImage attachment={attachment} isSticker={attachment.mediaType === 'sticker'} />;
+  const { mediaType } = attachment;
+  if (mediaType === 'sticker') {
+    return <Sticker attachment={attachment} />;
   }
-  return <MediaTile attachment={attachment} />;
+  if (mediaType === 'voice' || mediaType === 'audio') {
+    return <AudioPlayer attachment={attachment} tone="bubble" />;
+  }
+  return <ViewerButton message={message} attachment={attachment} />;
 }

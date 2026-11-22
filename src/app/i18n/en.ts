@@ -336,7 +336,6 @@ export const en = {
       links: 'No links in this chat.',
     },
     itemLabel: '{label}, {sender}, {date}',
-    linkLabel: '{url}, {sender}, {date}',
     unknownSender: 'Unknown sender',
     viewerTitle: '{label} {position} of {total}',
     viewerTitleSingle: '{label}',
