@@ -210,9 +210,11 @@ export function useImportFlow() {
     [],
   );
 
+  // Cancel only signals the worker. The screen moves when begin() answers
+  // CANCELLED (after the §9.3 rollback), so it never flashes the picker
+  // and then jumps to the cancelled message.
   const cancel = useCallback((): void => {
     cancelImport();
-    dispatch({ type: 'back-to-pick' });
   }, []);
 
   return { state, dispatch, runDetect, startImport, cancel };

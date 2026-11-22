@@ -152,7 +152,8 @@ test('flow 5: cancel mid-import — no chat created, no OPFS files left (§9.3)'
   await openPicker(page);
   // Enough media that the cancel lands inside the media phase, after some
   // files are on disk: rollback must then delete them (§9.3).
-  await pickFile(page, await buildMediaCancelZip(800), 'WhatsApp Chat - Media.zip');
+  const zip = await buildMediaCancelZip(800);
+  await pickFile(page, zip, 'WhatsApp Chat - Media.zip');
   await expect(page.getByText('Confirm import')).toBeVisible();
   await page.getByRole('button', { name: 'Start import' }).click();
   // The bar is named after the active phase. Wait until media files are
@@ -168,18 +169,20 @@ test('flow 5: cancel mid-import — no chat created, no OPFS files left (§9.3)'
     .toBeGreaterThanOrEqual(2);
   expect(await countOpfsMediaFiles(page)).toBeGreaterThan(0);
   await page.getByRole('button', { name: 'Cancel import' }).click();
-  await expect(page.getByText('Import a WhatsApp export')).toBeVisible();
-
-  // §9.3: NO chat was created — go home (browser back from the picker) and
-  // confirm the home screen shows NO chat entries (the M3 build has no
-  // chat list UI yet; the home screen is the M0 shell).
-  await page.goBack();
-  await expect(page.getByRole('heading', { level: 1, name: 'waChatBack' })).toBeVisible({
+  await expect(page.getByText('Import cancelled. Nothing was imported.')).toBeVisible({
     timeout: 30_000,
   });
-  // The M3 build has no chat entries visible anywhere: the empty state on
-  // the home shell shows no chat rows (there are none in the db).
-  await expect(page.getByText('good evening all')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Try another file' }).click();
+  await expect(page.getByText('Import a WhatsApp export')).toBeVisible();
+
+  // §9.3: no chat was created. Picking the same export again must not offer
+  // to update an existing "Media" chat; flow 4 shows that option appearing
+  // once a chat with the title exists.
+  await pickFile(page, zip, 'WhatsApp Chat - Media.zip');
+  await expect(page.getByText('Confirm import')).toBeVisible();
+  // The target choice renders with the detection result, in the same paint
+  // as the heading, so its absence here is final.
+  await expect(page.getByText('Update existing chat: Media')).toHaveCount(0);
 
   // §9.3: the OPFS media file count returns to the
   // BASELINE (0) — poll until the async rollback deletes everything.
