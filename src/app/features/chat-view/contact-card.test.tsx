@@ -30,7 +30,7 @@ afterEach(() => {
 
 describe('ContactCard (§12.5)', () => {
   it('shares the stored card through the share sheet when files can be shared', async () => {
-    const share = vi.fn(() => Promise.resolve());
+    const share = vi.fn<(data: ShareData) => Promise<void>>(() => Promise.resolve());
     Object.defineProperty(navigator, 'share', { configurable: true, value: share });
     Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
     readStoredFile.mockResolvedValue(new File(['BEGIN:VCARD'], 'att-1.vcf'));
@@ -41,7 +41,7 @@ describe('ContactCard (§12.5)', () => {
     await waitFor(() => {
       expect(share).toHaveBeenCalledTimes(1);
     });
-    const shared = (share.mock.calls[0] as unknown as [{ files: File[] }])[0].files[0];
+    const shared = share.mock.calls[0]?.[0].files?.[0];
     expect(shared?.name).toBe('Ali.vcf');
     expect(readStoredFile).toHaveBeenCalledWith('media/c/att-1.vcf');
   });
