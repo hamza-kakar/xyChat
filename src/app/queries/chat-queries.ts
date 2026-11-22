@@ -86,6 +86,9 @@ export function useInvalidateImportedChat(): (chatId: ChatId) => Promise<void> {
         client.invalidateQueries({ queryKey: queryKeys.imports(chatId), exact: true }),
         client.invalidateQueries({ queryKey: queryKeys.messages(chatId) }),
         client.invalidateQueries({ queryKey: queryKeys.messageDays(chatId), exact: true }),
+        // A merge renumbers seqs, which bookmarks link to.
+        client.invalidateQueries({ queryKey: queryKeys.bookmarks(chatId), exact: true }),
+        client.invalidateQueries({ queryKey: queryKeys.bookmarks(null), exact: true }),
       ]);
       // New messages change every result list of this chat and the
       // global ones; drop them rather than refetch lists nobody shows.
