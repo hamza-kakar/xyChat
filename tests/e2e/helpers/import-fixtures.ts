@@ -61,6 +61,7 @@ export function supersetText(): string {
     '‎[17/11/2026, 9:19:30 PM] Ali Khan: ‎Sara created group "Family"',
     '‎[17/11/2026, 9:19:45 PM] Ali Khan: newer message inserted after base 1',
     '‎[17/11/2026, 9:20:00 PM] Bob: good evening all',
+    '‎[17/11/2026, 9:20:30 PM] Bob: ‎<attached: 00000002-VIDEO-2026-11-17-21-20-59.mp4>',
     '‎[17/11/2026, 9:21:00 PM] Sara: ‎<attached: 00000001-PHOTO-2026-11-17-21-20-30.jpg>',
     '‎[17/11/2026, 9:22:00 PM] Ali Khan: ‎video omitted',
     '‎[17/11/2026, 9:23:00 PM] Bob: newer message at the end',
