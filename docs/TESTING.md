@@ -50,10 +50,27 @@ storage or import. Record results (date, device, OS, pass/fail) per run.
 - [ ] Use search with VoiceOver.
 - [ ] Operate the lock screen.
 
-## Voice notes (from M6)
+## Voice notes and media (from M6)
 
-- [ ] `.opus` voice note plays (fallback path when needed).
-- [ ] Playback pauses when app goes to background.
+Record the device, iOS version and date with the results.
+
+- [ ] `.opus` voice note plays from its bubble; on iOS versions without
+      Opus support the first play shows "Preparing audio…", then plays.
+- [ ] A second play of the same note starts at once (cached WAV).
+- [ ] If the first tap only prepares the note (iOS refused autoplay after
+      decoding), a second tap plays it.
+- [ ] Seek, elapsed/total and 1×/1.5×/2× work; starting another note
+      pauses the first.
+- [ ] Playback pauses when the app goes to the background.
+- [ ] Gallery: photos grid, month headers, smooth scrolling on a chat
+      with thousands of photos.
+- [ ] Image viewer: pinch zoom, double-tap zoom, pan, swipe between
+      photos, swipe down closes; "Show in chat" lands on the message.
+- [ ] Video plays inline with native controls; video tiles get a
+      thumbnail after a moment.
+- [ ] Document: Open previews a PDF; Share opens the share sheet with the
+      file; Save downloads it.
+- [ ] Links tab opens links in Safari.
 
 ## Lock (from M7)
 
