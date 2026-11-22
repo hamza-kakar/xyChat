@@ -32,6 +32,17 @@ Also landed:
   and requests persistent storage once, only when not already persisted.
 - The stable commit perf case times the median of 3 runs after a warm-up.
 
+Round-3 fixes:
+
+- Written paths are flushed to the imports row every 100 paths and once
+  when the media phase ends or fails, not on every file (§9.2 step 8).
+  After a crash, at most 99 unflushed files are left for the orphan
+  sweeper.
+- Cancel waits for the worker's CANCELLED answer instead of flashing the
+  picker first. E2E flow 5 then re-picks the export and checks no
+  "Update existing chat" option appears, so no chat was created.
+- Wake-lock tests cover a lock granted after the progress step unmounts.
+
 Known limits: message order after a superset merge is asserted by the
 browser contract test, not E2E, until the chat view lands (M4). The two
 perf tests can exceed budget when suites run in parallel on one machine;
