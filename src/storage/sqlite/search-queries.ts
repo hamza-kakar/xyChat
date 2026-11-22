@@ -6,10 +6,19 @@
 import type { ChatId } from '../../core/ids';
 import { messageFromRow } from './rows';
 import type { SqliteDatabase } from './open';
-import type { LinkPage, SearchPage, SearchQuery } from '../repository';
+import type {
+  InChatSearchQuery,
+  LinkPage,
+  MatchingSeqs,
+  SearchPage,
+  SearchQuery,
+} from '../repository';
 
 /** §11: LIKE fallback result cap (in-chat, 1–2 char queries). */
 const LIKE_RESULT_CAP = 500;
+/** In-chat navigation keeps at most this many FTS matches (§11 "12 of
+ * 87"); a chat with more shows the capped count with a "+". */
+export const IN_CHAT_MATCH_CAP = 10_000;
 
 /** Escapes a LIKE query per §11 (1–2 char fallback path). */
 function escapeLike(raw: string): string {
@@ -32,6 +41,11 @@ function buildSnippet(body: string, query: string): string {
   const prefix = start > 0 ? '…' : '';
   const suffix = end < body.length ? '…' : '';
   return `${prefix}${body.slice(start, end)}${suffix}`;
+}
+
+/** Parses a `group_concat` of integers ('' or NULL when nothing matched). */
+export function unpackIntegers(packed: unknown): number[] {
+  return typeof packed === 'string' && packed !== '' ? packed.split(',').map(Number) : [];
 }
 
 /** WHERE fragments + parameters for one search (§11 filters, keyset, mode). */
@@ -139,6 +153,31 @@ export function searchMessages(db: SqliteDatabase, q: SearchQuery): SearchPage {
       ? { tsKey: lastRow['ts_key'], rowId: Number(lastRow['id']), seq: Number(lastRow['seq']) }
       : null;
   return { hits, nextCursor };
+}
+
+/**
+ * Every matching seq of an in-chat search, ascending (§11 in-chat
+ * navigation: the counter and next/previous need the full ordered list,
+ * not a page of snippets). FTS matches stop at IN_CHAT_MATCH_CAP, the 1–2
+ * char LIKE fallback at its 500-result cap.
+ */
+export function listMatchingSeqs(db: SqliteDatabase, q: InChatSearchQuery): MatchingSeqs {
+  const cap = q.query.length < 3 ? LIKE_RESULT_CAP : IN_CHAT_MATCH_CAP;
+  const { conditions, params, joins } = searchConditions({ ...q, limit: cap, cursor: null });
+  // One packed row: per-row results cost a wasm-bridge crossing each,
+  // which dominated large match lists (§17).
+  const rows = db.selectArrays(
+    `SELECT group_concat(seq, ',' ORDER BY seq) FROM (
+       SELECT m.seq FROM messages m ${joins}
+       WHERE ${conditions.join(' AND ')}
+       ORDER BY m.seq ASC
+       LIMIT ?
+     )`,
+    [...params, cap + 1],
+  );
+  const all = unpackIntegers(rows[0]?.[0]);
+  const seqs = all.slice(0, cap);
+  return { seqs, isCapped: all.length > cap };
 }
 
 /** Lists link-bearing text messages with extracted URLs (§12.6). */

@@ -67,6 +67,10 @@ export const dbClient = {
     date: Parameters<DbApi['findSeqByDate']>[1],
   ) => caller.call(() => remote().findSeqByDate(chatId, date), 'findSeqByDate'),
   search: (q: Parameters<DbApi['search']>[0]) => caller.call(() => remote().search(q), 'search'),
+  listMatchingSeqs: (q: Parameters<DbApi['listMatchingSeqs']>[0]) =>
+    caller.call(() => remote().listMatchingSeqs(q), 'listMatchingSeqs'),
+  listMessageDays: (chatId: Parameters<DbApi['listMessageDays']>[0]) =>
+    caller.call(() => remote().listMessageDays(chatId), 'listMessageDays'),
   listAttachments: (q: Parameters<DbApi['listAttachments']>[0]) =>
     caller.call(() => remote().listAttachments(q), 'listAttachments'),
   listLinks: (q: Parameters<DbApi['listLinks']>[0]) =>
@@ -137,6 +141,14 @@ export type MessageWindowView = Awaited<ReturnType<DbApi['getMessageWindow']>>;
 export type WindowMessage = MessageWindowView['messages'][number];
 /** One attachment row. */
 export type AttachmentView = WindowMessage['attachments'][number];
+/** One global search hit (§11). */
+export type SearchHitView = Awaited<ReturnType<DbApi['search']>>['hits'][number];
+/** A search query as the worker takes it. */
+export type SearchQueryInput = Parameters<DbApi['search']>[0];
+/** An in-chat navigation query (§11). */
+export type InChatSearchInput = Parameters<DbApi['listMatchingSeqs']>[0];
+/** One bookmark joined with its message. */
+export type BookmarkViewItem = Awaited<ReturnType<DbApi['listBookmarks']>>[number];
 /** One import run (chat info, message info). */
 export type ImportRecordView = Awaited<ReturnType<DbApi['listImports']>>[number];
 

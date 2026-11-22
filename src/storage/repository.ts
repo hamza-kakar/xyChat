@@ -167,6 +167,23 @@ export interface SearchQuery {
   readonly cursor: SearchPageCursor | null;
 }
 
+/** An in-chat search for navigation (§11): every matching seq, no paging. */
+export interface InChatSearchQuery {
+  readonly chatId: Brand<string, 'ChatId'>;
+  readonly query: string;
+  readonly authorId: Brand<string, 'ParticipantId'> | null;
+  readonly kinds: readonly MessageKind[] | null;
+  readonly dateFromTsKey: number | null;
+  readonly dateToTsKey: number | null;
+}
+
+/** Matching seqs of an in-chat search, ascending. */
+export interface MatchingSeqs {
+  readonly seqs: readonly number[];
+  /** True when more messages matched than were returned. */
+  readonly isCapped: boolean;
+}
+
 /** Attachment-gallery page (keyset by rowId). */
 export interface AttachmentPage {
   readonly attachments: readonly Attachment[];
