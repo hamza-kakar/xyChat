@@ -184,23 +184,37 @@ export interface MatchingSeqs {
   readonly isCapped: boolean;
 }
 
-/** Attachment-gallery page (keyset by rowId). */
+/** Where a gallery item or link sits in its chat (§12.6 "Show in chat"). */
+export interface MessageContext {
+  readonly messageRowId: number;
+  readonly seq: number;
+  readonly tsLocal: LocalDateTime;
+  readonly authorName: string | null;
+}
+
+/** One stored media file in the gallery, with its message context. */
+export interface GalleryItem {
+  readonly attachment: Attachment;
+  readonly message: MessageContext;
+}
+
+/** Media-gallery page, newest first (keyset by message seq: an export
+ * message carries at most one attachment). */
 export interface AttachmentPage {
-  readonly attachments: readonly Attachment[];
+  readonly items: readonly GalleryItem[];
   readonly nextCursor: number | null;
 }
 
-/** A link extracted from a text message body (§12.6 Links tab). */
-export interface LinkEntry {
-  readonly messageRowId: number;
+/** A text message that contains a link (§12.6 Links tab); the app
+ * extracts the URLs with the same linkifier the bubbles use. */
+export interface LinkMessage extends MessageContext {
   readonly chatId: Brand<string, 'ChatId'>;
-  readonly url: string;
-  readonly snippet: string;
+  readonly body: string;
 }
 
-/** Links page (keyset by rowId). */
+/** Links page, newest first (keyset by message seq). */
 export interface LinkPage {
-  readonly links: readonly LinkEntry[];
+  readonly messages: readonly LinkMessage[];
   readonly nextCursor: number | null;
 }
 

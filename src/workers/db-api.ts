@@ -106,4 +106,15 @@ export interface DbApi {
   setLastChatPosition(chatId: ChatId, seq: number): Promise<void>;
   /** Display name from a message's stored `.vcf` (§12.5), or null. */
   readContactName(messageId: number): Promise<string | null>;
+  /** Stores an audio duration measured on first play (§13.2). */
+  setAttachmentDuration(input: { attachmentId: string; durationMs: number }): Promise<void>;
+  /** Saves a video thumbnail made on the main thread (§13.3) and records
+   * it; resolves to its OPFS path, or null when the video row is gone.
+   * The JPEG buffer is transferred. */
+  saveVideoThumbnail(input: {
+    attachmentId: string;
+    jpeg: Uint8Array;
+    width: number;
+    height: number;
+  }): Promise<string | null>;
 }

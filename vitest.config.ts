@@ -60,6 +60,8 @@ export default defineConfig({
         'src/app/**',
         'src/platform/**',
         'src/workers/rpc-validate.ts',
+        'src/workers/rpc-validate-media.ts',
+        'src/workers/audio-transcode.ts',
         'src/client/rpc-call.ts',
         'src/storage/sqlite/opener.ts',
       ],

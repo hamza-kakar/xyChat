@@ -16,6 +16,10 @@ import {
 } from '../storage/media-store';
 import { getLastChatPosition, setLastChatPosition } from '../storage/sqlite/view-state';
 import { readContactName } from '../storage/contact-card';
+import { AUDIO_CACHE_DIR } from '../storage/audio-cache';
+import { thumbPathFor } from '../storage/media-paths';
+import { writeMediaFile } from './media-writer';
+import { rpcMediaInput } from './rpc-validate-media';
 import type { DbApi, WorkerError } from './db-api';
 import { RpcValidationError, rpcInput } from './rpc-validate';
 import { handleCommitMessage } from './commit-port';
@@ -127,6 +131,10 @@ const api: DbApi = {
       // §10.4: files go after the DB commit; a failure here leaves orphans
       // for the sweeper (§9.3), never rows pointing at missing files.
       await deleteChatMedia(id);
+      // Decoded voice notes sit outside the chat folders (§13.2).
+      await Promise.all(
+        paths.filter((path) => path.startsWith(`${AUDIO_CACHE_DIR}/`)).map(deleteMediaFile),
+      );
       return paths;
     }),
   addBookmark: (chatId, messageId, note) =>
@@ -179,11 +187,12 @@ const api: DbApi = {
     wrap(() => repo().listStoredFingerprints(rpcInput.chatId('listStoredFingerprints', chatId))),
   listOrphanMedia: () =>
     wrap(async () => {
-      const [media, thumbs] = await Promise.all([
+      const [media, thumbs, audio] = await Promise.all([
         listFilesUnder('media'),
         listFilesUnder('thumbs'),
+        listFilesUnder(AUDIO_CACHE_DIR),
       ]);
-      return repo().listOrphanMedia([...media, ...thumbs]);
+      return repo().listOrphanMedia([...media, ...thumbs, ...audio]);
     }),
   deleteOrphanMedia: (paths) =>
     wrap(async () => {
@@ -223,6 +232,36 @@ const api: DbApi = {
     wrap(() => {
       const rowId = rpcInput.nonNegativeInt('readContactName', messageId);
       return readContactName(repo().getAttachmentsForMessage(rowId), readMediaFile);
+    }),
+  setAttachmentDuration: (input) =>
+    wrap(() => {
+      const parsed = rpcMediaInput.duration('setAttachmentDuration', input);
+      repo().setAttachmentDuration(parsed.attachmentId, parsed.durationMs);
+    }),
+  saveVideoThumbnail: (input) =>
+    wrap(async () => {
+      const parsed = rpcMediaInput.thumbnail('saveVideoThumbnail', input);
+      const attachment = repo().getAttachment(parsed.attachmentId);
+      if (attachment?.status !== 'present') {
+        return null;
+      }
+      const path = thumbPathFor(attachment.chatId, attachment.id);
+      const written = await writeMediaFile(path, parsed.jpeg);
+      if (!written.ok) {
+        return null;
+      }
+      const recorded = repo().setVideoThumbnail({
+        attachmentId: attachment.id,
+        thumbPath: path,
+        width: parsed.width,
+        height: parsed.height,
+      });
+      if (!recorded) {
+        // Not a stored video: the file must not outlive the request.
+        await deleteMediaFile(path);
+        return null;
+      }
+      return path;
     }),
 };
 

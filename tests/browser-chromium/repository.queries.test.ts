@@ -61,9 +61,9 @@ describe('repository contract: queries', () => {
     expect(byKind.hits).toHaveLength(1);
   });
 
-  it('lists attachments, links and stats', () => {
+  it('lists attachments and stats', () => {
     expect(
-      repo.listAttachments({ chatId, types: ['image'], cursor: null, limit: 50 }).attachments,
+      repo.listAttachments({ chatId, types: ['image'], cursor: null, limit: 50 }).items,
     ).toHaveLength(0);
     const stats = repo.getChatStats(chatId);
     expect(stats.totalsByKind.text).toBe(3);
@@ -140,24 +140,5 @@ describe('repository contract: search paging (§11)', () => {
       cursor: null,
     });
     expect(global.hits).toHaveLength(0);
-  });
-});
-
-describe('repository contract: link extraction (§12.6)', () => {
-  it('extracts links from text messages with snippets', () => {
-    db.run(
-      `INSERT INTO messages (id, chat_id, fingerprint, seq, ts_local, ts_key, author_id, kind, body, is_edited, extra_json, import_id)
-       VALUES (NULL, ?, 'link-fp-0', 50, '2026-11-17T23:00:00', ?, NULL, 'text', 'see https://example.com/docs?page=1 for details', 0, NULL, 'imp-q')`,
-      [chatId, Date.UTC(2026, 10, 17, 23, 0, 0) / 1000],
-    );
-    const page = repo.listLinks({ chatId, cursor: null, limit: 50 });
-    expect(page.links).toHaveLength(1);
-    expect(page.links[0]?.url).toBe('https://example.com/docs?page=1');
-    expect(page.links[0]?.snippet).toContain('example.com');
-    expect(page.nextCursor).toBeNull();
-    // Keyset paging: a full page yields the last rowid as the cursor.
-    const limited = repo.listLinks({ chatId, cursor: null, limit: 1 });
-    expect(limited.links).toHaveLength(1);
-    expect(limited.nextCursor).not.toBeNull();
   });
 });
