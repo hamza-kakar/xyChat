@@ -14,6 +14,7 @@ import type { DetectReport, ImportError } from '../../../../workers/import-detec
 import type { BeginOutcome } from '../../../../client/import-client';
 import type { ChatId } from '../../../../core/ids';
 import type { ConfirmChoices } from '../import-confirm-step';
+import { useInvalidateImportedChat } from '../../../queries/chat-queries';
 
 /** The §12.8 flow states. */
 type ImportStep =
@@ -174,6 +175,8 @@ export function useImportFlow() {
       });
   }, []);
 
+  const invalidateChat = useInvalidateImportedChat();
+
   const startImport = useCallback(
     (report: DetectReport, file: File, choices: ConfirmChoices): void => {
       dispatch({
@@ -217,6 +220,9 @@ export function useImportFlow() {
               // Logged through the rpc sink; the import stays successful.
             }
           }
+          // The chat list and any open view of this chat must show the
+          // new messages.
+          await invalidateChat(outcome.chatId).catch(() => undefined);
           dispatch({ type: 'begin-done', outcome });
         })
         .catch((error: unknown) => {
@@ -227,7 +233,7 @@ export function useImportFlow() {
           });
         });
     },
-    [],
+    [invalidateChat],
   );
 
   // Cancel signals the worker and marks the step as cancelling; the screen

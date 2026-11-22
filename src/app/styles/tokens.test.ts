@@ -85,6 +85,17 @@ const CONTRAST_PAIRS: readonly (readonly [string, string])[] = [
   ['text-muted', 'surface-raised'],
   ['accent-contrast', 'accent'],
   ['danger-contrast', 'danger'],
+  ['text-muted-on-bubble', 'bubble-in'],
+  ['text-muted-on-bubble', 'bubble-out'],
+  ['link-on-bubble', 'bubble-in'],
+  ['link-on-bubble', 'bubble-out'],
+  // Participant names (§12.2): on incoming bubbles, and as avatar initials
+  // on the list surfaces.
+  ...Array.from({ length: 12 }, (_unused, index) => [
+    ...(['bubble-in', 'surface', 'surface-raised'] as const).map(
+      (background) => [`name-${String(index)}`, background] as const,
+    ),
+  ]).flat(),
 ];
 
 describe('design token contrast', () => {

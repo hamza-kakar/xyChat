@@ -1,17 +1,28 @@
 import { Navigate, Route, Routes } from 'react-router';
-import { HomeScreen } from './features/shell/home-screen';
 import { ImportScreen } from './features/import';
+import { ChatViewScreen } from './features/chat-view';
+import { AppErrorBoundary, ChatsLayout } from './features/shell';
 
 /**
- * Route table (AGENTS.md §12.3). Screens for later milestones are added as
- * they land; unknown routes always redirect home.
+ * Route table (AGENTS.md §12.3). Each route renders inside its own error
+ * boundary; unknown routes redirect home. Screens for later milestones are
+ * added as they land.
  */
 export function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<HomeScreen />} />
-      <Route path="/import" element={<ImportScreen />} />
-      <Route path="/chat/:chatId" element={<Navigate to="/" replace />} />
+      <Route element={<ChatsLayout />}>
+        <Route index element={null} />
+        <Route path="/chat/:chatId" element={<ChatViewScreen />} />
+      </Route>
+      <Route
+        path="/import"
+        element={
+          <AppErrorBoundary>
+            <ImportScreen />
+          </AppErrorBoundary>
+        }
+      />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

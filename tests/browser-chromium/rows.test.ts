@@ -18,6 +18,7 @@ const BASE_ROW: Record<string, unknown> = {
   body: 'plain',
   is_edited: 0,
   extra_json: null,
+  import_id: 'imp-1',
 };
 
 describe('messageFromRow', () => {

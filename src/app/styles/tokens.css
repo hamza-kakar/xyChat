@@ -24,6 +24,20 @@
   --dark-danger-contrast: #370b08;
   --dark-focus-ring: #45d0af;
   --dark-border: #2c3432;
+  --dark-text-muted-on-bubble: #c2ccc8;
+  --dark-link-on-bubble: #9fe8d4;
+  --dark-name-0: #ff8a80;
+  --dark-name-1: #ffb366;
+  --dark-name-2: #e8c547;
+  --dark-name-3: #a6d96a;
+  --dark-name-4: #5fd4a0;
+  --dark-name-5: #5cc8e0;
+  --dark-name-6: #8ab4ff;
+  --dark-name-7: #a5b0f0;
+  --dark-name-8: #c3a6ff;
+  --dark-name-9: #e59af0;
+  --dark-name-10: #ff8fc7;
+  --dark-name-11: #d9a882;
 
   /* ---- Light palette (defaults) ---- */
   --surface: #f6f7f8;
@@ -39,6 +53,24 @@
   --danger-contrast: #ffffff;
   --focus-ring: #0b6e5c;
   --border: #d5dadd;
+
+  /* Bubble-only text: timestamps and links (§12.5). */
+  --text-muted-on-bubble: #5c676d;
+  --link-on-bubble: #0a6352;
+
+  /* Participant names (§12.2), AA on bubble-in and the surfaces. */
+  --name-0: #b42318;
+  --name-1: #b54708;
+  --name-2: #8a6100;
+  --name-3: #4d7c0f;
+  --name-4: #067647;
+  --name-5: #0e7490;
+  --name-6: #175cd3;
+  --name-7: #4e5ba6;
+  --name-8: #6941c6;
+  --name-9: #9e1fa8;
+  --name-10: #c11574;
+  --name-11: #7a4e2d;
 }
 
 /* System dark scheme, unless the user forced light (M7 override). */
@@ -57,6 +89,20 @@
     --danger-contrast: var(--dark-danger-contrast);
     --focus-ring: var(--dark-focus-ring);
     --border: var(--dark-border);
+    --text-muted-on-bubble: var(--dark-text-muted-on-bubble);
+    --link-on-bubble: var(--dark-link-on-bubble);
+    --name-0: var(--dark-name-0);
+    --name-1: var(--dark-name-1);
+    --name-2: var(--dark-name-2);
+    --name-3: var(--dark-name-3);
+    --name-4: var(--dark-name-4);
+    --name-5: var(--dark-name-5);
+    --name-6: var(--dark-name-6);
+    --name-7: var(--dark-name-7);
+    --name-8: var(--dark-name-8);
+    --name-9: var(--dark-name-9);
+    --name-10: var(--dark-name-10);
+    --name-11: var(--dark-name-11);
   }
 }
 
@@ -75,4 +121,18 @@
   --danger-contrast: var(--dark-danger-contrast);
   --focus-ring: var(--dark-focus-ring);
   --border: var(--dark-border);
+  --text-muted-on-bubble: var(--dark-text-muted-on-bubble);
+  --link-on-bubble: var(--dark-link-on-bubble);
+  --name-0: var(--dark-name-0);
+  --name-1: var(--dark-name-1);
+  --name-2: var(--dark-name-2);
+  --name-3: var(--dark-name-3);
+  --name-4: var(--dark-name-4);
+  --name-5: var(--dark-name-5);
+  --name-6: var(--dark-name-6);
+  --name-7: var(--dark-name-7);
+  --name-8: var(--dark-name-8);
+  --name-9: var(--dark-name-9);
+  --name-10: var(--dark-name-10);
+  --name-11: var(--dark-name-11);
 }
