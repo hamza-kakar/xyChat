@@ -32,47 +32,49 @@ export function SearchScreen() {
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const query = useDebouncedValue(text.trim(), SEARCH.DEBOUNCE_MS);
   return (
-    <main className="bg-surface flex min-h-dvh flex-col">
-      <header className="border-border safe-area flex flex-col gap-1 border-b py-1 ps-1 pe-4">
-        <div className="flex items-center gap-1">
-          <Link
-            to="/"
-            aria-label={en.search.backLabel}
-            className="text-accent flex min-h-11 min-w-11 items-center justify-center rounded-full"
-          >
-            <BackIcon className="h-6 w-6 rtl:-scale-x-100" />
-          </Link>
-          <h1
-            ref={headingRef}
-            tabIndex={-1}
-            className="text-text ps-2 text-lg font-semibold outline-none"
-          >
-            {en.search.title}
-          </h1>
-        </div>
-        <form
-          role="search"
-          className="ps-3 pb-2"
-          onSubmit={(event) => {
-            event.preventDefault();
-          }}
-        >
-          <input
-            type="search"
-            value={text}
-            maxLength={QUERY_MAX_LENGTH}
-            aria-label={en.search.inputLabel}
-            placeholder={en.search.placeholder}
-            enterKeyHint="search"
-            dir="auto"
-            className="border-border bg-surface-raised text-text min-h-11 w-full rounded-lg border px-3"
-            onChange={(event) => {
-              const next = event.target.value;
-              setText(next);
-              setParams(next === '' ? {} : { q: next }, { replace: true });
+    <main className="bg-surface safe-sides-bottom flex min-h-dvh flex-col">
+      <header className="border-border safe-top border-b">
+        <div className="flex flex-col gap-1 py-1 ps-1 pe-4">
+          <div className="flex items-center gap-1">
+            <Link
+              to="/"
+              aria-label={en.search.backLabel}
+              className="text-accent flex min-h-11 min-w-11 items-center justify-center rounded-full"
+            >
+              <BackIcon className="h-6 w-6 rtl:-scale-x-100" />
+            </Link>
+            <h1
+              ref={headingRef}
+              tabIndex={-1}
+              className="text-text ps-2 text-lg font-semibold outline-none"
+            >
+              {en.search.title}
+            </h1>
+          </div>
+          <form
+            role="search"
+            className="ps-3 pb-2"
+            onSubmit={(event) => {
+              event.preventDefault();
             }}
-          />
-        </form>
+          >
+            <input
+              type="search"
+              value={text}
+              maxLength={QUERY_MAX_LENGTH}
+              aria-label={en.search.inputLabel}
+              placeholder={en.search.placeholder}
+              enterKeyHint="search"
+              dir="auto"
+              className="border-border bg-surface-raised text-text min-h-11 w-full rounded-lg border px-3"
+              onChange={(event) => {
+                const next = event.target.value;
+                setText(next);
+                setParams(next === '' ? {} : { q: next }, { replace: true });
+              }}
+            />
+          </form>
+        </div>
       </header>
       <SearchFilterPanel state={filters} onChange={setFilters} />
       <SearchResults filters={toSearchFilters(query, filters)} />

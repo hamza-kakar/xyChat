@@ -43,7 +43,7 @@ export function Sheet({ open, title, closeLabel, onClose, children }: SheetProps
     <dialog
       ref={dialogRef}
       aria-labelledby={titleId}
-      className="bg-surface-raised text-text safe-area fixed inset-x-0 top-auto bottom-0 m-0 w-full max-w-none rounded-t-2xl p-0 backdrop:bg-black/50 md:mx-auto md:mb-8 md:max-w-md md:rounded-2xl"
+      className="bg-surface-raised text-text safe-area fixed inset-x-0 top-auto bottom-0 m-0 w-full max-w-none rounded-t-2xl backdrop:bg-black/50 md:mx-auto md:mb-8 md:max-w-md md:rounded-2xl"
       onCancel={(event) => {
         event.preventDefault();
         onClose();

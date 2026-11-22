@@ -46,7 +46,11 @@ function renderStep(deps: RenderDeps) {
         />
       );
     case 'detecting':
-      return <p className="text-text-muted safe-area p-6 text-center">{en.import.detecting}</p>;
+      return (
+        <div className="safe-area">
+          <p className="text-text-muted p-6 text-center">{en.import.detecting}</p>
+        </div>
+      );
     case 'confirm': {
       const { report, file, suggestedTargetChatId } = state.step;
       return (

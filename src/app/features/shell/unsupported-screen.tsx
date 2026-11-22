@@ -19,19 +19,21 @@ export function UnsupportedScreen({ failures }: UnsupportedScreenProps) {
   }, [failures]);
 
   return (
-    <main className="safe-area bg-surface flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
-      <h1 className="text-text text-xl font-bold">{en.boot.unsupportedTitle}</h1>
-      <p className="text-text-muted max-w-md">
-        {formatString(en.boot.unsupportedIntro, { appName: APP_NAME })}
-      </p>
-      <ul className="text-text list-inside list-disc text-start">
-        {failures.map((failure) => (
-          <li key={failure.id}>{en.capability[failure.id]}</li>
-        ))}
-      </ul>
-      <p className="text-text-muted max-w-md text-sm">
-        {formatString(en.boot.minimumRequirements, { appName: APP_NAME })}
-      </p>
+    <main className="safe-area bg-surface flex min-h-dvh">
+      <div className="flex w-full flex-col items-center justify-center gap-4 px-6 text-center">
+        <h1 className="text-text text-xl font-bold">{en.boot.unsupportedTitle}</h1>
+        <p className="text-text-muted max-w-md">
+          {formatString(en.boot.unsupportedIntro, { appName: APP_NAME })}
+        </p>
+        <ul className="text-text list-inside list-disc text-start">
+          {failures.map((failure) => (
+            <li key={failure.id}>{en.capability[failure.id]}</li>
+          ))}
+        </ul>
+        <p className="text-text-muted max-w-md text-sm">
+          {formatString(en.boot.minimumRequirements, { appName: APP_NAME })}
+        </p>
+      </div>
     </main>
   );
 }

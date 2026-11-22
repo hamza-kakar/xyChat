@@ -45,6 +45,15 @@ async function importPlans(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Done' }).click();
 }
 
+/** Safe-area insets sit on the header and its own spacing on the row
+ * inside, so neither overrides the other (§12.1). */
+async function expectHeaderSpacing(page: Page): Promise<void> {
+  const header = page.locator('main header').first();
+  await expect(header).toHaveCSS('padding-bottom', '0px');
+  await expect(header.locator('> div')).toHaveCSS('padding-top', '4px');
+  await expect(header.locator('> div')).toHaveCSS('padding-inline-start', '4px');
+}
+
 /** The message row currently marked as jumped-to. */
 function highlightedRow(page: Page) {
   return page.getByRole('log').locator('article[aria-current="true"]');
@@ -54,6 +63,7 @@ test('global search opens the hit in its chat, highlighted (flow 6)', async ({ p
   await importPlans(page);
   await page.getByRole('link', { name: 'Search all chats' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Search' })).toBeFocused();
+  await expectHeaderSpacing(page);
   await page.getByRole('searchbox', { name: 'Search messages' }).fill('number 1250');
   const hit = page.getByRole('link', { name: /^Plans.*Sara.*trip idea number 1250/u });
   await expect(hit).toBeVisible();
@@ -81,6 +91,7 @@ test('in-chat search steps through matches; jump to date and to latest (flow 7)'
   await page.getByRole('link', { name: /Plans/u }).click();
   const log = page.getByRole('log');
   await expect(log.getByText('note 1999 about the weekly plan')).toBeVisible();
+  await expectHeaderSpacing(page);
 
   await page.getByRole('button', { name: 'Search in chat' }).click();
   await page.getByRole('searchbox', { name: 'Search in this chat' }).fill('trip idea');

@@ -32,7 +32,7 @@ export function ChatListPane({ asSidebar }: ChatListPaneProps) {
   return (
     <Root
       aria-label={asSidebar ? en.chatList.heading : undefined}
-      className="bg-surface flex min-h-dvh w-full flex-col"
+      className="bg-surface safe-area flex min-h-dvh w-full flex-col"
     >
       <header className="border-border flex items-center gap-2 border-b py-2 ps-4 pe-2">
         <Heading

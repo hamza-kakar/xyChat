@@ -27,34 +27,36 @@ export function ImportErrorStep({ error, onRetry }: ImportErrorStepProps) {
   );
 
   return (
-    <main className="safe-area bg-surface mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-4 px-6">
-      <h1 className="text-text text-2xl font-bold">{en.import.errorTitle}</h1>
-      <p className="text-text" dir="auto">
-        {message}
-      </p>
-      <button
-        type="button"
-        className="text-text border-border min-h-11 rounded-lg border px-4 py-2 text-sm"
-        onClick={() => {
-          navigator.clipboard
-            .writeText(diagnostics)
-            .then(() => {
-              setCopied(true);
-            })
-            .catch(() => {
-              setCopied(false);
-            });
-        }}
-      >
-        {copied ? en.import.errorCopied : en.import.errorCopyDiagnostics}
-      </button>
-      <button
-        type="button"
-        className="bg-accent text-surface min-h-11 rounded-lg px-4 py-2 font-semibold"
-        onClick={onRetry}
-      >
-        {en.import.errorRetryButton}
-      </button>
+    <main className="safe-area bg-surface flex min-h-dvh">
+      <div className="mx-auto flex w-full max-w-md flex-col justify-center gap-4 px-6">
+        <h1 className="text-text text-2xl font-bold">{en.import.errorTitle}</h1>
+        <p className="text-text" dir="auto">
+          {message}
+        </p>
+        <button
+          type="button"
+          className="text-text border-border min-h-11 rounded-lg border px-4 py-2 text-sm"
+          onClick={() => {
+            navigator.clipboard
+              .writeText(diagnostics)
+              .then(() => {
+                setCopied(true);
+              })
+              .catch(() => {
+                setCopied(false);
+              });
+          }}
+        >
+          {copied ? en.import.errorCopied : en.import.errorCopyDiagnostics}
+        </button>
+        <button
+          type="button"
+          className="bg-accent text-surface min-h-11 rounded-lg px-4 py-2 font-semibold"
+          onClick={onRetry}
+        >
+          {en.import.errorRetryButton}
+        </button>
+      </div>
     </main>
   );
 }
