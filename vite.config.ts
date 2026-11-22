@@ -94,11 +94,20 @@ export default defineConfig(async () => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,wasm,svg,png,webmanifest}'],
+          // ogg-opus-decoder's ML build loads only with speech enhancement,
+          // which the app never enables (ADR 0013).
+          globIgnores: ['**/opus-ml-*.js'],
           navigateFallback: 'index.html',
         },
         injectRegister: 'auto',
       }),
     ],
+    worker: {
+      // Module workers (§3.2) keep dynamic imports as separate chunks, so
+      // the Opus decoder's optional ML build is never inlined into the
+      // audio worker.
+      format: 'es' as const,
+    },
     define: {
       __APP_VERSION__: JSON.stringify(appVersion),
     },
