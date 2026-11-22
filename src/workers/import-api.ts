@@ -79,13 +79,13 @@ export interface ImportWorkerApi {
     localeHint?: string,
     dateOrderOverride?: 'DMY' | 'MDY',
   ): Promise<DetectAnswer>;
+  /** Takes the import-side end of the commit MessageChannel (§3.2);
+   * transferred by the caller. */
+  setCommitPort(port: MessagePort): void;
   /**
    * Runs the confirmed pipeline (§9.2 steps 6–11): parse → fingerprint →
    * media writes → commit over the MessagePort. Cancellation via the
    * proxied hooks; the commit request carries the pre-assembled input.
    */
-  /** Takes the import-side end of the commit MessageChannel (§3.2);
-   * transferred by the caller. */
-  setCommitPort(port: MessagePort): void;
   begin(options: BeginOptions, hooks: ImportHooks): Promise<BeginAnswer>;
 }

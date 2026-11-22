@@ -20,10 +20,22 @@ M2 — Storage and db.worker: merged.
   suite cleans OPFS after each test (fixes the CI browser failure).
 - Corrupt `written_paths_json` reads as an empty list instead of throwing.
 
-Still open from round 2: e2e flows 4–5 to the full §19.5 spec, port
-dispatch out of the db.worker shell, archive-reader per-entry reopen,
-remaining Minors/Nit, and the timing flakiness of the two perf tests when
-suites run in parallel.
+Also landed:
+
+- db.worker holds no SQL: import marks, written paths, attachment and
+  chat-path reads go through repository methods with Valibot-validated
+  rows; contract tests cover the in_progress-only transitions and corrupt
+  path lists; commit-port dispatch has unit tests.
+- E2E flow 4 uses a true superset (6 stored + 2 new); flow 5 cancels only
+  once media files exist and fails if rollback skips the deletes.
+- The import flow hook lives in `features/import/hooks/`, owns cancel,
+  and requests persistent storage once, only when not already persisted.
+- The stable commit perf case times the median of 3 runs after a warm-up.
+
+Known limits: message order after a superset merge is asserted by the
+browser contract test, not E2E, until the chat view lands (M4). The two
+perf tests can exceed budget when suites run in parallel on one machine;
+serial runs and CI pass.
 
 ## What's done (M3)
 
