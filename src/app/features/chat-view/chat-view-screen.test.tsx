@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Route, Routes } from 'react-router';
 import { renderWithProviders } from '../../test/providers';
+import { stubDivLayout } from '../../test/layout-stub';
 import { ALI, chat, CHAT_ID, message, participant, SARA } from '../../test/fixtures';
 import { asImportId } from '../../../core/ids';
 import { ChatViewScreen } from './chat-view-screen';
@@ -16,6 +17,7 @@ const db = vi.hoisted(() => ({
   setSelf: vi.fn(),
   listImports: vi.fn(),
   readContactName: vi.fn(),
+  listBookmarks: vi.fn(),
 }));
 
 vi.mock('../../../client/db-client', () => ({ dbClient: db }));
@@ -33,20 +35,10 @@ const messages = [
   message({ seq: 2, kind: 'system', authorId: null, authorName: null, body: 'Ali Khan left' }),
 ];
 
-/** happy-dom has no layout, so every element measures 0 px and the
- * virtualizer would render nothing. Give the rendered divs a phone-sized
- * box. happy-dom builds element classes per window, so the stub goes on
- * the prototype the divs actually use. */
-const SIZES = { clientHeight: 800, clientWidth: 400, offsetHeight: 72, offsetWidth: 400 };
-const divPrototype = Object.getPrototypeOf(document.createElement('div')) as object;
-const sizeDescriptors = Object.fromEntries(
-  Object.keys(SIZES).map((name) => [name, Object.getOwnPropertyDescriptor(divPrototype, name)]),
-);
+let restoreLayout: () => void = () => undefined;
 
 beforeEach(() => {
-  for (const [name, value] of Object.entries(SIZES)) {
-    Object.defineProperty(divPrototype, name, { configurable: true, get: () => value });
-  }
+  restoreLayout = stubDivLayout();
   vi.clearAllMocks();
   db.getChat.mockResolvedValue(chat());
   db.getParticipants.mockResolvedValue([
@@ -57,6 +49,7 @@ beforeEach(() => {
   db.getLastChatPosition.mockResolvedValue(null);
   db.setLastChatPosition.mockResolvedValue(undefined);
   db.setSelf.mockResolvedValue(undefined);
+  db.listBookmarks.mockResolvedValue([]);
   db.listImports.mockResolvedValue([
     {
       id: asImportId('imp-1'),
@@ -74,13 +67,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
-  for (const [name, descriptor] of Object.entries(sizeDescriptors)) {
-    if (descriptor === undefined) {
-      Reflect.deleteProperty(divPrototype, name);
-    } else {
-      Object.defineProperty(divPrototype, name, descriptor);
-    }
-  }
+  restoreLayout();
 });
 
 function renderChat(id: string = CHAT_ID) {

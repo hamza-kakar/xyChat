@@ -1,15 +1,15 @@
 /**
- * The chat view (AGENTS.md §12.5): header, the self-choice banner and the
- * virtualized message log. The route parameter is validated (§12.3);
- * anything invalid or unknown shows "Not found".
+ * The chat view (AGENTS.md §12.5): header, in-chat search, the self-choice
+ * banner, the virtualized message log and jump to date. Route parameters
+ * are validated (§12.3): an invalid chat id shows "Not found"; an invalid
+ * `?seq` or `?q` is ignored.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router';
 import * as v from 'valibot';
 import { asChatId, type ChatId } from '../../../core/ids';
 import { en } from '../../i18n/en';
-import { formatString } from '../../i18n/format-string';
-import { BackIcon } from '../../components/icons';
+import { JUMP_HIGHLIGHT_MS } from '../../config';
 import { useFocusHeading } from '../../hooks/use-focus-heading';
 import { mediaUrlCache } from '../../../platform/media-url';
 import {
@@ -19,7 +19,11 @@ import {
   useSaveChatPosition,
 } from '../../queries/chat-queries';
 import type { ChatView, WindowMessage } from '../../../client/db-client';
-import { MessageList } from './message-list';
+import { useBookmarks } from '../../queries/bookmark-queries';
+import { MessageList, type JumpRequest } from './message-list';
+import { ChatHeader } from './chat-header';
+import { InChatSearch } from './in-chat-search';
+import { JumpToDateSheet } from './jump-to-date-sheet';
 import { SelfBanner } from './self-banner';
 import { MessageActionsSheet } from './message-actions-sheet';
 import { scrollMemory } from './session-memory';
@@ -27,17 +31,49 @@ import type { RowContext } from './row-model';
 
 /** Chat ids are generated UUIDs; anything else is not a chat. */
 const ChatIdParam = v.pipe(v.string(), v.regex(/^[0-9a-f-]{8,64}$/iu));
+/** `?seq=N` opens the chat at a message (§12.3). */
+const SeqParam = v.pipe(v.string(), v.regex(/^\d{1,9}$/u), v.transform(Number));
+/** `?q=` opens in-chat search with a query (§12.3). */
+const QueryParam = v.pipe(v.string(), v.minLength(1), v.maxLength(500));
+
+/** A validated optional search param, or null. */
+function readParam<T>(schema: v.GenericSchema<string, T>, raw: string | null): T | null {
+  if (raw === null) {
+    return null;
+  }
+  const parsed = v.safeParse(schema, raw);
+  return parsed.success ? parsed.output : null;
+}
 
 export function ChatViewScreen() {
   const params = useParams();
+  const [search] = useSearchParams();
   const parsed = v.safeParse(ChatIdParam, params['chatId']);
   if (!parsed.success) {
     return <ChatMessage text={en.chatView.notFound} />;
   }
-  return <ChatViewLoader key={parsed.output} chatId={asChatId(parsed.output)} />;
+  const seq = readParam(SeqParam, search.get('seq'));
+  const query = readParam(QueryParam, search.get('q'));
+  // A new linked message re-opens the view at it.
+  return (
+    <ChatViewLoader
+      key={`${parsed.output}:${String(seq)}`}
+      chatId={asChatId(parsed.output)}
+      linkedSeq={seq}
+      initialQuery={query}
+    />
+  );
 }
 
-function ChatViewLoader({ chatId }: { readonly chatId: ChatId }) {
+function ChatViewLoader({
+  chatId,
+  linkedSeq,
+  initialQuery,
+}: {
+  readonly chatId: ChatId;
+  readonly linkedSeq: number | null;
+  readonly initialQuery: string | null;
+}) {
   const chat = useChat(chatId);
   const lastPosition = useLastChatPosition();
   if (chat.isPending || lastPosition.isPending) {
@@ -49,9 +85,17 @@ function ChatViewLoader({ chatId }: { readonly chatId: ChatId }) {
   if (chat.data === null) {
     return <ChatMessage text={en.chatView.notFound} />;
   }
+  const linked = linkedSeq !== null && linkedSeq < chat.data.messageCount ? linkedSeq : null;
   const remembered = scrollMemory.get(chatId);
   const stored = lastPosition.data?.chatId === chatId ? lastPosition.data.seq : undefined;
-  return <ChatViewBody chat={chat.data} initialTopSeq={remembered ?? stored ?? null} />;
+  return (
+    <ChatViewBody
+      chat={chat.data}
+      initialTopSeq={linked ?? remembered ?? stored ?? null}
+      linkedSeq={linked}
+      initialQuery={initialQuery}
+    />
+  );
 }
 
 /** Saves the chat's position to `meta` on leave and when the app is hidden
@@ -81,16 +125,52 @@ function usePersistPosition(chatId: ChatId): void {
   }, [chatId, mutate]);
 }
 
+/** Jump requests and the brief highlight they leave (§11, §12.5). */
+function useJumps(linkedSeq: number | null) {
+  const token = useRef(0);
+  const [jump, setJump] = useState<JumpRequest | null>(null);
+  const [highlight, setHighlight] = useState<JumpRequest | null>(
+    linkedSeq === null ? null : { seq: linkedSeq, token: 0 },
+  );
+  useEffect(() => {
+    if (highlight === null) {
+      return undefined;
+    }
+    const timer = setTimeout(() => {
+      setHighlight(null);
+    }, JUMP_HIGHLIGHT_MS);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [highlight]);
+  const jumpTo = useCallback((seq: number) => {
+    token.current += 1;
+    const request = { seq, token: token.current };
+    setJump(request);
+    setHighlight(request);
+  }, []);
+  return { jump, highlightSeq: highlight?.seq ?? null, jumpTo };
+}
+
 function ChatViewBody({
   chat,
   initialTopSeq,
+  linkedSeq,
+  initialQuery,
 }: {
   readonly chat: ChatView;
   readonly initialTopSeq: number | null;
+  readonly linkedSeq: number | null;
+  readonly initialQuery: string | null;
 }) {
   const participants = useParticipants(chat.id);
+  const bookmarks = useBookmarks(chat.id);
   const headingRef = useFocusHeading<HTMLHeadingElement>();
+  const searchButtonRef = useRef<HTMLButtonElement>(null);
   const [actionsFor, setActionsFor] = useState<WindowMessage | null>(null);
+  const [isSearchOpen, setSearchOpen] = useState(initialQuery !== null);
+  const [isJumpOpen, setJumpOpen] = useState(false);
+  const { jump, highlightSeq, jumpTo } = useJumps(linkedSeq);
   usePersistPosition(chat.id);
   const locale = navigator.language;
   const context = useMemo<RowContext>(
@@ -101,6 +181,11 @@ function ChatViewBody({
     () => new Map((participants.data ?? []).map((p) => [p.id as string, p.colorIndex])),
     [participants.data],
   );
+  const bookmarkByMessage = useMemo(
+    () => new Map((bookmarks.data ?? []).map((item) => [item.bookmark.messageId, item.bookmark])),
+    [bookmarks.data],
+  );
+  const bookmarked = useMemo(() => new Set(bookmarkByMessage.keys()), [bookmarkByMessage]);
   const onTopSeqChange = useCallback(
     (seq: number) => {
       scrollMemory.set(chat.id, seq);
@@ -110,32 +195,34 @@ function ChatViewBody({
   const onOpenActions = useCallback((message: WindowMessage) => {
     setActionsFor(message);
   }, []);
+  const hasRange = chat.firstTsKey !== null && chat.lastTsKey !== null;
   return (
     <main className="bg-surface flex h-dvh min-w-0 flex-1 flex-col">
-      <header className="border-border bg-surface safe-area flex items-center gap-1 border-b py-1 ps-1 pe-4">
-        <Link
-          to="/"
-          aria-label={en.chatView.backLabel}
-          className="text-accent flex min-h-11 min-w-11 items-center justify-center rounded-full md:hidden"
-        >
-          <BackIcon className="h-6 w-6 rtl:-scale-x-100" />
-        </Link>
-        <div className="flex min-w-0 flex-1 flex-col ps-2 md:ps-3">
-          <h1
-            ref={headingRef}
-            tabIndex={-1}
-            className="text-text truncate text-lg font-semibold outline-none"
-            dir="auto"
-          >
-            {chat.title}
-          </h1>
-          {chat.isGroup && participants.data !== undefined ? (
-            <p className="text-text-muted text-xs">
-              {formatString(en.chatView.participants, { count: participants.data.length })}
-            </p>
-          ) : null}
-        </div>
-      </header>
+      <ChatHeader
+        title={chat.title}
+        participantCount={chat.isGroup ? (participants.data?.length ?? null) : null}
+        headingRef={headingRef}
+        searchButtonRef={searchButtonRef}
+        isSearchOpen={isSearchOpen}
+        canJump={chat.messageCount > 0 && hasRange}
+        onSearch={() => {
+          setSearchOpen((open) => !open);
+        }}
+        onJump={() => {
+          setJumpOpen(true);
+        }}
+      />
+      {isSearchOpen ? (
+        <InChatSearch
+          chatId={chat.id}
+          initialQuery={initialQuery ?? ''}
+          onJump={jumpTo}
+          onClose={() => {
+            setSearchOpen(false);
+            searchButtonRef.current?.focus();
+          }}
+        />
+      ) : null}
       {chat.selfParticipantId === null ? <SelfBanner chatId={chat.id} /> : null}
       <MessageList
         chatId={chat.id}
@@ -144,13 +231,31 @@ function ChatViewBody({
         context={context}
         colors={colors}
         initialTopSeq={initialTopSeq}
+        initialAlign={linkedSeq === null ? 'start' : 'center'}
+        jump={jump}
+        highlightSeq={highlightSeq}
+        bookmarked={bookmarked}
         onTopSeqChange={onTopSeqChange}
         onOpenActions={onOpenActions}
       />
+      {isJumpOpen && chat.firstTsKey !== null && chat.lastTsKey !== null ? (
+        <JumpToDateSheet
+          chatId={chat.id}
+          firstTsKey={chat.firstTsKey}
+          lastTsKey={chat.lastTsKey}
+          total={chat.messageCount}
+          locale={locale}
+          onJump={jumpTo}
+          onClose={() => {
+            setJumpOpen(false);
+          }}
+        />
+      ) : null}
       {actionsFor === null ? null : (
         <MessageActionsSheet
           chatId={chat.id}
           message={actionsFor}
+          bookmark={bookmarkByMessage.get(actionsFor.rowId) ?? null}
           locale={locale}
           onClose={() => {
             setActionsFor(null);
