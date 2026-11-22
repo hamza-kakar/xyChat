@@ -78,7 +78,7 @@ function StoredImage({
   const label = en.chatView.mediaLabels[attachment.mediaType];
   return (
     <div
-      className={isSticker ? 'max-w-40' : 'w-64 max-w-full overflow-hidden rounded-lg'}
+      className={isSticker ? 'w-40 max-w-full' : 'w-64 max-w-full overflow-hidden rounded-lg'}
       style={{
         aspectRatio: aspectOf(attachment) ?? '1 / 1',
         maxHeight: isSticker ? STICKER_MAX_PX : undefined,

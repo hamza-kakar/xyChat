@@ -137,7 +137,7 @@ export const MessageRow = memo(function MessageRow({
         data-seq={message.seq}
         className="relative"
       >
-        <div {...press}>
+        <div className="[-webkit-touch-callout:none] pointer-coarse:select-none" {...press}>
           {isPill ? (
             <Pill message={message} isCall={message.kind === 'call'} />
           ) : (

@@ -120,6 +120,21 @@ describe('MessageContent media (§12.5, §13.1)', () => {
     expect(screen.getByText('sunset')).toBeInTheDocument();
   });
 
+  it('shows a stored sticker at a fixed 160 px box without bubble chrome', () => {
+    renderWithProviders(
+      <MessageContent
+        message={message({
+          kind: 'media',
+          attachments: [
+            attachment({ mediaType: 'sticker', opfsPath: 'media/c/s.webp', thumbPath: null }),
+          ],
+        })}
+      />,
+    );
+    const image = screen.getByRole('img', { name: 'Sticker' });
+    expect(image.parentElement).toHaveClass('w-40', 'max-w-full');
+  });
+
   it('shows labeled tiles for voice notes and documents, with no fake controls', () => {
     renderWithProviders(
       <MessageContent

@@ -177,6 +177,14 @@ describe('ChatViewScreen (§12.5)', () => {
     expect(await within(info).findByText(/^WhatsApp Chat - Family\.zip, /u)).toBeInTheDocument();
   });
 
+  it('keeps text selection and the callout off the long-press area on touch', async () => {
+    renderChat();
+    const log = await screen.findByRole('log');
+    const text = await within(log).findByText('hello there');
+    const pressable = text.closest('article')?.firstElementChild;
+    expect(pressable).toHaveClass('pointer-coarse:select-none', '[-webkit-touch-callout:none]');
+  });
+
   it('remembers the position when leaving', async () => {
     const view = renderChat();
     await screen.findByText('hello there');
