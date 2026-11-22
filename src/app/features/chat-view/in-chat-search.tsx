@@ -19,6 +19,9 @@ const QUERY_MAX_LENGTH = 500;
 export interface InChatSearchProps {
   readonly chatId: ChatId;
   readonly initialQuery: string;
+  /** True when the user opened the bar; a `?q=` link keeps focus on the
+   * page heading (§16). */
+  readonly focusOnOpen: boolean;
   readonly onJump: (seq: number) => void;
   readonly onClose: () => void;
 }
@@ -29,7 +32,13 @@ interface Selection {
   readonly index: number;
 }
 
-export function InChatSearch({ chatId, initialQuery, onJump, onClose }: InChatSearchProps) {
+export function InChatSearch({
+  chatId,
+  initialQuery,
+  focusOnOpen,
+  onJump,
+  onClose,
+}: InChatSearchProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [text, setText] = useState(initialQuery);
   const query = useDebouncedValue(text.trim(), SEARCH.DEBOUNCE_MS);
@@ -41,8 +50,10 @@ export function InChatSearch({ chatId, initialQuery, onJump, onClose }: InChatSe
   const currentSeq = seqs[index];
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+    if (focusOnOpen) {
+      inputRef.current?.focus();
+    }
+  }, [focusOnOpen]);
 
   // Scrolling the list is the side effect this selection drives.
   useEffect(() => {
