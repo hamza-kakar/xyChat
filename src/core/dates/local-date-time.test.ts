@@ -4,7 +4,6 @@ import {
   canonical,
   compare,
   formatDateTime,
-  formatDaySeparator,
   formatDate,
   formatTime,
   isSameDay,
@@ -106,20 +105,5 @@ describe('formatting (UTC-trick)', () => {
 
   it('formats full date-time with seconds', () => {
     expect(formatDateTime(T(), { locale: 'en-US' })).toBe('Nov 17, 2026, 9:19:03 PM');
-  });
-
-  it('labels day separators relative to now', () => {
-    const now = T({ day: 17, hour: 10 });
-    expect(formatDaySeparator(T({ hour: 1 }), now, { locale: 'en-US' })).toBe('Today');
-    expect(formatDaySeparator(T({ day: 16, hour: 1 }), now, { locale: 'en-US' })).toBe('Yesterday');
-    // 3 days back: a weekday name (within the last week).
-    const threeDaysAgo = T({ day: 14, hour: 1 });
-    expect(formatDaySeparator(threeDaysAgo, now, { locale: 'en-US' })).toMatch(
-      /^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)$/,
-    );
-    // Older: a locale date.
-    expect(formatDaySeparator(T({ day: 1, hour: 1 }), now, { locale: 'en-US' })).toBe(
-      'Nov 1, 2026',
-    );
   });
 });

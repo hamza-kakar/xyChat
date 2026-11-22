@@ -31,11 +31,7 @@ export const MINUTES_IN_HOUR = 60;
 /** Seconds in one day, for day-difference arithmetic. */
 export const SECONDS_PER_DAY = 86_400;
 /** Milliseconds in one second (Date.UTC returns milliseconds). */
-const MS_PER_SECOND = 1000;
-/** Milliseconds in one day. */
-const MS_PER_DAY = SECONDS_PER_DAY * MS_PER_SECOND;
-/** Weekday labels are shown for dates within the last 7 days. */
-const WEEKDAY_LOOKBACK_DAYS = 7;
+export const MS_PER_SECOND = 1000;
 
 /** Error codes for local-date-time construction. */
 export type LocalDateTimeError = 'INVALID_DATE' | 'INVALID_TIME';
@@ -120,7 +116,7 @@ export function canonical(date: LocalDateTime): string {
  *
  * @example
  * tsKey({ year: 2026, month: 11, day: 17, hour: 21, minute: 19, second: 3 });
- * // 1792346383 (same as Date.UTC(2026, 10, 17, 21, 19, 3) / 1000)
+ * // 1794950343 (same as Date.UTC(2026, 10, 17, 21, 19, 3) / 1000)
  */
 export function tsKey(date: LocalDateTime): number {
   return (
@@ -195,41 +191,8 @@ export function formatDateTime(date: LocalDateTime, options: FormatOptions): str
 }
 
 /** Builds a `Date` from wall-clock fields via `Date.UTC` (the UTC-trick). */
-function toUtcDate(date: LocalDateTime): Date {
+export function toUtcDate(date: LocalDateTime): Date {
   return new Date(
     Date.UTC(date.year, date.month - 1, date.day, date.hour, date.minute, date.second),
   );
-}
-
-/**
- * Formats the sticky day-separator label: 'Today', 'Yesterday', weekday name
- * within the last week, otherwise a locale date.
- *
- * @param now The wall-clock "today" to compare against, from the app clock.
- */
-export function formatDaySeparator(
-  date: LocalDateTime,
-  now: LocalDateTime,
-  options: FormatOptions,
-): string {
-  const diffDays = Math.round((startOfDayTs(date) - startOfDayTs(now)) / MS_PER_DAY);
-  if (diffDays === 0) {
-    return 'Today';
-  }
-  if (diffDays === -1) {
-    return 'Yesterday';
-  }
-  if (diffDays > -WEEKDAY_LOOKBACK_DAYS && diffDays < 0) {
-    const formatter = new Intl.DateTimeFormat(options.locale, {
-      weekday: 'long',
-      timeZone: 'UTC',
-    });
-    return formatter.format(toUtcDate(date));
-  }
-  return formatDate(date, options);
-}
-
-/** Midnight (wall-clock-as-UTC) timestamp of the given day. */
-function startOfDayTs(date: LocalDateTime): number {
-  return Date.UTC(date.year, date.month - 1, date.day);
 }
