@@ -63,6 +63,7 @@ export function useDeleteChat() {
       client.removeQueries({ queryKey: queryKeys.messageDays(chatId), exact: true });
       client.removeQueries({ queryKey: queryKeys.bookmarks(chatId), exact: true });
       client.removeQueries({ queryKey: queryKeys.matchesOfChat(chatId) });
+      client.removeQueries({ queryKey: queryKeys.mediaOfChat(chatId) });
       // Results may include the deleted chat's hits.
       client.removeQueries({ queryKey: queryKeys.searchAll() });
       await Promise.all([
@@ -93,6 +94,7 @@ export function useInvalidateImportedChat(): (chatId: ChatId) => Promise<void> {
       // New messages change every result list of this chat and the
       // global ones; drop them rather than refetch lists nobody shows.
       client.removeQueries({ queryKey: queryKeys.matchesOfChat(chatId) });
+      client.removeQueries({ queryKey: queryKeys.mediaOfChat(chatId) });
       client.removeQueries({ queryKey: queryKeys.searchAll() });
     },
     [client],

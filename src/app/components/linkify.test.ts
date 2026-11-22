@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { splitLinks } from './linkify';
+import { extractLinks, splitLinks } from './linkify';
 
 const joined = (text: string): string =>
   splitLinks(text)
@@ -49,5 +49,19 @@ describe('splitLinks', () => {
       }),
       { numRuns: 1000 },
     );
+  });
+});
+
+describe('extractLinks (§12.6 Links tab)', () => {
+  it('lists allowed links once each, in order', () => {
+    expect(
+      extractLinks(
+        'see https://example.com/a, mailto:sara@example.com and https://example.com/a again javascript:alert(1)',
+      ),
+    ).toEqual([
+      { href: 'https://example.com/a', text: 'https://example.com/a' },
+      { href: 'mailto:sara@example.com', text: 'mailto:sara@example.com' },
+    ]);
+    expect(extractLinks('no links, example.com stays text')).toEqual([]);
   });
 });

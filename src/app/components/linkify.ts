@@ -61,3 +61,24 @@ export function splitLinks(text: string): readonly LinkSegment[] {
   }
   return segments;
 }
+
+/**
+ * Every allowed link in a text, in order, without duplicates (§12.6 Links
+ * tab).
+ *
+ * @param text A message body.
+ * @returns The links' targets and their text as written.
+ */
+export function extractLinks(
+  text: string,
+): readonly { readonly href: string; readonly text: string }[] {
+  const seen = new Set<string>();
+  const links: { readonly href: string; readonly text: string }[] = [];
+  for (const segment of splitLinks(text)) {
+    if (segment.kind === 'link' && !seen.has(segment.href)) {
+      seen.add(segment.href);
+      links.push({ href: segment.href, text: segment.text });
+    }
+  }
+  return links;
+}

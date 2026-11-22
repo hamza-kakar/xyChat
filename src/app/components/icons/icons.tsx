@@ -212,3 +212,62 @@ export function ForwardIcon(props: IconProps) {
     </Svg>
   );
 }
+
+/** Play triangle. */
+export function PlayIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M8 5.5v13l10.5-6.5z" fill="currentColor" />
+    </Svg>
+  );
+}
+
+/** Pause bars. */
+export function PauseIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M8 5.5v13M16 5.5v13" strokeWidth={3} />
+    </Svg>
+  );
+}
+
+/** Stacked frames: the media gallery. */
+export function GalleryIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <rect x="7" y="3.5" width="13.5" height="13.5" rx="2" />
+      <path d="M3.5 7.5v11a2 2 0 002 2h11" />
+      <path d="M9.5 14l3-3.5 2.5 2.5 1.5-1.5 2 2.5" />
+    </Svg>
+  );
+}
+
+/** Arrow out of a box: open elsewhere. */
+export function OpenIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M13.5 4.5h6v6M19.5 4.5l-8 8" />
+      <path d="M17.5 14v4.5a1.5 1.5 0 01-1.5 1.5H6a1.5 1.5 0 01-1.5-1.5V8A1.5 1.5 0 016 6.5h4.5" />
+    </Svg>
+  );
+}
+
+/** Arrow into a tray: save. */
+export function SaveIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M12 4v11M7.5 10.5L12 15l4.5-4.5" />
+      <path d="M4.5 16.5v2a1.5 1.5 0 001.5 1.5h12a1.5 1.5 0 001.5-1.5v-2" />
+    </Svg>
+  );
+}
+
+/** Two chain links. */
+export function LinkIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M10 14a4 4 0 005.66 0l3-3a4 4 0 00-5.66-5.66l-1 1" />
+      <path d="M14 10a4 4 0 00-5.66 0l-3 3a4 4 0 005.66 5.66l1-1" />
+    </Svg>
+  );
+}

@@ -5,7 +5,7 @@
  */
 import { Fragment, memo, useMemo, type ReactNode } from 'react';
 import { parseText, type LineSpan, type TextSpan } from '../../../core/text-format';
-import { splitLinks } from './linkify';
+import { splitLinks } from '../../components/linkify';
 
 /** Text with links turned into safe anchors. */
 function Linkified({ text }: { readonly text: string }) {
