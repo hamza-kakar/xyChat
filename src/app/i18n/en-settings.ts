@@ -81,6 +81,7 @@ export const enSettings = {
       autoLockImmediately: 'Immediately',
       autoLockMinutes: 'After {minutes} min',
       lockNow: 'Lock now',
+      cancel: 'Cancel',
     },
     storage: {
       heading: 'Storage',

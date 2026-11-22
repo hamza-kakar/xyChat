@@ -1,12 +1,12 @@
 /**
  * Chat view header (AGENTS.md §12.5): back, title, participant count for
- * groups, and the search, jump-to-date and media buttons.
+ * groups, and the search, jump-to-date, media and info buttons.
  */
 import type { Ref } from 'react';
 import { Link } from 'react-router';
 import { en } from '../../i18n/en';
 import { formatString } from '../../i18n/format-string';
-import { BackIcon, CalendarIcon, GalleryIcon, SearchIcon } from '../../components/icons';
+import { BackIcon, CalendarIcon, GalleryIcon, InfoIcon, SearchIcon } from '../../components/icons';
 
 /** Props for {@link ChatHeader}. */
 export interface ChatHeaderProps {
@@ -84,6 +84,13 @@ export function ChatHeader({
           className={iconButtonClass}
         >
           <GalleryIcon className="h-6 w-6" />
+        </Link>
+        <Link
+          to={`/chat/${chatId}/info`}
+          aria-label={en.chatInfo.infoButton}
+          className={iconButtonClass}
+        >
+          <InfoIcon className="h-6 w-6" />
         </Link>
       </div>
     </header>

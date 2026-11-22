@@ -40,3 +40,6 @@ export const MEDIA = {
   /** Playback speeds the audio player cycles through (§13.2). */
   PLAYBACK_RATES: [1, 1.5, 2],
 } as const;
+
+/** The public source repository (Settings → About). */
+export const SOURCE_URL = 'https://github.com/hamza-kakar/wachatback';

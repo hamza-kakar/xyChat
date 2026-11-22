@@ -227,7 +227,7 @@ export class SqliteChatRepository {
     return setVideoThumbnail(this.db, input);
   }
 
-  /** Chat-info statistics (§12.7). */
+  /** Chat-info statistics (§12.7); media counts cover stored files. */
   getChatStats(chatId: ChatId): ChatStats {
     const kindRows = this.db.selectObjects(
       'SELECT kind, COUNT(*) AS n FROM messages WHERE chat_id = ? GROUP BY kind',
@@ -235,7 +235,7 @@ export class SqliteChatRepository {
     );
     const mediaRows = this.db.selectObjects(
       `SELECT media_type, COUNT(*) AS n, COALESCE(SUM(byte_size), 0) AS bytes
-       FROM attachments WHERE chat_id = ? GROUP BY media_type`,
+       FROM attachments WHERE chat_id = ? AND status = 'present' GROUP BY media_type`,
       [chatId],
     );
     const range = this.db.selectObjects(

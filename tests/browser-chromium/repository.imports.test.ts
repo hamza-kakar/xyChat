@@ -8,7 +8,12 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { commitImport } from '../../src/storage/sqlite/import-commit';
 import { createImportRecord } from '../../src/storage/sqlite/import-record';
 import { asChatId } from '../../src/core/ids';
-import { openContractDb, presentMediaInput, recordInput } from './contract-helpers';
+import {
+  omittedMediaInput,
+  openContractDb,
+  presentMediaInput,
+  recordInput,
+} from './contract-helpers';
 import type { SqliteDatabase } from '../../src/storage/sqlite/open';
 import type { SqliteChatRepository } from '../../src/storage/sqlite/sqlite-repository';
 
@@ -135,5 +140,17 @@ describe('repository contract: import history reports (§9.2 step 11, §12.7)', 
     expect(repo.listImports(chatId)[0]?.report).toBeNull();
     db.run("UPDATE imports SET report_json = 'not json' WHERE id = 'imp-r3'");
     expect(repo.listImports(chatId)[0]?.report).toBeNull();
+  });
+});
+
+describe('repository contract: chat stats media (§12.7)', () => {
+  it('counts and sizes stored media only', () => {
+    createImportRecord(db, recordInput('imp-s1'));
+    const chatId = asChatId(commitImport(db, omittedMediaInput('imp-s1', null)).chatId);
+    expect(repo.getChatStats(chatId)).toMatchObject({ mediaCounts: {}, mediaBytes: 0 });
+
+    createImportRecord(db, recordInput('imp-s2'));
+    commitImport(db, presentMediaInput('imp-s2', chatId));
+    expect(repo.getChatStats(chatId)).toMatchObject({ mediaCounts: { image: 1 }, mediaBytes: 500 });
   });
 });
