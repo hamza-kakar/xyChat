@@ -14,6 +14,8 @@ import { PinForm, type PinFormMode } from './pin-form';
 
 function AutoLockChoice({ minutes }: { readonly minutes: number }) {
   const setAutoLock = useSetAutoLock();
+  // Show the choice at once, not after the save round trip.
+  const shown = setAutoLock.isPending ? setAutoLock.variables : minutes;
   return (
     <fieldset className="flex flex-col gap-1">
       <legend className="text-text-muted mb-1 text-sm">{en.settings.lock.autoLockLabel}</legend>
@@ -23,7 +25,7 @@ function AutoLockChoice({ minutes }: { readonly minutes: number }) {
             type="radio"
             name="auto-lock"
             value={choice}
-            checked={minutes === choice}
+            checked={shown === choice}
             disabled={setAutoLock.isPending}
             className="accent-accent h-5 w-5"
             onChange={() => {
