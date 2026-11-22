@@ -45,19 +45,27 @@ import type {
   StorageUsage,
 } from '../repository';
 
-/** Reads an attachment row set for the given message ids. */
-function attachmentsForMessages(
+/** Reads the attachments of a chat's messages with seq in `lo..hi`, in ONE
+ * statement (idx_attachments_message): per-message queries cost a VFS
+ * round trip each, which dominated window reads on OPFS (§17). */
+function attachmentsForSeqRange(
   db: SqliteDatabase,
-  rowIds: readonly number[],
+  chatId: ChatId,
+  range: { readonly lo: number; readonly hi: number },
 ): Map<number, Attachment[]> {
   const byMessage = new Map<number, Attachment[]>();
-  for (const rowId of rowIds) {
-    const rows = db.selectObjects('SELECT * FROM attachments WHERE message_id = ? ORDER BY id', [
-      rowId,
-    ]);
-    const list = rows.map(attachmentFromRow);
-    if (list.length > 0) {
-      byMessage.set(rowId, list);
+  const rows = db.selectObjects(
+    `SELECT a.* FROM messages m JOIN attachments a ON a.message_id = m.id
+     WHERE m.chat_id = ? AND m.seq BETWEEN ? AND ?
+     ORDER BY a.message_id, a.id`,
+    [chatId, range.lo, range.hi],
+  );
+  for (const attachment of rows.map(attachmentFromRow)) {
+    const list = byMessage.get(attachment.messageId);
+    if (list === undefined) {
+      byMessage.set(attachment.messageId, [attachment]);
+    } else {
+      list.push(attachment);
     }
   }
   return byMessage;
@@ -111,38 +119,40 @@ export class SqliteChatRepository {
       .map(participantFromRow);
   }
 
-  /** A window of messages around an anchor seq (§12.5). */
+  /** A window of messages around an anchor seq (§12.5), read in one
+   * transaction so the VFS lock is taken once. */
   getMessageWindow(q: {
     chatId: ChatId;
     anchorSeq: number;
     before: number;
     after: number;
   }): MessageWindow {
-    const rows = this.db.selectObjects(
-      `SELECT m.*, p.display_name AS author_name
-       FROM messages m LEFT JOIN participants p ON p.id = m.author_id
-       WHERE m.chat_id = ? AND m.seq BETWEEN ? AND ?
-       ORDER BY m.seq`,
-      [q.chatId, q.anchorSeq - q.before, q.anchorSeq + q.after],
-    );
-    const messages = rows.map(messageFromRow);
-    const attachments = attachmentsForMessages(
-      this.db,
-      messages.map((m) => m.rowId),
-    );
-    const minSeq = this.db.selectObjects('SELECT MIN(seq) AS s FROM messages WHERE chat_id = ?', [
-      q.chatId,
-    ]);
-    const maxSeq = this.db.selectObjects('SELECT MAX(seq) AS s FROM messages WHERE chat_id = ?', [
-      q.chatId,
-    ]);
-    const hasBefore = Number(minSeq[0]?.['s'] ?? 0) < q.anchorSeq - q.before;
-    const hasAfter = Number(maxSeq[0]?.['s'] ?? 0) > q.anchorSeq + q.after;
-    return {
-      messages: messages.map((m) => ({ ...m, attachments: attachments.get(m.rowId) ?? [] })),
-      hasBefore,
-      hasAfter,
-    };
+    const range = { lo: q.anchorSeq - q.before, hi: q.anchorSeq + q.after };
+    return this.db.transaction(() => {
+      const rows = this.db.selectObjects(
+        `SELECT m.*, p.display_name AS author_name
+         FROM messages m LEFT JOIN participants p ON p.id = m.author_id
+         WHERE m.chat_id = ? AND m.seq BETWEEN ? AND ?
+         ORDER BY m.seq`,
+        [q.chatId, range.lo, range.hi],
+      );
+      const attachments = attachmentsForSeqRange(this.db, q.chatId, range);
+      // Two statements: SQLite's min/max shortcut reads one index entry
+      // each, where a combined MIN/MAX would scan the chat's whole range.
+      const minSeq = this.db.selectObjects('SELECT MIN(seq) AS s FROM messages WHERE chat_id = ?', [
+        q.chatId,
+      ]);
+      const maxSeq = this.db.selectObjects('SELECT MAX(seq) AS s FROM messages WHERE chat_id = ?', [
+        q.chatId,
+      ]);
+      return {
+        messages: rows
+          .map(messageFromRow)
+          .map((m) => ({ ...m, attachments: attachments.get(m.rowId) ?? [] })),
+        hasBefore: Number(minSeq[0]?.['s'] ?? 0) < range.lo,
+        hasAfter: Number(maxSeq[0]?.['s'] ?? 0) > range.hi,
+      };
+    });
   }
 
   /** First seq at/after the given date (§10.5, §12.5 jump-to-date). */

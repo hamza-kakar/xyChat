@@ -5,6 +5,7 @@
  */
 import type { SqliteDatabase } from './open';
 import { SQL_0001_INIT } from './migrations/0001-init';
+import { SQL_0002_ATTACHMENTS_MESSAGE_INDEX } from './migrations/0002-attachments-message-index';
 
 /** One schema migration step. */
 export interface Migration {
@@ -20,6 +21,12 @@ export const MIGRATIONS: readonly Migration[] = [
     version: 1,
     up: (db: SqliteDatabase): void => {
       db.exec(SQL_0001_INIT);
+    },
+  },
+  {
+    version: 2,
+    up: (db: SqliteDatabase): void => {
+      db.exec(SQL_0002_ATTACHMENTS_MESSAGE_INDEX);
     },
   },
 ];
