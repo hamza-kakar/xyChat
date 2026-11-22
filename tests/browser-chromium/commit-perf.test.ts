@@ -144,6 +144,15 @@ function timedCommit(input: ImportCommitInput): {
   return { result, elapsed: performance.now() - start };
 }
 
+/** Median of a non-empty list of timings. */
+function median(values: readonly number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)] ?? Number.NaN;
+}
+
+/** Timed runs per idempotent case; the median damps runner noise (§17). */
+const TIMED_RUNS = 3;
+
 /** Asserts seqs are 0..n-1 with no gaps after the merge (§8.10). */
 function assertNoSeqGaps(): void {
   const gaps = db.selectObjects(
@@ -211,7 +220,16 @@ describe('import-commit performance (§17, ADR 0007)', () => {
       fileBytes: 10_000_000,
       parserVersion: '1.0.0',
     };
-    const { result, elapsed } = timedCommit(input);
+    // One untimed warm-up, then the median of TIMED_RUNS identical
+    // re-imports: each is idempotent, so every run does the same work.
+    const { result } = timedCommit(input);
+    const timings: number[] = [];
+    for (let run = 0; run < TIMED_RUNS; run += 1) {
+      const importId = `perf-commit-2-${run}`;
+      beginImport(importId, 'perf2.txt');
+      timings.push(timedCommit({ ...input, importId }).elapsed);
+    }
+    const elapsed = median(timings);
 
     expect(result.messagesInserted).toBe(0);
     expect(result.duplicatesSkipped).toBe(ROWS);
