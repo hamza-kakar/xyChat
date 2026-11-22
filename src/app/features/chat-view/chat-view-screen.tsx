@@ -27,6 +27,8 @@ import { JumpToDateSheet } from './jump-to-date-sheet';
 import { SelfBanner } from './self-banner';
 import { MessageActionsSheet } from './message-actions-sheet';
 import { scrollMemory } from './session-memory';
+import { OpenMediaContext, type OpenMedia } from './open-media-context';
+import { MediaViewer, type ViewerItem } from '../media';
 import type { RowContext } from './row-model';
 
 /** Chat ids are generated UUIDs; anything else is not a chat. */
@@ -196,6 +198,10 @@ function ChatViewBody({
   const onOpenActions = useCallback((message: WindowMessage) => {
     setActionsFor(message);
   }, []);
+  const [mediaFor, setMediaFor] = useState<ViewerItem | null>(null);
+  const openMedia = useCallback<OpenMedia>((message, attachment) => {
+    setMediaFor({ message, attachment });
+  }, []);
   const hasRange = chat.firstTsKey !== null && chat.lastTsKey !== null;
   return (
     <main className="bg-surface safe-sides-bottom flex h-dvh min-w-0 flex-1 flex-col">
@@ -228,20 +234,34 @@ function ChatViewBody({
         />
       ) : null}
       {chat.selfParticipantId === null ? <SelfBanner chatId={chat.id} /> : null}
-      <MessageList
-        chatId={chat.id}
-        title={chat.title}
-        total={chat.messageCount}
-        context={context}
-        colors={colors}
-        initialTopSeq={initialTopSeq}
-        initialAlign={linkedSeq === null ? 'start' : 'center'}
-        jump={jump}
-        highlightSeq={highlightSeq}
-        bookmarked={bookmarked}
-        onTopSeqChange={onTopSeqChange}
-        onOpenActions={onOpenActions}
-      />
+      <OpenMediaContext value={openMedia}>
+        <MessageList
+          chatId={chat.id}
+          title={chat.title}
+          total={chat.messageCount}
+          context={context}
+          colors={colors}
+          initialTopSeq={initialTopSeq}
+          initialAlign={linkedSeq === null ? 'start' : 'center'}
+          jump={jump}
+          highlightSeq={highlightSeq}
+          bookmarked={bookmarked}
+          onTopSeqChange={onTopSeqChange}
+          onOpenActions={onOpenActions}
+        />
+      </OpenMediaContext>
+      {mediaFor === null ? null : (
+        <MediaViewer
+          chatId={chat.id}
+          items={[mediaFor]}
+          index={0}
+          onIndexChange={() => undefined}
+          onClose={() => {
+            setMediaFor(null);
+          }}
+          showInChat={false}
+        />
+      )}
       {isJumpOpen && chat.firstTsKey !== null && chat.lastTsKey !== null ? (
         <JumpToDateSheet
           chatId={chat.id}
