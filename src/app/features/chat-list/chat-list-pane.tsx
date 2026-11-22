@@ -11,7 +11,7 @@ import { en } from '../../i18n/en';
 import { formatString } from '../../i18n/format-string';
 import { isStandalone } from '../../../platform/install';
 import type { ChatSummaryView } from '../../../client/db-client';
-import { BookmarkIcon, PlusIcon, SearchIcon } from '../../components/icons';
+import { BookmarkIcon, PlusIcon, SearchIcon, SettingsIcon } from '../../components/icons';
 import { useChats } from '../../queries/chat-queries';
 import { useFocusHeading } from '../../hooks/use-focus-heading';
 import { useLocalNow } from '../../hooks/use-local-now';
@@ -56,6 +56,13 @@ export function ChatListPane({ asSidebar }: ChatListPaneProps) {
             className="text-accent flex min-h-11 min-w-11 items-center justify-center rounded-full"
           >
             <BookmarkIcon className="h-6 w-6" />
+          </Link>
+          <Link
+            to="/settings"
+            aria-label={en.settings.openButton}
+            className="text-accent flex min-h-11 min-w-11 items-center justify-center rounded-full"
+          >
+            <SettingsIcon className="h-6 w-6" />
           </Link>
           <Link
             to="/import"

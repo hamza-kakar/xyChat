@@ -1,14 +1,14 @@
 /**
- * Chat row actions (AGENTS.md §12.4): rename, and delete behind a
- * confirmation that states the message count, media count and bytes.
+ * Chat row actions (AGENTS.md §12.4): rename, chat info, and delete behind
+ * a confirmation that states the message count, media count and bytes.
  */
 import { useState } from 'react';
 import { useMatch, useNavigate } from 'react-router';
 import { en } from '../../i18n/en';
-import { formatBytes, formatString } from '../../i18n/format-string';
 import { Sheet, SheetButton } from '../../components/sheet';
-import { useChat, useDeleteChat, useRenameChat } from '../../queries/chat-queries';
+import { useRenameChat } from '../../queries/chat-queries';
 import type { ChatSummaryView } from '../../../client/db-client';
+import { DeleteChatSheet } from './delete-chat-sheet';
 
 /** Props for {@link ChatActionsSheet}. */
 export interface ChatActionsSheetProps {
@@ -18,11 +18,24 @@ export interface ChatActionsSheetProps {
 
 export function ChatActionsSheet({ chat, onClose }: ChatActionsSheetProps) {
   const [mode, setMode] = useState<'menu' | 'rename' | 'delete'>('menu');
+  const navigate = useNavigate();
+  const openChat = useMatch('/chat/:chatId');
   if (mode === 'rename') {
     return <RenameSheet chat={chat} onClose={onClose} />;
   }
   if (mode === 'delete') {
-    return <DeleteSheet chat={chat} onClose={onClose} />;
+    return (
+      <DeleteChatSheet
+        chat={chat}
+        onClose={onClose}
+        onDeleted={() => {
+          onClose();
+          if (openChat?.params.chatId === chat.id) {
+            void navigate('/', { replace: true });
+          }
+        }}
+      />
+    );
   }
   return (
     <Sheet open title={chat.title} closeLabel={en.chatActions.close} onClose={onClose}>
@@ -32,6 +45,14 @@ export function ChatActionsSheet({ chat, onClose }: ChatActionsSheetProps) {
         }}
       >
         {en.chatActions.rename}
+      </SheetButton>
+      <SheetButton
+        onClick={() => {
+          onClose();
+          void navigate(`/chat/${chat.id}/info`);
+        }}
+      >
+        {en.chatInfo.title}
       </SheetButton>
       <SheetButton
         tone="danger"
@@ -88,54 +109,6 @@ function RenameSheet({ chat, onClose }: ChatActionsSheetProps) {
           {en.chatActions.renameSave}
         </button>
       </form>
-    </Sheet>
-  );
-}
-
-function DeleteSheet({ chat, onClose }: ChatActionsSheetProps) {
-  const details = useChat(chat.id);
-  const remove = useDeleteChat();
-  const navigate = useNavigate();
-  const openChat = useMatch('/chat/:chatId');
-  const media = details.data?.mediaCount ?? 0;
-  const bytes = details.data?.mediaBytes ?? 0;
-  return (
-    <Sheet
-      open
-      title={formatString(en.chatActions.deleteTitle, { title: chat.title })}
-      closeLabel={en.chatActions.close}
-      onClose={onClose}
-    >
-      <p className="text-text-muted text-sm">
-        {formatString(en.chatActions.deleteBody, {
-          messages: chat.messageCount,
-          media,
-          bytes: formatBytes(bytes),
-        })}
-      </p>
-      {remove.isError ? (
-        <p role="alert" className="text-danger text-sm">
-          {en.chatActions.actionFailed}
-        </p>
-      ) : null}
-      <button
-        type="button"
-        disabled={remove.isPending || details.isPending}
-        className="bg-danger text-danger-contrast min-h-11 rounded-lg px-4 font-semibold disabled:opacity-60"
-        onClick={() => {
-          remove.mutate(chat.id, {
-            onSuccess: () => {
-              onClose();
-              if (openChat?.params.chatId === chat.id) {
-                void navigate('/', { replace: true });
-              }
-            },
-          });
-        }}
-      >
-        {en.chatActions.deleteConfirm}
-      </button>
-      <SheetButton onClick={onClose}>{en.chatActions.cancel}</SheetButton>
     </Sheet>
   );
 }
