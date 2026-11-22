@@ -43,6 +43,12 @@ Round-3 fixes:
   "Update existing chat" option appears, so no chat was created.
 - Wake-lock tests cover a lock granted after the progress step unmounts.
 
+Round-4 fix:
+
+- Tapping Cancel disables the button and shows "Cancelling…" until the
+  worker answers. If the import committed before the worker saw the
+  cancel, the report says it finished before it could be cancelled.
+
 Known limits: message order after a superset merge is asserted by the
 browser contract test, not E2E, until the chat view lands (M4). The two
 perf tests can exceed budget when suites run in parallel on one machine;

@@ -6,6 +6,8 @@ import type { BeginOutcome } from '../../../client/import-client';
 export interface ImportReportStepProps {
   readonly outcome: BeginOutcome;
   readonly onOpenChat: () => void;
+  /** Cancel was tapped, but the import committed first. */
+  readonly finishedBeforeCancel?: boolean;
 }
 
 /** Report step (§12.8.6): success summary, warnings grouped by code with
@@ -14,7 +16,11 @@ export interface ImportReportStepProps {
 /** Plain-language explanations keyed by warning code (§12.8 step 6). */
 const warningExplanations: Readonly<Record<string, string>> = en.import.warnings;
 
-export function ImportReportStep({ outcome, onOpenChat }: ImportReportStepProps) {
+export function ImportReportStep({
+  outcome,
+  onOpenChat,
+  finishedBeforeCancel = false,
+}: ImportReportStepProps) {
   const navigate = useNavigate();
   const warningEntries = Object.entries(outcome.report.warningsByCode);
   const warningCount = warningEntries.reduce((sum, [, count]) => sum + count, 0);
@@ -22,6 +28,9 @@ export function ImportReportStep({ outcome, onOpenChat }: ImportReportStepProps)
   return (
     <main className="safe-area bg-surface mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-4 px-6">
       <h1 className="text-text text-2xl font-bold">{en.import.reportTitle}</h1>
+      {finishedBeforeCancel ? (
+        <p className="text-text text-sm">{en.import.reportFinishedBeforeCancel}</p>
+      ) : null}
       <ul className="text-text flex flex-col gap-1 text-sm">
         <li>{en.import.reportAdded.replace('{count}', String(outcome.commit.messagesInserted))}</li>
         <li>

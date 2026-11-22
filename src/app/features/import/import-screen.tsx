@@ -68,12 +68,13 @@ function renderStep(deps: RenderDeps) {
       );
     }
     case 'progress':
-      return <ImportProgressStep onCancel={cancel} />;
+      return <ImportProgressStep onCancel={cancel} isCancelling={state.step.isCancelling} />;
     case 'report': {
-      const { outcome } = state.step;
+      const { outcome, finishedBeforeCancel } = state.step;
       return (
         <ImportReportStep
           outcome={outcome}
+          finishedBeforeCancel={finishedBeforeCancel}
           onOpenChat={() => {
             navigate(`/chat/${outcome.chatId}`);
           }}

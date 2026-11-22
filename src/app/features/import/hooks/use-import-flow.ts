@@ -33,8 +33,14 @@ type ImportStep =
       readonly confirmedTitle: string;
       readonly targetChatId: ChatId | null;
       readonly selfName: string | null;
+      readonly isCancelling: boolean;
     }
-  | { readonly name: 'report'; readonly outcome: BeginOutcome }
+  | {
+      readonly name: 'report';
+      readonly outcome: BeginOutcome;
+      /** Cancel was tapped, but the import committed before the worker saw it. */
+      readonly finishedBeforeCancel: boolean;
+    }
   | { readonly name: 'error'; readonly error: ImportError };
 
 /** Detection state for the §12.8.4 order-toggle re-run. */
@@ -66,6 +72,7 @@ type ImportAction =
       readonly targetChatId: ChatId | null;
       readonly selfName: string | null;
     }
+  | { readonly type: 'cancel-requested' }
   | { readonly type: 'begin-done'; readonly outcome: BeginOutcome }
   | { readonly type: 'begin-failed'; readonly error: ImportError }
   | { readonly type: 'back-to-pick' };
@@ -111,11 +118,24 @@ function reducer(state: ImportState, action: ImportAction): ImportState {
                 confirmedTitle: action.confirmedTitle,
                 targetChatId: action.targetChatId,
                 selfName: action.selfName,
+                isCancelling: false,
               }
             : state.step,
       };
+    case 'cancel-requested':
+      return {
+        ...state,
+        step: state.step.name === 'progress' ? { ...state.step, isCancelling: true } : state.step,
+      };
     case 'begin-done':
-      return { ...state, step: { name: 'report', outcome: action.outcome } };
+      return {
+        ...state,
+        step: {
+          name: 'report',
+          outcome: action.outcome,
+          finishedBeforeCancel: state.step.name === 'progress' && state.step.isCancelling,
+        },
+      };
     case 'begin-failed':
       return { ...state, step: { name: 'error', error: action.error } };
     case 'back-to-pick':
@@ -210,10 +230,12 @@ export function useImportFlow() {
     [],
   );
 
-  // Cancel only signals the worker. The screen moves when begin() answers
-  // CANCELLED (after the §9.3 rollback), so it never flashes the picker
-  // and then jumps to the cancelled message.
+  // Cancel signals the worker and marks the step as cancelling; the screen
+  // moves when begin() answers. The worker checks the flag between media
+  // entries and ignores it once committing has started, so the answer may
+  // be CANCELLED (after the §9.3 rollback) or a finished import.
   const cancel = useCallback((): void => {
+    dispatch({ type: 'cancel-requested' });
     cancelImport();
   }, []);
 
