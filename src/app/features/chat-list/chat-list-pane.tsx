@@ -11,7 +11,7 @@ import { en } from '../../i18n/en';
 import { formatString } from '../../i18n/format-string';
 import { isStandalone } from '../../../platform/install';
 import type { ChatSummaryView } from '../../../client/db-client';
-import { PlusIcon } from '../../components/icons';
+import { BookmarkIcon, PlusIcon, SearchIcon } from '../../components/icons';
 import { useChats } from '../../queries/chat-queries';
 import { useFocusHeading } from '../../hooks/use-focus-heading';
 import { useLocalNow } from '../../hooks/use-local-now';
@@ -42,13 +42,29 @@ export function ChatListPane({ asSidebar }: ChatListPaneProps) {
         >
           {APP_NAME}
         </Heading>
-        <Link
-          to="/import"
-          className="text-accent flex min-h-11 items-center gap-1 rounded-lg px-3 font-semibold"
-        >
-          <PlusIcon />
-          {en.chatList.importButton}
-        </Link>
+        <nav aria-label={en.chatList.toolbarLabel} className="flex items-center">
+          <Link
+            to="/search"
+            aria-label={en.chatList.searchButton}
+            className="text-accent flex min-h-11 min-w-11 items-center justify-center rounded-full"
+          >
+            <SearchIcon className="h-6 w-6" />
+          </Link>
+          <Link
+            to="/bookmarks"
+            aria-label={en.chatList.bookmarksButton}
+            className="text-accent flex min-h-11 min-w-11 items-center justify-center rounded-full"
+          >
+            <BookmarkIcon className="h-6 w-6" />
+          </Link>
+          <Link
+            to="/import"
+            className="text-accent flex min-h-11 items-center gap-1 rounded-lg px-3 font-semibold"
+          >
+            <PlusIcon />
+            {en.chatList.importButton}
+          </Link>
+        </nav>
       </header>
       <InstallBanner />
       <ChatListBody />

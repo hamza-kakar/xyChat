@@ -2,12 +2,21 @@
  * Typed view-model fixtures for component tests (the shapes db.worker
  * returns). Synthetic data only.
  */
-import { asAttachmentId, asChatId, asImportId, asMessageId, asParticipantId } from '../../core/ids';
+import {
+  asAttachmentId,
+  asBookmarkId,
+  asChatId,
+  asImportId,
+  asMessageId,
+  asParticipantId,
+} from '../../core/ids';
 import type {
   AttachmentView,
+  BookmarkViewItem,
   ChatSummaryView,
   ChatView,
   ParticipantView,
+  SearchHitView,
   WindowMessage,
 } from '../../client/db-client';
 
@@ -99,6 +108,52 @@ export function attachment(over: Partial<AttachmentView> = {}): AttachmentView {
     height: 480,
     durationMs: null,
     status: 'present',
+    ...over,
+  };
+}
+
+/** A bookmark joined with its message (bookmarks screen, chat view). */
+export function bookmarkView(
+  over: { readonly note?: string | null; readonly message?: Partial<WindowMessage> } = {},
+): BookmarkViewItem {
+  const full = message(over.message);
+  const messageFields: BookmarkViewItem['message'] = {
+    rowId: full.rowId,
+    chatId: full.chatId,
+    fingerprint: full.fingerprint,
+    seq: full.seq,
+    tsLocal: full.tsLocal,
+    tsKey: full.tsKey,
+    authorId: full.authorId,
+    authorName: full.authorName,
+    kind: full.kind,
+    body: full.body,
+    isEdited: full.isEdited,
+    poll: full.poll,
+    location: full.location,
+    importId: full.importId,
+  };
+  return {
+    bookmark: {
+      id: asBookmarkId(`bm-${String(messageFields.seq)}`),
+      chatId: messageFields.chatId,
+      messageId: messageFields.rowId,
+      note: over.note === undefined ? null : over.note,
+      createdAt: '2026-11-19T00:00:00Z',
+    },
+    message: messageFields,
+  };
+}
+
+/** A search hit (§11). */
+export function searchHit(over: Partial<SearchHitView> = {}): SearchHitView {
+  return {
+    messageRowId: 5,
+    chatId: CHAT_ID,
+    seq: 4,
+    tsLocal: { year: 2026, month: 11, day: 17, hour: 21, minute: 19, second: 3 },
+    authorName: 'Sara',
+    snippet: 'the trip starts on Monday',
     ...over,
   };
 }

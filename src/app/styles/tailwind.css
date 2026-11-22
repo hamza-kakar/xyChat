@@ -17,6 +17,7 @@
   --color-border: var(--border);
   --color-text-muted-on-bubble: var(--text-muted-on-bubble);
   --color-link-on-bubble: var(--link-on-bubble);
+  --color-highlight: var(--highlight);
 }
 
 html {

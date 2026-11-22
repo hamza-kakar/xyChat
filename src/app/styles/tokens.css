@@ -26,6 +26,7 @@
   --dark-border: #2c3432;
   --dark-text-muted-on-bubble: #c2ccc8;
   --dark-link-on-bubble: #9fe8d4;
+  --dark-highlight: #5e4a0c;
   --dark-name-0: #ff8a80;
   --dark-name-1: #ffb366;
   --dark-name-2: #e8c547;
@@ -57,6 +58,9 @@
   /* Bubble-only text: timestamps and links (§12.5). */
   --text-muted-on-bubble: #5c676d;
   --link-on-bubble: #0a6352;
+
+  /* Search matches and the jumped-to message (§11). */
+  --highlight: #fbe38e;
 
   /* Participant names (§12.2), AA on bubble-in and the surfaces. */
   --name-0: #b42318;
@@ -91,6 +95,7 @@
     --border: var(--dark-border);
     --text-muted-on-bubble: var(--dark-text-muted-on-bubble);
     --link-on-bubble: var(--dark-link-on-bubble);
+    --highlight: var(--dark-highlight);
     --name-0: var(--dark-name-0);
     --name-1: var(--dark-name-1);
     --name-2: var(--dark-name-2);
@@ -123,6 +128,7 @@
   --border: var(--dark-border);
   --text-muted-on-bubble: var(--dark-text-muted-on-bubble);
   --link-on-bubble: var(--dark-link-on-bubble);
+  --highlight: var(--dark-highlight);
   --name-0: var(--dark-name-0);
   --name-1: var(--dark-name-1);
   --name-2: var(--dark-name-2);
