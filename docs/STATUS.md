@@ -4,11 +4,59 @@ Progress tracker for waChatBack. Updated in every PR.
 
 ## Current milestone
 
-M5 — Search, jump to date, bookmarks (branch `m5-search-bookmarks`, PR open).
+M6 — Media (branch `m6-media`, PR open).
 
-M4 — Chat list and chat view: merged (PR #7).
+M5 — Search, jump to date, bookmarks: merged (PR #8).
 
-## What's done (M5)
+## What's done (M6)
+
+- Gallery (§12.3 `#/chat/:chatId/media?tab=`, §12.6): Photos (with
+  stickers and GIFs), Videos, Audio (voice notes and audio), Documents
+  and Links tabs. Stored media only, newest first, keyset pages of 120,
+  grouped under month headers and virtualized; photos and videos in a
+  3-column grid (5+ on wide screens), audio and documents as rows. The
+  tab is validated (unknown → Photos); the chat header gains a media
+  button.
+- Full-screen viewer: image (pinch zoom, double-tap zoom, pan when zoomed,
+  swipe sideways between items and down to close, all on pointer events;
+  no transitions under reduced motion), native video (`playsinline`,
+  `preload="metadata"`), the audio player, and documents (icon, name,
+  size, Open in a new tab, Share with the file, Save). Previous/next
+  buttons and arrow keys (mirrored under RTL), Escape closes, focus is
+  trapped and restored (`<dialog>`), and every viewer has "Show in chat".
+- Bubbles: voice notes and audio play in place; photos, videos (and MP4
+  GIFs) and documents open the viewer on that item; video bubbles show a
+  thumbnail.
+- Audio player (§13.2): play/pause, seek bar, elapsed/total, 1×/1.5×/2×.
+  Loads on first play; one item plays at a time and playback pauses when
+  the app is hidden or the viewer closes. The duration measured on first
+  play is stored (`setAttachmentDuration`).
+- Opus fallback (§13.2): when `canPlayType('audio/ogg; codecs=opus')` is
+  empty, a lazily spawned audio worker streams the stored file through
+  ogg-opus-decoder and writes 16-bit PCM straight into
+  `cache/audio/<id>.wav` (own WAV encoder in `platform/audio.ts`), reused
+  afterwards and deleted with its chat. Decodes are serialized.
+- Lazy video thumbnails (§13.3): a visible video without a thumbnail is
+  seeked to min(1 s, duration/2) in an offscreen `<video>`, drawn at a
+  320 px long edge and saved as JPEG through db.worker, which records
+  `thumb_path`. At most two at once; a failure keeps the type icon for the
+  session.
+- Links tab: messages whose body contains a link (paged in SQL), expanded
+  in TS with the same linkifier as the bubbles (http/https/mailto/tel
+  only); each link shows its domain, the message and "Show in chat".
+- Workers are bundled as ES modules, so ogg-opus-decoder's optional ML
+  build (4 MB, never used) is a separate chunk kept out of the precache
+  (ADR 0013); the audio worker is ~134 kB.
+- E2E (Chromium): flow 8 (gallery → viewer → next → double-tap zoom →
+  Show in chat, highlighted), documents and links tabs, flow 9 (voice
+  note plays natively; and with `canPlayType` forced empty, plays the
+  decoded WAV, which is cached in OPFS), with axe on the gallery, the
+  viewer and the tabs. The voice note fixture is a real Ogg Opus stream
+  generated at test time.
+
+Screenshots (iPhone viewport, light and dark): `docs/screenshots/m6/`.
+
+## Previously (M5)
 
 - Global search (§11, §12.3 `#/search?q=`): the query lives in the URL,
   FTS5 trigram phrase search for 3+ characters, filters for chat, sender
@@ -56,7 +104,7 @@ M4 — Chat list and chat view: merged (PR #7).
   full in-chat match list (10k of 33k matches) ~40–85 ms, day list
   ~45–55 ms.
 
-Screenshots (iPhone viewport, light and dark): `docs/screenshots/m5/`.
+Screenshots: `docs/screenshots/m5/`.
 
 ## Previously (M4)
 
@@ -215,10 +263,11 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
 
 ## What's next
 
-- M6 — media: gallery tabs, image viewer, video, audio player with the
-  opus fallback, lazy video thumbnails, documents and contacts, links
-  tab, "Show in chat" (§12.6, §13; e2e flows 8, 9). The chat header's
-  info button and the list toolbar's Settings entry arrive with M7.
+- M7 — chat info, settings, app lock, storage management (§12.7, §12.9,
+  §15.3; e2e flows 11, 12). The chat header's info button and the list
+  toolbar's Settings entry arrive with it.
+- Manual iPhone check of voice notes (`docs/TESTING.md`, Voice notes and
+  media): needs a real device.
 
 ## Verified results (M2 + audit rounds 2–3)
 
@@ -318,3 +367,16 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
   design).
 - M4: migration `0002` (index on `attachments.message_id`) added for the
   §17 open-chat budget.
+- M6: the repository gains `setAttachmentDuration` and
+  `saveVideoThumbnail` (§13.2, §13.3 write paths); gallery and link pages
+  carry the message's seq, time and sender for the viewer and "Show in
+  chat".
+- M6: the chat header gets a media button (the spec's header lists
+  search, jump and info; the gallery needs an entry point before chat info
+  lands in M7).
+- M6: voice notes and audio play inside their bubbles and gallery rows
+  open the full-screen player; stickers are not tappable.
+- M6: two described `jsx-a11y/media-has-caption` disables on `<audio>` and
+  `<video>`: exported chats carry no caption tracks.
+- ADR 0013: workers bundle as ES modules; the unused Opus ML chunk is not
+  precached.
