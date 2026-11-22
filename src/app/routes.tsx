@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router';
 import { ImportScreen } from './features/import';
 import { ChatViewScreen } from './features/chat-view';
+import { SearchScreen } from './features/search';
+import { BookmarksScreen } from './features/bookmarks';
 import { AppErrorBoundary, ChatsLayout } from './features/shell';
 
 /**
@@ -20,6 +22,22 @@ export function AppRoutes() {
         element={
           <AppErrorBoundary>
             <ImportScreen />
+          </AppErrorBoundary>
+        }
+      />
+      <Route
+        path="/search"
+        element={
+          <AppErrorBoundary>
+            <SearchScreen />
+          </AppErrorBoundary>
+        }
+      />
+      <Route
+        path="/bookmarks"
+        element={
+          <AppErrorBoundary>
+            <BookmarksScreen />
           </AppErrorBoundary>
         }
       />

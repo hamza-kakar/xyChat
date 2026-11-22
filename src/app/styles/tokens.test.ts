@@ -89,6 +89,9 @@ const CONTRAST_PAIRS: readonly (readonly [string, string])[] = [
   ['text-muted-on-bubble', 'bubble-out'],
   ['link-on-bubble', 'bubble-in'],
   ['link-on-bubble', 'bubble-out'],
+  // Search matches (<mark>) in results and in bubbles.
+  ['text', 'highlight'],
+  ['text-on-bubble', 'highlight'],
   // Participant names (§12.2): on incoming bubbles, and as avatar initials
   // on the list surfaces.
   ...Array.from({ length: 12 }, (_unused, index) => [

@@ -60,7 +60,13 @@ export function useDeleteChat() {
       client.removeQueries({ queryKey: queryKeys.participants(chatId), exact: true });
       client.removeQueries({ queryKey: queryKeys.imports(chatId), exact: true });
       client.removeQueries({ queryKey: queryKeys.messages(chatId) });
+      client.removeQueries({ queryKey: queryKeys.messageDays(chatId), exact: true });
+      client.removeQueries({ queryKey: queryKeys.bookmarks(chatId), exact: true });
+      client.removeQueries({ queryKey: queryKeys.matchesOfChat(chatId) });
+      // Results may include the deleted chat's hits.
+      client.removeQueries({ queryKey: queryKeys.searchAll() });
       await Promise.all([
+        client.invalidateQueries({ queryKey: queryKeys.bookmarks(null), exact: true }),
         client.invalidateQueries({ queryKey: queryKeys.chats(), exact: true }),
         client.invalidateQueries({ queryKey: queryKeys.lastChatPosition(), exact: true }),
       ]);
@@ -79,7 +85,12 @@ export function useInvalidateImportedChat(): (chatId: ChatId) => Promise<void> {
         client.invalidateQueries({ queryKey: queryKeys.participants(chatId), exact: true }),
         client.invalidateQueries({ queryKey: queryKeys.imports(chatId), exact: true }),
         client.invalidateQueries({ queryKey: queryKeys.messages(chatId) }),
+        client.invalidateQueries({ queryKey: queryKeys.messageDays(chatId), exact: true }),
       ]);
+      // New messages change every result list of this chat and the
+      // global ones; drop them rather than refetch lists nobody shows.
+      client.removeQueries({ queryKey: queryKeys.matchesOfChat(chatId) });
+      client.removeQueries({ queryKey: queryKeys.searchAll() });
     },
     [client],
   );
