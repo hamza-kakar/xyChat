@@ -5,13 +5,14 @@
  * thumbnail (§13.3), voice notes and audio play in place (§13.2), and
  * photos, videos and documents open the full-screen viewer.
  */
-import { useState, type ReactNode } from 'react';
+import { useContext, type ReactNode } from 'react';
 import { en } from '../../i18n/en';
 import { formatBytes, formatString } from '../../i18n/format-string';
 import { DocumentIcon, MicIcon, PhotoIcon, PlayIcon, VideoIcon } from '../../components/icons';
 import { useMediaUrl } from '../../hooks/use-media-url';
 import type { AttachmentView, WindowMessage } from '../../../client/db-client';
-import { AudioPlayer, MediaViewer, useVideoThumbnail } from '../media';
+import { AudioPlayer, useVideoThumbnail } from '../media';
+import { OpenMediaContext } from './open-media-context';
 
 /** Largest sticker edge (§13.1). */
 const STICKER_MAX_PX = 160;
@@ -170,7 +171,8 @@ function Preview({ attachment }: { readonly attachment: AttachmentView }) {
   return <MediaTile attachment={attachment} />;
 }
 
-/** A preview that opens the full-screen viewer on this one item. */
+/** A preview that opens the full-screen viewer on this one item (a plain
+ * preview outside a chat view). */
 function ViewerButton({
   message,
   attachment,
@@ -178,35 +180,24 @@ function ViewerButton({
   readonly message: WindowMessage;
   readonly attachment: AttachmentView;
 }) {
-  const [isOpen, setOpen] = useState(false);
+  const openMedia = useContext(OpenMediaContext);
+  if (openMedia === null) {
+    return <Preview attachment={attachment} />;
+  }
   return (
-    <>
-      <button
-        type="button"
-        aria-label={formatString(en.chatView.openMedia, {
-          label: en.chatView.mediaLabels[attachment.mediaType],
-        })}
-        aria-haspopup="dialog"
-        className="block max-w-full text-start"
-        onClick={() => {
-          setOpen(true);
-        }}
-      >
-        <Preview attachment={attachment} />
-      </button>
-      {isOpen ? (
-        <MediaViewer
-          chatId={message.chatId}
-          items={[{ attachment, message }]}
-          index={0}
-          onIndexChange={() => undefined}
-          onClose={() => {
-            setOpen(false);
-          }}
-          showInChat={false}
-        />
-      ) : null}
-    </>
+    <button
+      type="button"
+      aria-label={formatString(en.chatView.openMedia, {
+        label: en.chatView.mediaLabels[attachment.mediaType],
+      })}
+      aria-haspopup="dialog"
+      className="block max-w-full text-start"
+      onClick={() => {
+        openMedia(message, attachment);
+      }}
+    >
+      <Preview attachment={attachment} />
+    </button>
   );
 }
 

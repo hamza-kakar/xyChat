@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '../../test/providers';
 import { attachment, message } from '../../test/fixtures';
 import { MessageContent } from './message-content';
+import { OpenMediaContext } from './open-media-context';
 
 const readContactName = vi.hoisted(() => vi.fn());
 
@@ -152,34 +153,35 @@ describe('MessageContent media (§12.5, §13.1)', () => {
     expect(screen.getByText('0:00 / 1:05')).toBeInTheDocument();
   });
 
-  it('opens a document in the full-screen viewer', async () => {
+  it('asks the chat view to open a document in the viewer', async () => {
     const user = userEvent.setup();
+    const openMedia = vi.fn();
+    const doc = attachment({
+      mediaType: 'document',
+      fileName: 'report.pdf',
+      thumbPath: null,
+      byteSize: 5120,
+    });
+    const docMessage = message({ kind: 'media', body: '', attachments: [doc] });
     renderWithProviders(
-      <MessageContent
-        message={message({
-          kind: 'media',
-          body: '',
-          attachments: [
-            attachment({
-              mediaType: 'document',
-              fileName: 'report.pdf',
-              thumbPath: null,
-              byteSize: 5120,
-            }),
-          ],
-        })}
-      />,
+      <OpenMediaContext value={openMedia}>
+        <MessageContent message={docMessage} />
+      </OpenMediaContext>,
     );
     expect(screen.getByText('report.pdf')).toBeInTheDocument();
     expect(screen.getByText('5 KB')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Open Document' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Document' });
-    expect(dialog).toHaveTextContent('report.pdf');
-    expect(screen.queryByRole('link', { name: 'Show in chat' })).toBeNull();
-    // The stored file can't be read in this test, so the hand-off says so.
-    expect(await screen.findByRole('alert')).toHaveTextContent('This file could not be opened.');
-    await user.click(screen.getByRole('button', { name: 'Close' }));
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(openMedia).toHaveBeenCalledWith(docMessage, doc);
+  });
+
+  it('shows a plain preview outside a chat view', () => {
+    renderWithProviders(
+      <MessageContent
+        message={message({ kind: 'media', body: '', attachments: [attachment()] })}
+      />,
+    );
+    expect(screen.getByRole('img', { name: 'Photo' })).toBeInTheDocument();
+    expect(screen.queryByRole('button')).toBeNull();
   });
 
   it('shows a contact card with the name read from its .vcf', async () => {
