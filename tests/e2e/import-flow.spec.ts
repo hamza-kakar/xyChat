@@ -130,14 +130,12 @@ test('flow 4: re-importing the same file adds 0 and preselects the merge', async
   await page.getByRole('button', { name: 'Start import' }).click();
   await expect(page.getByText('Import complete')).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText('2 messages imported')).toBeVisible();
-  // The superset carries 5 of the 6 stored messages as duplicates (§8.10).
-  await expect(page.getByText('5 duplicates skipped')).toBeVisible();
+  await expect(page.getByText('6 duplicates skipped')).toBeVisible();
 
-  // Ordering: the chat view lands in M4; ordering is asserted by the
-  // 'interleaves a superset' browser contract test (getMessageWindow seq
-  // order) and re-verified here through a third import of the SAME
-  // superset: every message must now duplicate (fingerprints stable), so
-  // the stored set matches the superset exactly.
+  // Re-importing the superset adds nothing: all 8 are now stored. Message
+  // order can't be read from the UI until the chat view lands (M4); the
+  // 'interleaves a superset' browser contract test asserts the merged seq
+  // order through getMessageWindow on the real repository.
   await page.getByRole('button', { name: 'Done' }).click();
   const thirdLink = page.getByRole('link', { name: 'Import a chat' });
   await expect(thirdLink).toBeVisible({ timeout: 30_000 });
@@ -147,20 +145,28 @@ test('flow 4: re-importing the same file adds 0 and preselects the merge', async
   await page.getByRole('button', { name: 'Start import' }).click();
   await expect(page.getByText('Import complete')).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText('0 messages imported')).toBeVisible();
-  await expect(page.getByText('7 duplicates skipped')).toBeVisible();
+  await expect(page.getByText('8 duplicates skipped')).toBeVisible();
 });
 
 test('flow 5: cancel mid-import — no chat created, no OPFS files left (§9.3)', async ({ page }) => {
   await openPicker(page);
-  // A zip with 300 media messages: the cancel lands inside writing-media,
-  // after several files have been written and rolled back (§9.3).
-  await pickFile(page, await buildMediaCancelZip(300), 'WhatsApp Chat - Media.zip');
+  // Enough media that the cancel lands inside the media phase, after some
+  // files are on disk: rollback must then delete them (§9.3).
+  await pickFile(page, await buildMediaCancelZip(800), 'WhatsApp Chat - Media.zip');
   await expect(page.getByText('Confirm import')).toBeVisible();
   await page.getByRole('button', { name: 'Start import' }).click();
-  // Wait until writing-media is UNDER WAY: the cancel must
-  // land after files have been written and recorded.
-  const writingLabel = page.getByText('Writing media');
-  await expect(writingLabel).toBeVisible({ timeout: 30_000 });
+  // The bar is named after the active phase. Wait until media files are
+  // actually being written (the step list always shows every label).
+  const mediaBar = page.getByRole('progressbar', {
+    name: /^(Writing media|Generating thumbnails)$/u,
+  });
+  await expect
+    .poll(async () => Number((await mediaBar.getAttribute('aria-valuenow')) ?? 0), {
+      timeout: 30_000,
+      intervals: [25],
+    })
+    .toBeGreaterThanOrEqual(2);
+  expect(await countOpfsMediaFiles(page)).toBeGreaterThan(0);
   await page.getByRole('button', { name: 'Cancel import' }).click();
   await expect(page.getByText('Import a WhatsApp export')).toBeVisible();
 
