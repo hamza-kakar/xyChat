@@ -38,6 +38,14 @@ async function importAndOpenTrip(page: Page): Promise<void> {
 
 test('gallery → image viewer → Show in chat (flow 8)', async ({ page }) => {
   await importAndOpenTrip(page);
+  // A photo bubble opens the viewer on that photo; closing returns focus.
+  const bubblePhoto = page.getByRole('log').getByRole('button', { name: 'Open Photo' }).last();
+  await bubblePhoto.click();
+  await expect(page.getByRole('dialog', { name: 'Photo' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toBeHidden();
+  await expect(bubblePhoto).toBeFocused();
+
   await page.getByRole('link', { name: 'Media, links and docs' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Media' })).toBeFocused();
 
