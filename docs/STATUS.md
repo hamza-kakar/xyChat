@@ -4,11 +4,55 @@ Progress tracker for waChatBack. Updated in every PR.
 
 ## Current milestone
 
-M4 — Chat list and chat view (branch `m4-chat-list-view`, PR open).
+M5 — Search, jump to date, bookmarks (branch `m5-search-bookmarks`, PR open).
 
-M3 — Import pipeline: merged (PR #6).
+M4 — Chat list and chat view: merged (PR #7).
 
-## What's done (M4)
+## What's done (M5)
+
+- Global search (§11, §12.3 `#/search?q=`): the query lives in the URL,
+  FTS5 trigram phrase search for 3+ characters, filters for chat, sender
+  (once a chat is chosen), message kinds and a date range, newest-first
+  keyset pages of 50 behind "Show more". Results name the chat, sender and
+  time and show the ±40-character snippet with matches in `<mark>` (split
+  in TS, never FTS markup). 1–2 character queries run only with a chat
+  filter (LIKE fallback, 500-result cap, with a hint).
+- In-chat search (§11): a bar under the chat header with a "12 of 87"
+  counter and previous/next (Enter steps to the older match, Escape
+  closes). It starts at the newest match; every step scrolls the
+  virtualized list to the message, centred, with a brief highlight. Backed
+  by a new `listMatchingSeqs` query that returns every matching seq in one
+  packed row (cap 10,000, shown as "of 10,000+"). `?q=` opens it
+  prefilled; `?seq=N` opens the chat at a message, highlighted.
+- Jump to date (§12.5): a custom calendar sheet limited to the chat's
+  months, days with messages marked (new `listMessageDays` query, one
+  packed row of day numbers), weeks starting on the locale's first day
+  (`Intl.Locale` week info, Monday where the engine has none), plus "First
+  message" and "Last message". Picking a day uses `findSeqByDate`.
+- Jump to latest (§12.5): a floating button with the count of messages
+  below the viewport.
+- Bookmarks (§12.5): Bookmark / Edit bookmark note / Remove bookmark in
+  the message actions; bookmarked bubbles carry an icon and "Bookmarked"
+  in their spoken label. Bookmarks screen (`#/bookmarks`) lists every
+  bookmark newest first with chat, sender, time, text and note, with Show
+  in chat, Add/Edit note and Remove. Adding upserts the note (one bookmark
+  per message) and only stores a bookmark whose message is in that chat;
+  the list reads bookmarks with their messages in one statement.
+- Entry points: Search and Bookmarks in the chat-list toolbar; search and
+  jump-to-date buttons in the chat header (disabled for an empty chat).
+- New `highlight` colour token for matches and the jumped-to row, AA
+  checked against text in both themes.
+- E2E (Chromium): flow 6 (global search → open hit → highlighted in
+  view), flow 7 (in-chat previous/next, jump to date, jump to latest,
+  first message), flow 10 (bookmark, edit note, bookmarks screen, show in
+  chat, remove), with axe in light and dark on the new screens and sheets.
+- Perf (CI Chromium, 100k messages, budget 100 ms): search page ~55 ms,
+  full in-chat match list (10k of 33k matches) ~40–85 ms, day list
+  ~45–55 ms.
+
+Screenshots (iPhone viewport, light and dark): `docs/screenshots/m5/`.
+
+## Previously (M4)
 
 - Chat list (§12.4): avatar initials and colour from the title hash, group
   icon, last-message preview with sender prefix in groups and media-type
@@ -165,11 +209,10 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
 
 ## What's next
 
-- M5 — search, jump to date, bookmarks (§11, §12.5 search/jump UI,
-  bookmarks screen; e2e flows 6, 7, 10). The chat header's search,
-  jump-to-date and info buttons and the list toolbar's Search, Bookmarks
-  and Settings entries arrive with the milestones that build those
-  screens.
+- M6 — media: gallery tabs, image viewer, video, audio player with the
+  opus fallback, lazy video thumbnails, documents and contacts, links
+  tab, "Show in chat" (§12.6, §13; e2e flows 8, 9). The chat header's
+  info button and the list toolbar's Settings entry arrive with M7.
 
 ## Verified results (M2 + audit rounds 2–3)
 
@@ -251,9 +294,16 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
   reviewer-approved approach requested in round 1).
 - ADR 0009: PWA installability gate replaced (Lighthouse 12 removed the
   audit).
-- M4: the chat header and list toolbar omit the search, jump-to-date,
-  chat-info, bookmarks and settings entry points until M5/M7 build those
-  screens (no buttons that lead nowhere, §0 rule 4).
+- M4/M5: the chat header omits the chat-info button and the list toolbar
+  the Settings entry until M7 builds those screens (no buttons that lead
+  nowhere, §0 rule 4).
+- M5: the repository gains `listMatchingSeqs` (in-chat navigation needs
+  every matching seq, not a page of snippets) and `listMessageDays`
+  (calendar marks) beyond the §10.5 interface; `addBookmark` returns
+  null when the message is not in the given chat.
+- M5: the sender/kind/date filters live on the search screen, where a
+  chat filter turns it into a filtered in-chat search with snippets; the
+  in-chat bar is query-only, like the counter-and-arrows design in §11.
 - M4: each bubble has a "Message actions" button for keyboard and switch
   users; it is visually hidden until focused, since touch users long-press
   and mouse users right-click.
