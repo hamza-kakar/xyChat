@@ -242,6 +242,20 @@ describe('archive reader: entry bytes and media listing (§9.2 step 8)', () => {
     await opened.value.close();
   });
 
+  it('opens a plain-text export as an archive with no media', async () => {
+    const opened = await openArchive(new Blob([CHAT_TEXT], { type: 'text/plain' }));
+    expect(opened.ok).toBe(true);
+    if (!opened.ok) {
+      return;
+    }
+    await expect(opened.value.listEntries()).resolves.toEqual({ ok: true, value: [] });
+    const streamed = await opened.value.streamEntry('IMG-0001.jpg', () => 0);
+    expect(streamed.ok).toBe(false);
+    const read = await opened.value.readEntry('IMG-0001.jpg');
+    expect(read.ok).toBe(false);
+    await opened.value.close();
+  });
+
   it('answers ENTRY_NOT_FOUND for absent entries', async () => {
     const opened = await openArchive(await mediaZip());
     expect(opened.ok).toBe(true);

@@ -49,14 +49,37 @@ class ChunkSinkWriter extends zipJs.Writer<void> {
   }
 }
 
+/** Leading bytes of every zip file (`PK\x03\x04`). */
+const ZIP_MAGIC = [0x50, 0x4b, 0x03, 0x04];
+
+/** A `.txt` export carries no media: an archive with no entries. */
+const NO_MEDIA: OpenedArchive = {
+  listEntries: () => Promise.resolve(ok([])),
+  streamEntry: () =>
+    Promise.resolve(err({ code: 'ENTRY_NOT_FOUND', detail: 'text export has no media' })),
+  readEntry: () =>
+    Promise.resolve(err({ code: 'ENTRY_NOT_FOUND', detail: 'text export has no media' })),
+  close: () => Promise.resolve(),
+};
+
+/** True when the blob starts with the zip magic bytes. */
+async function startsWithZipMagic(file: Blob): Promise<boolean> {
+  const head = new Uint8Array(await file.slice(0, ZIP_MAGIC.length).arrayBuffer());
+  return head.length === ZIP_MAGIC.length && ZIP_MAGIC.every((byte, index) => head[index] === byte);
+}
+
 /**
  * Opens the archive for the media phase: ONE ZipReader, entries indexed by
- * name.
+ * name. A plain-text export (no zip magic) opens as an archive with no
+ * media, so `.txt` imports run the same pipeline (§1.1, §9.2 step 1).
  *
  * @param file The picked export blob.
  */
 export async function openArchive(file: Blob): Promise<Result<OpenedArchive, ArchiveError>> {
   try {
+    if (!(await startsWithZipMagic(file))) {
+      return ok(NO_MEDIA);
+    }
     const reader = new zipJs.ZipReader(new zipJs.BlobReader(file));
     const entries = await reader.getEntries();
     if (entries.length > IMPORT_LIMITS.maxZipEntries) {
