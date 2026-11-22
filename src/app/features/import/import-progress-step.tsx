@@ -91,6 +91,7 @@ export function ImportProgressStep({ onCancel }: ImportProgressStepProps) {
       </ol>
       <div
         role="progressbar"
+        aria-label={PHASES[activeIndex]?.label ?? en.import.progressTitle}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(fraction * 100)}
