@@ -4,7 +4,9 @@
  * calls over Comlink. Every RPC wraps unexpected exceptions (§18.7).
  */
 import * as Comlink from 'comlink';
-import { openDatabase } from '../storage/sqlite/open';
+import { loadSqlite, openDatabase } from '../storage/sqlite/open';
+import { createScratchDatabases, type ScratchDatabases } from '../storage/sqlite/scratch-db';
+import { estimateBackupBytes } from '../storage/sqlite/backup-snapshot';
 import { SqliteChatRepository } from '../storage/sqlite/sqlite-repository';
 import { commitImport } from '../storage/sqlite/import-commit';
 import { createImportRecord } from '../storage/sqlite/import-record';
@@ -35,6 +37,11 @@ import { readPersistedLogs, writePersistedLogs } from '../storage/sqlite/persist
 import { readSchemaVersion } from '../storage/sqlite/meta';
 import { derivePinHash, randomPinSalt } from '../platform/pin-hash';
 import { createSerialQueue } from './serial-queue';
+import { rpcBackupInput } from './rpc-validate-backup';
+import { runBackup } from './backup-run';
+import { inspectBackup } from './restore-inspect';
+import { runRestore } from './restore-run';
+import { clearBackupFiles, productionBackupDeps, productionRestoreDeps } from './transfer-deps';
 
 /** Production crypto and clock for the app lock (§15.3). */
 const pinDeps: PinDeps = { derive: derivePinHash, randomSalt: randomPinSalt, now: Date.now };
@@ -44,6 +51,7 @@ const pinDeps: PinDeps = { derive: derivePinHash, randomSalt: randomPinSalt, now
 const pinQueue = createSerialQueue();
 
 let repository: SqliteChatRepository | null = null;
+let scratchDatabases: ScratchDatabases | null = null;
 
 /** Serializes an unexpected exception into a WorkerError (§18.7). The stack
  * is preserved so the client-side diagnostics can quote it; it contains
@@ -63,6 +71,14 @@ function repo(): SqliteChatRepository {
     throw new Error('db.worker not ready');
   }
   return repository;
+}
+
+/** Asserts the scratch-database factory exists (set up in ready()). */
+function scratch(): ScratchDatabases {
+  if (scratchDatabases === null) {
+    throw new Error('db.worker not ready');
+  }
+  return scratchDatabases;
 }
 
 /** Wraps a repository call: validation failures answer INVALID_INPUT (§18.5),
@@ -85,7 +101,8 @@ function wrap<T>(fn: () => T | Promise<T>): Promise<T> {
 const api: DbApi = {
   async ready() {
     try {
-      const opened = await openDatabase();
+      const sqlite3 = await loadSqlite();
+      const opened = await openDatabase(sqlite3);
       if (!opened.ok) {
         return {
           ok: false as const,
@@ -93,6 +110,7 @@ const api: DbApi = {
         };
       }
       repository = new SqliteChatRepository(opened.value);
+      scratchDatabases = createScratchDatabases(sqlite3);
       // §9.3 boot rollback: mark in_progress imports rolled_back and return
       // their written OPFS paths — the client deletes the files.
       const orphanPaths = repository.rollbackInProgressImports();
@@ -101,6 +119,8 @@ const api: DbApi = {
       for (const path of orphanPaths) {
         await deleteMediaFile(path);
       }
+      // Archives left from an earlier session were offered already (§10.6).
+      await clearBackupFiles();
       return { ok: true as const };
     } catch (error) {
       return { ok: false as const, error: toWorkerError(error) };
@@ -303,6 +323,39 @@ const api: DbApi = {
     wrap(() => {
       writePersistedLogs(repo().database, rpcSettingsInput.logs('savePersistedLogs', entries));
     }),
+  estimateBackup: (selection) =>
+    wrap(() => {
+      const parsed = rpcBackupInput.selection('estimateBackup', selection);
+      return estimateBackupBytes(repo().database, parsed.chatIds, parsed.includeMedia);
+    }),
+  createBackup: (request, hooks) =>
+    wrap(() =>
+      runBackup(
+        productionBackupDeps(repo(), scratch()),
+        rpcBackupInput.backupRequest('createBackup', request),
+        hooks,
+      ),
+    ),
+  clearBackupFiles: () => wrap(clearBackupFiles),
+  inspectBackup: (file) =>
+    wrap(() =>
+      inspectBackup(
+        { db: repo().database, scratch: scratch() },
+        rpcBackupInput.file('inspectBackup', file),
+      ),
+    ),
+  restoreBackup: (request, hooks) =>
+    wrap(() =>
+      runRestore(
+        productionRestoreDeps(repo(), scratch()),
+        {
+          file: rpcBackupInput.file('restoreBackup', request.file),
+          fileName: rpcBackupInput.fileName('restoreBackup', request.fileName),
+          decisions: rpcBackupInput.decisions('restoreBackup', request.decisions),
+        },
+        hooks,
+      ),
+    ),
 };
 
 // Expose the API. Comlink's expose returns void; the worker stays alive

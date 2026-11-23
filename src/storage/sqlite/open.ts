@@ -28,8 +28,7 @@ export type { OpenError, OpenErrorCode, DatabaseOpenerDeps, InstanceLockManager 
  * (createSyncAccessHandle); it runs inside db.worker at production boot and
  * is exercised there by every e2e flow. Page-context coverage cannot reach
  * it, per ADR 0007. */
-async function openSahpool(): Promise<SqliteDatabase> {
-  const sqlite3: Sqlite3Static = await initSqlite3();
+async function openSahpool(sqlite3: Sqlite3Static): Promise<SqliteDatabase> {
   // Registers the opfs-sahpool VFS; the pool util exposes the VFS-backed
   // DB constructor directly.
   const pool = await sqlite3.installOpfsSAHPoolVfs({ directory: SAHPOOL_DIRECTORY });
@@ -48,15 +47,29 @@ async function openSahpool(): Promise<SqliteDatabase> {
 }
 
 /**
+ * Loads the sqlite-wasm module once per worker; the database and the
+ * backup scratch databases (§10.6) share it.
+ *
+ * @returns The initialized module.
+ */
+export function loadSqlite(): Promise<Sqlite3Static> {
+  return initSqlite3();
+}
+
+/**
  * Opens the database: single-instance lock first (§10.1), then the sahpool
  * VFS, pragmas, migrations, and the FTS5 probe.
  *
+ * @param sqlite3 The module from {@link loadSqlite}.
  * @returns The opened, migrated database, or a structured failure.
  */
-/* v8 ignore next 4 -- same worker-only constraint as openSahpool; the
+/* v8 ignore next 7 -- same worker-only constraint as openSahpool; the
  * lifetime-lock semantics are unit-tested in opener.test.ts. */
-export function openDatabase(): Promise<Result<SqliteDatabase, OpenError>> {
+export function openDatabase(sqlite3: Sqlite3Static): Promise<Result<SqliteDatabase, OpenError>> {
   // Built per call so importing this module never touches `navigator`
   // (unit tests import the factory with injected fakes).
-  return createDatabaseOpener({ locks: navigator.locks, openSqlite: openSahpool })();
+  return createDatabaseOpener({
+    locks: navigator.locks,
+    openSqlite: () => openSahpool(sqlite3),
+  })();
 }

@@ -27,6 +27,17 @@ import type { ImportRecordInput } from '../storage/sqlite/import-record';
 import type { LockState, PinCheck } from '../storage/sqlite/app-lock-store';
 import type { PersistedLogEntry } from '../storage/sqlite/persisted-logs';
 import type { ChatId, ParticipantId } from '../core/ids';
+import type { Result } from '../core/result';
+import type {
+  BackupError,
+  BackupRequest,
+  BackupResult,
+  RestoreChatReport,
+  RestoreError,
+  RestorePreview,
+  RestoreRequest,
+} from './transfer-types';
+import type { TransferHooks } from './transfer-hooks';
 import type { LocalDateTime } from '../core/model';
 
 /** A serialized worker error (§18.7). The stack rides in the caller-side
@@ -133,4 +144,23 @@ export interface DbApi {
   listPersistedLogs(): Promise<readonly PersistedLogEntry[]>;
   /** Replaces the persisted log entries (empty clears them). */
   savePersistedLogs(entries: readonly PersistedLogEntry[]): Promise<void>;
+  /** Estimated backup size in bytes (§10.6: shown before making it). */
+  estimateBackup(selection: {
+    chatIds: readonly string[] | null;
+    includeMedia: boolean;
+  }): Promise<number>;
+  /** Makes a backup archive in `backup-tmp/` (§10.6); hooks are proxied. */
+  createBackup(
+    request: BackupRequest,
+    hooks: TransferHooks,
+  ): Promise<Result<BackupResult, BackupError>>;
+  /** Removes finished backup archives from `backup-tmp/`. */
+  clearBackupFiles(): Promise<void>;
+  /** Validates a backup and previews its chats (§10.6). */
+  inspectBackup(file: Blob): Promise<Result<RestorePreview, RestoreError>>;
+  /** Restores the chosen chats of a backup (§10.6); hooks are proxied. */
+  restoreBackup(
+    request: RestoreRequest,
+    hooks: TransferHooks,
+  ): Promise<Result<readonly RestoreChatReport[], RestoreError>>;
 }

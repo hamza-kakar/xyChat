@@ -49,3 +49,15 @@ export const APP_LOCK = {
   /** The auto-lock choices offered in Settings, in minutes (0 = immediately). */
   autoLockMinutes: [0, 1, 5, 15],
 } as const;
+
+/** Backup and restore limits (AGENTS.md §10.6, §15.2). */
+export const BACKUP_LIMITS = {
+  /** Largest `manifest.json` a restore reads. */
+  maxManifestBytes: 1 * MIB,
+  /** Largest `db.sqlite3` a restore loads; it is held in memory whole. */
+  maxDatabaseBytes: 512 * MIB,
+  /** Backups above this get the iPhone memory warning (§10.6). */
+  largeBackupBytes: 1 * GIB,
+  /** Written paths are flushed to the import row this often (§9.2 step 8). */
+  writtenPathsFlushEvery: 100,
+} as const;

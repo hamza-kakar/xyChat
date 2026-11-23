@@ -8,6 +8,7 @@
 import * as Comlink from 'comlink';
 import { createRpcCaller, type RpcErrorSink } from './rpc-call';
 import type { DbApi } from '../workers/db-api';
+import type { TransferHooks, TransferProgressEvent } from '../workers/transfer-hooks';
 
 let worker: Worker | null = null;
 let api: Comlink.Remote<DbApi> | null = null;
@@ -40,7 +41,13 @@ export async function ensureDbReady(): Promise<boolean> {
 
 const RPC_TIMEOUT_MS = 10_000;
 /** Long-running import commits are exempt from the RPC timeout (§18.8). */
-const RPC_TIMEOUT_EXEMPT: ReadonlySet<string> = new Set(['commitImport']);
+const RPC_TIMEOUT_EXEMPT: ReadonlySet<string> = new Set([
+  'commitImport',
+  // Backups and restores stream whole archives (§10.6).
+  'createBackup',
+  'inspectBackup',
+  'restoreBackup',
+]);
 
 const caller = createRpcCaller({
   ensureReady: ensureDbReady,
@@ -138,6 +145,22 @@ export const dbClient = {
   listPersistedLogs: () => caller.call(() => remote().listPersistedLogs(), 'listPersistedLogs'),
   savePersistedLogs: (entries: Parameters<DbApi['savePersistedLogs']>[0]) =>
     caller.call(() => remote().savePersistedLogs(entries), 'savePersistedLogs'),
+  estimateBackup: (selection: Parameters<DbApi['estimateBackup']>[0]) =>
+    caller.call(() => remote().estimateBackup(selection), 'estimateBackup'),
+  /** Makes a backup; the hooks run on the main thread via a proxy (§10.6). */
+  createBackup: (request: Parameters<DbApi['createBackup']>[0], hooks: TransferHooks) =>
+    caller.call(
+      (): Promise<BackupOutcome> => remote().createBackup(request, Comlink.proxy(hooks)),
+      'createBackup',
+    ),
+  clearBackupFiles: () => caller.call(() => remote().clearBackupFiles(), 'clearBackupFiles'),
+  inspectBackup: (file: Blob) =>
+    caller.call((): Promise<RestoreInspection> => remote().inspectBackup(file), 'inspectBackup'),
+  restoreBackup: (request: Parameters<DbApi['restoreBackup']>[0], hooks: TransferHooks) =>
+    caller.call(
+      (): Promise<RestoreOutcome> => remote().restoreBackup(request, Comlink.proxy(hooks)),
+      'restoreBackup',
+    ),
   /** Takes the db-side end of the commit MessageChannel (§3.2, transferred). */
   connectCommitPort: (port: MessagePort) =>
     caller.call(
@@ -187,6 +210,19 @@ export type PersistedLogEntryView = Awaited<ReturnType<DbApi['listPersistedLogs'
 export type ChatStatsView = Awaited<ReturnType<DbApi['getChatStats']>>;
 /** Media bytes per chat (§12.9). */
 export type StorageUsageView = Awaited<ReturnType<DbApi['storageUsage']>>;
+
+/** Backup and restore progress (§10.6). */
+export type TransferProgress = TransferProgressEvent;
+/** A finished backup or why it failed. */
+export type BackupOutcome = Awaited<ReturnType<DbApi['createBackup']>>;
+/** A restore preview or why the file can't be restored. */
+export type RestoreInspection = Awaited<ReturnType<DbApi['inspectBackup']>>;
+/** One backup chat in the restore preview. */
+export type RestorePreviewChatView = (RestoreInspection & { ok: true })['value']['chats'][number];
+/** A restore's outcome. */
+export type RestoreOutcome = Awaited<ReturnType<DbApi['restoreBackup']>>;
+/** The user's choice for one backup chat. */
+export type RestoreDecisionInput = Parameters<DbApi['restoreBackup']>[0]['decisions'][number];
 
 /** Test seam: resets the cached worker (contract tests spawn their own). */
 export function resetDbClientForTests(): void {

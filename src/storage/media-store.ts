@@ -8,7 +8,7 @@ import type { ChatId } from '../core/ids';
 /** OPFS root segment names (§10.4). */
 export const MEDIA_DIR = 'media';
 export const THUMBS_DIR = 'thumbs';
-/** Import crash-rollback staging dir (§9.3). */
+/** Backup archives being written or offered for saving (§10.6). */
 export const BACKUP_TMP_DIR = 'backup-tmp';
 
 /** Result of a media write. */
@@ -118,6 +118,16 @@ export async function deleteChatMedia(chatId: ChatId): Promise<number> {
   const removed = await deleteDirRecursive(`${MEDIA_DIR}/${chatId}`);
   const removedThumbs = await deleteDirRecursive(`${THUMBS_DIR}/${chatId}`);
   return removed + removedThumbs;
+}
+
+/**
+ * Removes a directory and everything in it (backup-tmp/ clean-up, §10.6).
+ *
+ * @param path Root-relative directory path.
+ * @returns The number of files removed (0 when absent).
+ */
+export function deleteDirectory(path: string): Promise<number> {
+  return deleteDirRecursive(path);
 }
 
 /** Recursively removes a directory and its contents. Returns the number of
