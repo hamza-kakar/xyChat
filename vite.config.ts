@@ -37,7 +37,7 @@ function injectBuildMeta(): Plugin {
     apply: 'build',
     transformIndexHtml(html) {
       const metaTag = `<meta http-equiv="Content-Security-Policy" content="${CSP_DIRECTIVES}">`;
-      // The app name lives in one constant (AGENTS.md header); index.html
+      // The app name lives in one constant (src/app/app-name.ts); index.html
       // gets it injected at build time so a rename is a one-line change.
       // The iOS launch images are generated with the icons.
       return html
