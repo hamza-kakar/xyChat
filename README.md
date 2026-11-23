@@ -16,7 +16,8 @@ browser's private storage on your phone or computer.
 - Chat list, media gallery, global search, bookmarks
 - Voice-note playback (including `.opus` notes on iOS)
 - Optional app lock (PIN)
-- Backup and restore
+- Backup and restore: one file with your chats (and media, if you like) to
+  keep in Files or iCloud Drive
 - Fully offline after first load — airplane mode forever
 
 ## Install on iPhone
@@ -36,7 +37,10 @@ browser's private storage on your phone or computer.
 - The service worker caches only the app's own code for offline use.
 - The PIN lock is a privacy screen, not encryption. Your device's OS-level
   encryption protects data at rest.
-- Keep your original exports: they are the primary backup.
+- Keep your original exports: they are the primary backup. You can always
+  import them again.
+- A backup file made in Settings is not encrypted: it holds your chats as
+  they are. Keep it somewhere private.
 
 ## Development
 

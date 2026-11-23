@@ -4,12 +4,54 @@ Progress tracker for waChatBack. Updated in every PR.
 
 ## Current milestone
 
-M7 — Chat info, settings, app lock, storage management (branch
-`m7-info-settings-lock`, PR open).
+M8 — Backup and restore (branch `m8-backup-restore`, PR open).
 
-M6 — Media: merged (PR #9).
+M7 — Chat info, settings, app lock, storage management: merged (PR #10).
 
-## What's done (M7)
+## What's done (M8)
+
+- Settings → Backup and restore (§10.6, §12.9):
+  - Make a backup of all chats or one, with or without media. The
+    estimated size shows first, with the iPhone warning above 1 GB.
+    Progress (copying the chats, adding media n of m, finishing) with
+    Cancel; the screen stays awake. The archive is
+    `wachatback-backup-YYYYMMDD-HHMM.zip`: `manifest.json`, the
+    `db.sqlite3` snapshot, then `media/…` and `thumbs/…`, written into
+    `backup-tmp/` in OPFS. "Share backup" opens the share sheet when the
+    browser can share files; "Save backup" downloads it.
+  - Restore: pick a backup; the manifest, the entries (§15.2 gates) and
+    the database (integrity check, schema version, every row) are
+    checked; the preview lists its chats with the matching local chat.
+    Per chat: Merge (default for a match), Replace or Skip; Restore or
+    Skip otherwise. Progress with Cancel until the commit, then a report
+    per chat (added, already there, media restored and not found) with
+    Open chat.
+  - The original exports are named as the primary safety net, with a
+    link to re-import one.
+- Storage: snapshots are built in an in-memory scratch database (no app
+  settings, no full-text index) and restores read the backup's database
+  the same way; rows go through Valibot before use. A restore commits
+  every chosen chat in one transaction through the import commit, so a
+  merge follows the §8.10 fingerprint rules and fingerprints survive
+  verbatim. Each chat has an `in_progress` import row listing its
+  written files: cancel, failure and a crash leave nothing (§9.3).
+- Deleting a chat also removes its finished import rows (a restore that
+  reuses the chat id would otherwise show the old history).
+- The wake-lock effect of the import progress step became a shared
+  `useScreenWakeLock` hook, also used by backup and restore.
+- E2E (Chromium): flow 13 — import, back up with media, delete, restore,
+  then a second backup holds the same fingerprints in the same order
+  (read from the downloaded zips with `node:sqlite`); media is back and
+  "me" is still set; axe on the backup and restore screens.
+- Browser tests: snapshot contents, tampered and foreign databases,
+  restore as new / merge / replace / copy beside the original, rollback of
+  a failing multi-chat commit, cancel leaving no files, quota and bad
+  choices, non-backup files.
+- Bundle: 162.1 kB JS / 6.9 kB CSS gzip (budgets 170 / 25).
+
+Screenshots (iPhone viewport, light and dark): `docs/screenshots/m8/`.
+
+## Previously (M7)
 
 - Chat info (§12.3 `#/chat/:chatId/info`, §12.7): editable title, group
   or one-to-one, date range (from the stored wall-clock times), totals by
@@ -314,8 +356,10 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
 
 ## What's next
 
-- M8 — backup and restore (§10.6; e2e flow 13), with its Settings
-  section.
+- M9 — PWA hardening and release: the update prompt (suppressed during
+  imports and restores, §12.12), splash screens, full offline and CSP
+  e2e, Lighthouse budgets, the full accessibility pass, `docs/TESTING.md`
+  on a real iPhone, README final, v1.0.0.
 - Manual iPhone checks of voice notes and the app lock
   (`docs/TESTING.md`): need a real device.
 
@@ -437,9 +481,15 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
   Immediately; the backoff caps at one day; changing or removing the PIN
   needs the current PIN; chat-info media counts cover stored files; the
   license list is generated at build time and precached.
-- M7: Settings has no Backup section yet (M8). The toolbar's Import is
-  now an icon button (same accessible name) so four actions fit beside the
+- M7: the toolbar's Import is now an icon button (same accessible name) so four actions fit beside the
   title on a phone.
 - M7: the repository gains settings methods beyond §10.5
   (`getLockState`, `verifyPin`, `changePin`, `setAutoLock`,
   `getSchemaVersion`, `listPersistedLogs`, `savePersistedLogs`).
+- ADR 0015 (M8): backup snapshots and restore sources are in-memory
+  scratch databases instead of sahpool `exportFile` / `VACUUM INTO`;
+  backups leave out app settings and the full-text index; backup and
+  restore run in db.worker; a restored chat's import history starts with
+  the restore; the archive name uses the app name (`wachatback-backup-…`).
+- M8: the db.worker API gains `estimateBackup`, `createBackup`,
+  `clearBackupFiles`, `inspectBackup` and `restoreBackup` (beyond §10.5).

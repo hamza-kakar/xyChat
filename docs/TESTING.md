@@ -107,6 +107,15 @@ Record the device, iOS version and date with the results.
       media-per-chat list).
 - [ ] "Clean up orphaned files" reports none after normal use.
 - [ ] Backup → delete → restore round-trips.
+- [ ] Backup of one chat with media: "Share backup" opens the share sheet
+      and "Save to Files" stores the zip; "Save backup" also works.
+- [ ] Restore from Files: the preview lists the chats; Merge, Replace and
+      Skip do what they say; the report's "Open chat" opens the chat.
+- [ ] A backup estimated above 1 GB shows the memory warning; a per-chat
+      backup of a large chat finishes without the app reloading.
+- [ ] Cancel during a backup and during a restore's media phase: nothing
+      new appears in Storage and "Clean up orphaned files" finds none.
+- [ ] The screen stays awake while a backup or restore runs.
 
 ## Import memory notes (M3, §17 manual targets)
 
