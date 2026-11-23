@@ -1,9 +1,9 @@
 /**
- * In-memory scratch databases for backup and restore (AGENTS.md §10.6).
+ * In-memory scratch databases for backup and restore.
  * A backup snapshot is built in a fresh in-memory database and serialized
  * to bytes; a restore deserializes the backup's bytes into another one.
  * Neither touches the opfs-sahpool VFS, so the app database keeps its
- * single connection (§10.1) and the same code runs in page-context tests.
+ * single connection and the same code runs in page-context tests.
  */
 import type { Sqlite3Static } from '@sqlite.org/sqlite-wasm';
 import { wrapDatabase, type SqliteDatabase } from './db-wrapper';

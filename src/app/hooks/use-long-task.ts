@@ -1,6 +1,6 @@
 /**
  * Tracks whether an import, backup or restore is running anywhere in the
- * app, so the update prompt can wait until it ends (AGENTS.md §12.12).
+ * app, so the update prompt can wait until it ends.
  * Worker jobs are tracked until their promise settles, even when the
  * screen that started them closes; screens can also hold a task for steps
  * that belong to a job but run no worker call (the import's confirm step).

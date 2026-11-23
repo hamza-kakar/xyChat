@@ -1,6 +1,5 @@
 /**
- * Repository contract: boot, import commit and media upgrades (§10.5,
- * §9.2, §8.10, §19.4). Runs SqliteChatRepository against the real
+ * Repository contract: boot, import commit and media upgrades. Runs SqliteChatRepository against the real
  * sqlite-wasm stack so v8 coverage instruments the storage layer.
  * Chromium-only per ADR 0007.
  */
@@ -44,7 +43,7 @@ describe('repository contract: boot and import', () => {
     chatId = asChatId(result.chatId);
     const chat = repo.listChats().find((c) => c.title === 'Contract Test Chat');
     expect(chat?.messageCount).toBe(3);
-    // The last message by seq feeds the preview label (§12.4).
+    // The last message by seq feeds the preview label.
     expect(chat?.lastMessagePreview).toBe('goodbye');
     expect(chat?.lastMessageKind).toBe('text');
     expect(chat?.lastAuthorName).not.toBeNull();
@@ -72,7 +71,7 @@ describe('repository contract: boot and import', () => {
   });
 });
 
-describe('repository contract: merge plan (§8.10)', () => {
+describe('repository contract: merge plan', () => {
   it('interleaves a superset with new messages between stored ones', () => {
     createImportRecord(db, recordInput('imp-sup-1'));
     const first = commitImport(db, threeMsgInput('imp-sup-1', null));

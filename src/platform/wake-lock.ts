@@ -1,9 +1,9 @@
 /**
- * Screen wake lock (AGENTS.md §12.8 step 5): keeps the
+ * Screen wake lock: keeps the
  * screen awake during long imports when `navigator.wakeLock` is available.
- * Pure platform wrapper (platform → core only, §3.1); the UI acquires on
+ * Pure platform wrapper (platform → core only); the UI acquires on
  * start and releases on done/cancel/fail/unmount, re-acquiring on
- * `visibilitychange` (§18.4 hooks live with the feature flow).
+ * `visibilitychange` (hooks live with the feature flow).
  */
 import { err, ok, type Result } from '../core/result';
 
@@ -12,8 +12,8 @@ export interface WakeLockHandle {
   readonly release: () => Promise<void>;
 }
 
-/** Acquires the screen wake lock; ok(null) when unsupported (§0.6: the
- * import proceeds; the §12.8.5 text warning covers the battery cost). */
+/** Acquires the screen wake lock; ok(null) when unsupported (the
+ * import proceeds; the text warning covers the battery cost). */
 export async function acquireScreenWakeLock(): Promise<Result<WakeLockHandle | null, string>> {
   const wakeLock = (
     navigator as {

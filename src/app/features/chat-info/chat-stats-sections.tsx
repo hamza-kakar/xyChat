@@ -1,7 +1,7 @@
 /**
  * Chat info: the overview (group or one-to-one, date range, total), the
- * totals by message kind, and the media counts and bytes (§12.7). The
- * date range is formatted from the stored wall-clock times (§12.1).
+ * totals by message kind, and the media counts and bytes. The
+ * date range is formatted from the stored wall-clock times.
  */
 import { Link } from 'react-router';
 import { formatDate } from '../../../core/dates';

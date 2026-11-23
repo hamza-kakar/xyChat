@@ -1,8 +1,8 @@
 /**
- * Theme preference (AGENTS.md §12.1, §15.4): System, Light or Dark. It is
+ * Theme preference: System, Light or Dark. It is
  * the one value kept in localStorage, because it must apply before the
  * database loads (no flash of the wrong theme). The stored value is
- * validated on read (§18.5); the choice sets `data-theme` on the root,
+ * validated on read; the choice sets `data-theme` on the root,
  * which the tokens in `tokens.css` follow.
  */
 import { useCallback, useSyncExternalStore } from 'react';

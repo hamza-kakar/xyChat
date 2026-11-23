@@ -1,5 +1,5 @@
 /**
- * The "Update available" toast (AGENTS.md §12.12). It appears once a new
+ * The "Update available" toast. It appears once a new
  * service worker waits, stays hidden while an import, backup or restore
  * runs, and reloads only when the user taps Reload.
  */

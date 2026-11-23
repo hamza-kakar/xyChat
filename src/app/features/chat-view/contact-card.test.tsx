@@ -28,7 +28,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('ContactCard (§12.5)', () => {
+describe('ContactCard', () => {
   it('shares the stored card through the share sheet when files can be shared', async () => {
     const share = vi.fn<(data: ShareData) => Promise<void>>(() => Promise.resolve());
     Object.defineProperty(navigator, 'share', { configurable: true, value: share });

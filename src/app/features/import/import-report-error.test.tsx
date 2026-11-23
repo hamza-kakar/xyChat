@@ -1,7 +1,7 @@
 /**
- * Report + error step tests (§12.8.6): counts, media split, warnings,
+ * Report + error step tests: counts, media split, warnings,
  * decoding note, and the plain-language error mapping with diagnostics
- * copy (§18.7 — codes/counts only).
+ * copy (codes/counts only).
  */
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -34,7 +34,7 @@ const outcome: BeginOutcome = {
   chatId,
 };
 
-describe('ImportReportStep (§12.8.6)', () => {
+describe('ImportReportStep', () => {
   it('renders counts, the media split, duration and warning grouping', () => {
     render(
       <MemoryRouter>
@@ -52,7 +52,7 @@ describe('ImportReportStep (§12.8.6)', () => {
     expect(screen.getByText(/out of chronological order/)).toBeInTheDocument();
   });
 
-  it('opens the chat via the §12.8.6 button', async () => {
+  it('opens the chat via the button', async () => {
     const user = userEvent.setup();
     const onOpenChat = vi.fn();
     render(
@@ -65,7 +65,7 @@ describe('ImportReportStep (§12.8.6)', () => {
   });
 });
 
-describe('ImportErrorStep (§12.8)', () => {
+describe('ImportErrorStep', () => {
   it('maps a typed code to plain language and offers diagnostics copy', async () => {
     const user = userEvent.setup();
     const written: string[] = [];
@@ -93,7 +93,7 @@ describe('ImportErrorStep (§12.8)', () => {
     expect(written[0]).toContain('QUOTA_EXCEEDED');
   });
 
-  it('shows the cancelled message on CANCELLED (§9.3)', () => {
+  it('shows the cancelled message on CANCELLED', () => {
     render(<ImportErrorStep error={{ code: 'CANCELLED', detail: '' }} onRetry={() => undefined} />);
     expect(screen.getByText('Import cancelled. Nothing was imported.')).toBeInTheDocument();
   });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { isInactiveTooLong, locksOnHide, secondsUntil } from './auto-lock';
 
-describe('auto-lock rules (§15.3)', () => {
+describe('auto-lock rules', () => {
   it('locks on hide only with a PIN and the immediate setting', () => {
     expect(locksOnHide(true, 0)).toBe(true);
     expect(locksOnHide(true, 5)).toBe(false);

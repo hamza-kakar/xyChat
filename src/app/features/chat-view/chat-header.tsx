@@ -1,5 +1,5 @@
 /**
- * Chat view header (AGENTS.md §12.5): back, title, participant count for
+ * Chat view header: back, title, participant count for
  * groups, and the search, jump-to-date, media and info buttons.
  */
 import type { Ref } from 'react';
@@ -43,7 +43,7 @@ export function ChatHeader({
           <BackIcon className="h-6 w-6 rtl:-scale-x-100" />
         </Link>
         {/* min-w-32: at large text sizes the actions wrap below the title
-            instead of squeezing it away (§16). */}
+            instead of squeezing it away. */}
         <div className="flex min-w-32 flex-1 flex-col ps-2 md:ps-3">
           <h1
             ref={headingRef}

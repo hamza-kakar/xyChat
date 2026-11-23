@@ -1,10 +1,10 @@
 /**
- * Plan application for import commits (AGENTS.md §8.10, §9.2 step 10): walks
+ * Plan application for import commits: walks
  * the planMerge output, re-sequences stored rows that the plan displaces,
  * inserts incoming-only rows at their final positions, and applies media
  * upgrades for twins whose export newly provides bytes.
  *
- * Sequencing strategy (§10.2, §17 budgets): the plan is computed first, so
+ * Sequencing strategy (budgets): the plan is computed first, so
  * rows whose position does not change are never touched — a stable re-import
  * re-sequences nothing. Only displaced stored rows take the +1e9 offset
  * trick, and incoming rows insert at their FINAL seq after displaced rows
@@ -58,10 +58,10 @@ const PLACEHOLDER_STORED_MESSAGE: ParsedMessage = Object.freeze({
   location: null,
 });
 
-/** Loads stored messages as MergeEntry inputs (§9.2 step 7). Presence of
+/** Loads stored messages as MergeEntry inputs. Presence of
  * stored media comes from ONE scan of the (usually small) attachments set
  * instead of a correlated EXISTS per message row; rows arrive as positional
- * arrays — the cheap shape for a 100k-row scan (§17). */
+ * arrays — the cheap shape for a 100k-row scan. */
 export function loadStoredEntries(db: SqliteDatabase, chatId: string): readonly StoredEntry[] {
   const rows = db.selectArrays(
     'SELECT id, fingerprint, seq, ts_key FROM messages WHERE chat_id = ? ORDER BY seq',
@@ -146,7 +146,7 @@ function collectPlanActions(
 }
 
 /** Applies a media upgrade when the incoming twin has newly *present* media
- * (§8.10 rule 1: an omitted twin never turns a placeholder into present
+ * (an omitted twin never turns a placeholder into present
  * media). The seq update happens in resequenceDisplacedRows. */
 function applyStoredUpgrade(ctx: ApplyContext, merged: MergedMessage, storedRowId: number): void {
   const twinFp = merged.fingerprintOfIncomingTwin;
@@ -178,7 +178,7 @@ function applyStoredUpgrade(ctx: ApplyContext, merged: MergedMessage, storedRowI
 }
 
 /** Counts whether a rule-1 merge performed a media upgrade — the incoming
- * twin must have newly *present* media (§8.10: an omitted twin is a no-op). */
+ * twin must have newly *present* media (an omitted twin is a no-op). */
 function countUpgrade(
   merged: MergedMessage,
   storedHadMedia: boolean,
@@ -191,7 +191,7 @@ function countUpgrade(
   return upgrade?.status === 'present';
 }
 
-/** Moves displaced stored rows to their final seq (§10.2 offset trick):
+/** Moves displaced stored rows to their final seq (offset trick):
  * first bumps the displaced rows out of the low-seq range (vacating their
  * old positions), then updates them to their final positions in batched
  * UPDATE ... FROM VALUES statements. Undisplaced rows are never touched —
@@ -202,7 +202,7 @@ function resequenceDisplacedRows(db: SqliteDatabase, displaced: readonly Displac
   }
 
   // 1e9 + original seq is unique per chat, so the bump itself collides with
-  // nothing (§10.2). Rowid IN lists resolve through rowid seeks.
+  // nothing. Rowid IN lists resolve through rowid seeks.
   const ROWS_PER_BATCH = 8_000;
   for (let start = 0; start < displaced.length; start += ROWS_PER_BATCH) {
     const batch = displaced.slice(start, start + ROWS_PER_BATCH);
@@ -228,7 +228,7 @@ function resequenceDisplacedRows(db: SqliteDatabase, displaced: readonly Displac
 }
 
 /**
- * Applies the planMerge inside the commit transaction (§9.2 step 10).
+ * Applies the planMerge inside the commit transaction.
  *
  * @returns The counts for the import report.
  */

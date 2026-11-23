@@ -1,5 +1,5 @@
 /**
- * RPC input validation for app settings (AGENTS.md §15.3, §18.5, §18.7):
+ * RPC input validation for app settings:
  * PINs, the auto-lock delay and persisted log entries.
  */
 import * as v from 'valibot';
@@ -19,7 +19,7 @@ function parse<TSchema extends v.GenericSchema>(
 ): v.InferOutput<TSchema> {
   const result = v.safeParse(schema, input);
   if (!result.success) {
-    // Messages name the rule only: PIN digits never reach logs (§15.4).
+    // Messages name the rule only: PIN digits never reach logs.
     throw new RpcValidationError(`${method}: ${result.issues[0].message}`);
   }
   return result.output;

@@ -1,5 +1,5 @@
 /**
- * Backup and restore e2e (AGENTS.md §10.6; §19.5 flow 13; §22 M8): back
+ * Backup and restore e2e: back
  * up a chat, delete it, restore it, and compare message count and
  * fingerprints through a second backup. Chromium runs the storage path;
  * WebKit skips (ADR 0007).
@@ -82,7 +82,7 @@ async function makeBackup(page: Page): Promise<SavedBackup> {
   return { path: await download.path(), name };
 }
 
-test('back up a chat, delete it, and restore it identically (flow 13)', async ({ page }) => {
+test('back up a chat, delete it, and restore it identically', async ({ page }) => {
   await importChat(page, {
     blob: await buildIosGroupZipWithImage(),
     name: 'WhatsApp Chat - Family.zip',

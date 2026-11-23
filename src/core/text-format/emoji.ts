@@ -1,5 +1,5 @@
 /**
- * Emoji-only detection for jumbomoji (AGENTS.md §12.5): a body made of one
+ * Emoji-only detection for jumbomoji: a body made of one
  * to three emoji (whitespace between them allowed) renders larger. Counts
  * grapheme clusters, so ZWJ families, skin tones, flags and keycaps each
  * count as one emoji.

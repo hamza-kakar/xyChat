@@ -1,6 +1,6 @@
 /**
- * Repository contract: last chat position in `meta` (§12.5), validated on
- * read (§18.5). Chromium against real sqlite-wasm per ADR 0007.
+ * Repository contract: last chat position in `meta`, validated on
+ * read. Chromium against real sqlite-wasm per ADR 0007.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { commitImport } from '../../src/storage/sqlite/import-commit';

@@ -1,15 +1,15 @@
 /**
- * Persisted log entries (AGENTS.md §18.7): the last 200 warn/error entries
+ * Persisted log entries: the last 200 warn/error entries
  * survive a reload in `meta`, for the Diagnostics log viewer. Entries are
- * codes plus small structured payloads (never content, §15.4); they are
- * validated on the way in and on the way out (§18.5).
+ * codes plus small structured payloads (never content); they are
+ * validated on the way in and on the way out.
  */
 import * as v from 'valibot';
 import { deleteMeta, readMetaJson, writeMetaJson } from './meta';
 import type { SqliteDatabase } from './open';
 
 const LOGS_KEY = 'log_entries';
-/** How many warn/error entries are kept (§18.7). */
+/** How many warn/error entries are kept. */
 export const PERSISTED_LOG_LIMIT = 200;
 const MAX_DATA_KEYS = 16;
 

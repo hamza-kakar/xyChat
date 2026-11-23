@@ -1,5 +1,5 @@
 /**
- * Repository contract: import bookkeeping (§9.3, §10.5). Status changes
+ * Repository contract: import bookkeeping. Status changes
  * apply only from in_progress, written-path lists round-trip and survive
  * corruption, and media path reads serve the skip and delete flows.
  * Chromium against real sqlite-wasm per ADR 0007.
@@ -32,7 +32,7 @@ function statusOf(importId: string): unknown {
   return db.selectObjects('SELECT status FROM imports WHERE id = ?', [importId])[0]?.['status'];
 }
 
-describe('repository contract: import status transitions (§9.3)', () => {
+describe('repository contract: import status transitions', () => {
   it.each([
     [
       'cancelled',
@@ -70,7 +70,7 @@ describe('repository contract: import status transitions (§9.3)', () => {
   });
 });
 
-describe('repository contract: written paths (§9.2 step 8, §9.3)', () => {
+describe('repository contract: written paths', () => {
   it('round-trips the cumulative list and hands it to boot rollback', () => {
     createImportRecord(db, recordInput('imp-w'));
     repo.recordWrittenPaths('imp-w', ['media/c/a.jpg']);
@@ -89,7 +89,7 @@ describe('repository contract: written paths (§9.2 step 8, §9.3)', () => {
   });
 });
 
-describe('repository contract: media path reads (§9.2 step 8, §10.4)', () => {
+describe('repository contract: media path reads', () => {
   it('lists stored fingerprints and the chat media paths', () => {
     createImportRecord(db, recordInput('imp-m'));
     const chatId = asChatId(commitImport(db, presentMediaInput('imp-m', null)).chatId);
@@ -102,7 +102,7 @@ describe('repository contract: media path reads (§9.2 step 8, §10.4)', () => {
   });
 });
 
-describe('repository contract: import history reports (§9.2 step 11, §12.7)', () => {
+describe('repository contract: import history reports', () => {
   it('stores the run facts with the commit counts and reads them back', () => {
     createImportRecord(db, recordInput('imp-r1'));
     const first = presentMediaInput('imp-r1', null);
@@ -143,7 +143,7 @@ describe('repository contract: import history reports (§9.2 step 11, §12.7)', 
   });
 });
 
-describe('repository contract: chat stats media (§12.7)', () => {
+describe('repository contract: chat stats media', () => {
   it('counts and sizes stored media only', () => {
     createImportRecord(db, recordInput('imp-s1'));
     const chatId = asChatId(commitImport(db, omittedMediaInput('imp-s1', null)).chatId);

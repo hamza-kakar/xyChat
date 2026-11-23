@@ -1,7 +1,6 @@
 /**
- * Core safety limits for untrusted import input (AGENTS.md §15.2). Constants
- * live in core so workers and the UI share them without layer violations
- * (§3.1). Exceeding any limit produces a typed error, never a crash.
+ * Core safety limits for untrusted import input. Constants
+ * live in core so workers and the UI share them without layer violations. Exceeding any limit produces a typed error, never a crash.
  */
 /** Bytes per MiB. */
 const MIB = 1024 * 1024;
@@ -22,15 +21,15 @@ export const IMPORT_LIMITS = {
   /** Abort an entry whose compression ratio exceeds this value. */
   maxCompressionRatio: 1000,
   /** Larger image entries get no thumbnail: decoding needs the whole entry
-   * in memory, which iOS can't afford for huge files (§9.4, §9.2 step 9). */
+   * in memory, which iOS can't afford for huge files. */
   maxThumbnailSourceBytes: 50 * MIB,
-  /** Thumbnail long edge in pixels (§9.2 step 9). */
+  /** Thumbnail long edge in pixels. */
   thumbnailLongEdge: 320,
-  /** Thumbnail JPEG quality (§9.2 step 9). */
+  /** Thumbnail JPEG quality. */
   thumbnailQuality: 0.8,
 } as const;
 
-/** App-lock parameters (AGENTS.md §15.3). */
+/** App-lock parameters. */
 export const APP_LOCK = {
   /** PBKDF2-SHA-256 iterations for the PIN hash. */
   pinHashIterations: 600_000,
@@ -50,14 +49,14 @@ export const APP_LOCK = {
   autoLockMinutes: [0, 1, 5, 15],
 } as const;
 
-/** Backup and restore limits (AGENTS.md §10.6, §15.2). */
+/** Backup and restore limits. */
 export const BACKUP_LIMITS = {
   /** Largest `manifest.json` a restore reads. */
   maxManifestBytes: 1 * MIB,
   /** Largest `db.sqlite3` a restore loads; it is held in memory whole. */
   maxDatabaseBytes: 512 * MIB,
-  /** Backups above this get the iPhone memory warning (§10.6). */
+  /** Backups above this get the iPhone memory warning. */
   largeBackupBytes: 1 * GIB,
-  /** Written paths are flushed to the import row this often (§9.2 step 8). */
+  /** Written paths are flushed to the import row this often. */
   writtenPathsFlushEvery: 100,
 } as const;

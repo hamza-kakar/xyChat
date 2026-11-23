@@ -1,7 +1,6 @@
 /**
- * One virtualized chat row (AGENTS.md §12.5, §16): optional day separator,
- * then a bubble, a system pill or a call pill. Memoized with stable props
- * (§18.4) so scrolling re-renders only rows whose data changed.
+ * One virtualized chat row: optional day separator,
+ * then a bubble, a system pill or a call pill. Memoized with stable props so scrolling re-renders only rows whose data changed.
  */
 import { memo } from 'react';
 import { formatDaySeparator, formatTime } from '../../../core/dates';
@@ -22,9 +21,9 @@ export interface MessageRowProps {
   readonly context: RowContext;
   readonly now: LocalDateTime;
   readonly total: number;
-  /** Palette index per author id (§12.2). */
+  /** Palette index per author id. */
   readonly colors: ReadonlyMap<string, number>;
-  /** Briefly marked after a jump to this message (§11). */
+  /** Briefly marked after a jump to this message. */
   readonly isHighlighted: boolean;
   readonly isBookmarked: boolean;
   readonly onOpenActions: (message: WindowMessage) => void;

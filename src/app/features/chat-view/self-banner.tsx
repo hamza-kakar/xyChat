@@ -1,5 +1,5 @@
 /**
- * "Choose which person is you" (AGENTS.md §12.5): with no self chosen,
+ * "Choose which person is you": with no self chosen,
  * every bubble is incoming and this dismissible banner offers the choice.
  */
 import { useState } from 'react';

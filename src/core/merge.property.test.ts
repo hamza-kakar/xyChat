@@ -1,5 +1,5 @@
 /**
- * Property-based merge tests (AGENTS.md §19.2.5, §8.10): planMerge is
+ * Property-based merge tests: planMerge is
  * idempotent, preserves each input's relative order, never loses a message,
  * and counts media upgrades only for twins whose export newly provides
  * bytes. fast-check runs each property 1,000 times.
@@ -29,7 +29,7 @@ function mergeEntry(body: string, index: number, attachmentStored = true): Merge
   return { fingerprint: body, message, tsKey: index, attachmentStored };
 }
 
-describe('property: merge idempotent, order-preserving, lossless (§19.2.5)', () => {
+describe('property: merge idempotent, order-preserving, lossless', () => {
   it('holds on generated lists', () => {
     const prop = fc.property(
       fc
@@ -72,8 +72,7 @@ describe('property: merge idempotent, order-preserving, lossless (§19.2.5)', ()
           );
         }
         // Order preservation is per INPUT list — after the optional shuffle.
-        // A body present in BOTH lists is emitted from the stored side
-        // (§8.10 rule 1), so the incoming-side stream must match exactly the
+        // A body present in BOTH lists is emitted from the stored side, so the incoming-side stream must match exactly the
         // incoming bodies that were not already stored.
         const incomingOrder = plan.messages
           .filter((m) => m.fromIncoming)
@@ -103,7 +102,7 @@ describe('property: merge idempotent, order-preserving, lossless (§19.2.5)', ()
   });
 });
 
-describe('property: media upgrades count only newly present media (§8.10)', () => {
+describe('property: media upgrades count only newly present media', () => {
   it('an omitted twin never upgrades (mediaUpgraded stays 0)', () => {
     const prop = fc.property(
       fc
@@ -117,7 +116,7 @@ describe('property: media upgrades count only newly present media (§8.10)', () 
       (existingBodies, incomingBodies, shuffleIncoming, storedHasMedia) => {
         const existing = existingBodies.map((b, index) => mergeEntry(b, index, storedHasMedia));
         // Re-import WITHOUT media: every incoming twin is an omitted
-        // placeholder (§8.6 'omitted') — nothing can be upgraded.
+        // placeholder ('omitted') — nothing can be upgraded.
         const incomingBodiesMaybeReversed = shuffleIncoming
           ? [...incomingBodies].reverse()
           : incomingBodies;

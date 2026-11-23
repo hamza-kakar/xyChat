@@ -1,5 +1,5 @@
 /**
- * Import detection phase tests (§9.2 step 4, §12.8.4): real zips read by
+ * Import detection phase tests: real zips read by
  * readArchive, formats detected, metadata derived — the exact data the
  * confirmation screen renders.
  */
@@ -25,7 +25,7 @@ const IOS_GROUP_TEXT = [
   '[17/11/2026, 9:22:00 PM] Ali Khan: ‎<attached: 00000009-VIDEO-2026-11-17-21-21-59.mp4>',
 ].join('\n');
 
-describe('detectExport (§9.2 step 4)', () => {
+describe('detectExport', () => {
   it('derives participants, group heuristic and media counts from an iOS group zip', async () => {
     const blob = await buildZip({
       '_chat.txt': IOS_GROUP_TEXT,
@@ -41,7 +41,7 @@ describe('detectExport (§9.2 step 4)', () => {
     // First-seen order; the group-event actor (line 3) is a system message.
     expect(report.value.participants).toEqual(['Sara', 'Bob', 'Ali Khan']);
     // 5 messages; the encryption banner precedes the first header and is an
-    // orphan line (§8.5), not a message.
+    // orphan line, not a message.
     expect(report.value.messagesCount).toBe(5);
     expect(report.value.mediaFilesFound).toBe(1);
     expect(report.value.mediaFilesMissing).toBe(1);

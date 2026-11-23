@@ -10,14 +10,14 @@ export interface ImportErrorStepProps {
   readonly onRetry: () => void;
 }
 
-/** Error step (§12.8): a plain-language message mapped from the typed code,
+/** Error step: a plain-language message mapped from the typed code,
  * plus "Copy diagnostic details" (codes/counts/versions only — never
- * message or file content, §18.7). */
+ * message or file content). */
 export function ImportErrorStep({ error, onRetry }: ImportErrorStepProps) {
   const [copied, setCopied] = useState(false);
   const mapped: string = en.import.errors[error.code];
   const message = error.code === 'CANCELLED' ? en.import.errorCancelled : mapped;
-  // §12.8/§15.4: diagnostics carry the typed code,
+  //  diagnostics carry the typed code,
   // counts and app/parser versions — never detail strings (which may
   // contain engine text), never message or file content.
   const diagnostics = JSON.stringify(

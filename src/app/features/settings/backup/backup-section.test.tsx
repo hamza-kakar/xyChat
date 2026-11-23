@@ -222,9 +222,7 @@ describe('restore from a backup', () => {
     db.inspectBackup.mockResolvedValue({ ok: false, error: { code: 'NOT_A_BACKUP' } });
     renderWithProviders(<BackupSection />);
     await user.upload(screen.getByLabelText('Choose a backup file'), new File(['z'], 'b.zip'));
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'This file is not a xyChat backup.',
-    );
+    expect(await screen.findByRole('alert')).toHaveTextContent('This file is not a xyChat backup.');
     expect(screen.getByLabelText('Choose another file')).toBeInTheDocument();
   });
 });

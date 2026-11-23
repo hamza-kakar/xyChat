@@ -1,6 +1,6 @@
 /**
- * Shared types of the import media phase (AGENTS.md §9.2 steps 8–9): the
- * injectable IO (§18.4) and the phase result. Split out so the media phase
+ * Shared types of the import media phase: the
+ * injectable IO and the phase result. Split out so the media phase
  * and its thumbnail helper share them without an import cycle.
  */
 import type { Result } from '../core/result';
@@ -14,7 +14,7 @@ export interface ThumbnailResult {
   readonly height: number;
 }
 
-/** Injectable IO for the media phase (§18.4). The opened archive is the
+/** Injectable IO for the media phase. The opened archive is the
  * ONE zip reader shared by the whole phase. */
 export interface MediaPhaseDeps {
   /** The opened archive (single central-directory parse). */
@@ -35,17 +35,16 @@ export interface MediaPhaseDeps {
   >;
   /** Buffers one SMALL entry whole — thumbnail inputs only. */
   readonly readEntryBuffered: (name: string) => Promise<Result<Uint8Array, ArchiveError>>;
-  /** Deletes one written path (rollback, §9.3). */
+  /** Deletes one written path (rollback). */
   readonly deleteFile: (path: string) => Promise<boolean>;
-  /** JPEG thumbnail generator; null produces no thumbnails (§9.2 step 9 —
-   * the gallery shows a type icon instead). */
+  /** JPEG thumbnail generator; null produces no thumbnails (the gallery shows a type icon instead). */
   readonly makeThumbnail: ((bytes: Uint8Array) => Promise<ThumbnailResult | null>) | null;
-  /** Media types that get thumbnails (production: images only, §12.6). */
+  /** Media types that get thumbnails (production: images only). */
   readonly thumbnailTypes: ReadonlySet<string>;
 }
 
 /** The media phase outcome: attachment rows for the commit plus every OPFS
- * path written (for recordWrittenPaths and rollback, §9.3). */
+ * path written (for recordWrittenPaths and rollback). */
 export interface MediaPhaseResult {
   readonly attachments: readonly InsertableAttachment[];
   readonly writtenPaths: readonly string[];

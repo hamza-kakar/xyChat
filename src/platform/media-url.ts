@@ -1,11 +1,11 @@
 /**
- * Object URLs for stored media (AGENTS.md §3.4, §10.4). The main thread
+ * Object URLs for stored media. The main thread
  * only READS from OPFS: `getFileHandle(path).getFile()`, then an object
  * URL held in a small LRU cache that revokes on eviction and on clear
  * (route change).
  */
 
-/** Maximum cached object URLs (§10.4). */
+/** Maximum cached object URLs. */
 export const OBJECT_URL_CACHE_SIZE = 200;
 
 /** Creates and revokes object URLs (injectable for tests). */
@@ -62,7 +62,7 @@ export class ObjectUrlCache {
     return url;
   }
 
-  /** Revokes every URL (route change, §10.4). */
+  /** Revokes every URL (route change). */
   clear(): void {
     for (const url of this.entries.values()) {
       this.urls.revoke(url);

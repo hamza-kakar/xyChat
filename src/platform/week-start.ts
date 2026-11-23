@@ -1,5 +1,5 @@
 /**
- * First day of the week for a locale (AGENTS.md §12.5 calendar), from
+ * First day of the week for a locale (calendar), from
  * `Intl.Locale` week info where the engine has it (`getWeekInfo()` or the
  * older `weekInfo` getter). Engines without it start weeks on Monday.
  */

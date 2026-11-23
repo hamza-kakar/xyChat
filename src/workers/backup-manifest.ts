@@ -1,6 +1,6 @@
 /**
- * Backup archive layout (AGENTS.md §10.6): entry names, the manifest
- * schema (validated on restore, §18.5) and the archive's file name.
+ * Backup archive layout: entry names, the manifest
+ * schema (validated on restore) and the archive's file name.
  */
 import * as v from 'valibot';
 import type { BackupChatSummary } from '../storage/sqlite/backup-snapshot';

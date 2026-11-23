@@ -1,6 +1,5 @@
 /**
- * Repository contract: in-chat search navigation and calendar days
- * (§11, §12.5). Chromium against real sqlite-wasm per ADR 0007.
+ * Repository contract: in-chat search navigation and calendar days. Chromium against real sqlite-wasm per ADR 0007.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { commitImport } from '../../src/storage/sqlite/import-commit';
@@ -26,7 +25,7 @@ afterEach(() => {
 
 const base = { authorId: null, kinds: null, dateFromTsKey: null, dateToTsKey: null } as const;
 
-describe('repository contract: in-chat match list (§11)', () => {
+describe('repository contract: in-chat match list', () => {
   it('lists every matching seq in order, with filters', () => {
     seedTextRows(db, {
       chatId,
@@ -72,7 +71,7 @@ describe('repository contract: in-chat match list (§11)', () => {
   });
 });
 
-describe('repository contract: calendar days (§12.5)', () => {
+describe('repository contract: calendar days', () => {
   it('lists distinct days with messages as day numbers', () => {
     const dayOf = (y: number, m: number, d: number): number => Date.UTC(y, m - 1, d) / 86_400_000;
     for (const [seq, local, key] of [

@@ -1,6 +1,6 @@
 /**
- * Gallery tabs (AGENTS.md §12.6): which media types each tab lists, and
- * the validated `?tab=` parameter (§12.3).
+ * Gallery tabs: which media types each tab lists, and
+ * the validated `?tab=` parameter.
  */
 import * as v from 'valibot';
 import type { MediaType } from '../../../core/model';
@@ -14,7 +14,7 @@ export type MediaTab = (typeof MEDIA_TABS)[number];
 /** A tab that lists stored files (every tab but Links). */
 export type FileTab = Exclude<MediaTab, 'links'>;
 
-/** Media types per file tab: Photos include stickers and GIFs (§12.6). */
+/** Media types per file tab: Photos include stickers and GIFs. */
 export const TAB_TYPES: Readonly<Record<FileTab, readonly MediaType[]>> = {
   photos: ['image', 'sticker', 'gif'],
   videos: ['video'],

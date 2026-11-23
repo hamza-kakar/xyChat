@@ -1,5 +1,5 @@
 /**
- * Migration 0002 on a real database (AGENTS.md §10.3): a version-1
+ * Migration 0002 on a real database: a version-1
  * database with data migrates to version 2, gains the attachments-by-
  * message index, and keeps every row.
  */

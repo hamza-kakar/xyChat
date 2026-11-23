@@ -88,7 +88,7 @@ describe('planMerge media upgrades and ordering', () => {
     expect(plan.counts.added).toBe(0);
   });
 
-  it('an omitted twin is a duplicate but never an upgrade (§8.10)', () => {
+  it('an omitted twin is a duplicate but never an upgrade', () => {
     const omitted = { fileName: null, mediaType: 'image' as const, status: 'omitted' as const };
     const stored = [entry({ ...msg(0, 'x'), attachment: omitted }, 'f-x', false)];
     const incoming = [entry({ ...msg(0, 'x'), attachment: omitted }, 'f-x', false)];

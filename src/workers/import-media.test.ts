@@ -1,9 +1,9 @@
 /**
- * Import media phase tests (§9.2 steps 8–9, §9.3): classification of
+ * Import media phase tests: classification of
  * present/missing/omitted media, STREAMED writes through the opened-archive
  * handle, cumulative written-path flushes, skip-stored fingerprints,
  * thumbnail degradation, and rollback on cancel/failure — against injected
- * fakes (§18.4).
+ * fakes.
  */
 import { describe, expect, it } from 'vitest';
 import { ok, err } from '../core/result';
@@ -51,7 +51,7 @@ function omitted(fingerprint: string): InsertableMessage {
 interface FakeKnobs {
   readonly zip: ReadonlyMap<string, number>;
   /** 1-based sink-open number that fails with a quota error (paths carry
-   * attachment UUIDs, not original names — §10.4). */
+   * attachment UUIDs, not original names — ). */
   readonly failSinkOpenOn?: number;
   readonly thumbnail?:
     (() => Promise<{ data: Uint8Array; width: number; height: number } | null>) | null;
@@ -59,7 +59,7 @@ interface FakeKnobs {
   readonly cancelAfterSinkOpens?: number;
 }
 
-/** In-memory OpenedArchive fake over the knob's zip (§18.4). */
+/** In-memory OpenedArchive fake over the knob's zip. */
 function fakeArchive(knobs: FakeKnobs): OpenedArchive {
   const byName = new Map([...knobs.zip].map(([name, size]) => [name, size]));
   return {
@@ -140,7 +140,7 @@ function harness(knobs: FakeKnobs): {
 }
 
 // eslint-disable-next-line max-lines-per-function -- one grouped classification suite
-describe('writeImportMedia: classification (§9.2 steps 8–9)', () => {
+describe('writeImportMedia: classification', () => {
   it('streams present media with thumbnail and tracks written paths', async () => {
     const { deps, hooks, written } = harness({
       zip: new Map([['IMG-0001.jpg', 12]]),
@@ -169,7 +169,7 @@ describe('writeImportMedia: classification (§9.2 steps 8–9)', () => {
     expect(written).toHaveLength(2);
   });
 
-  it('skips fingerprints whose media is already stored (§9.2 step 8)', async () => {
+  it('skips fingerprints whose media is already stored', async () => {
     const { deps, hooks, written } = harness({ zip: new Map([['IMG-0001.jpg', 12]]) });
     const result = await writeImportMedia({
       chatId: CHAT_ID,
@@ -188,7 +188,7 @@ describe('writeImportMedia: classification (§9.2 steps 8–9)', () => {
     expect(written).toHaveLength(0);
   });
 
-  it('marks referenced-but-absent files missing (§8.6)', async () => {
+  it('marks referenced-but-absent files missing', async () => {
     const { deps, hooks } = harness({ zip: new Map() });
     const result = await writeImportMedia({
       chatId: CHAT_ID,
@@ -223,7 +223,7 @@ describe('writeImportMedia: classification (§9.2 steps 8–9)', () => {
     expect(written).toHaveLength(0);
   });
 
-  it('degrades a failed thumbnail to no thumbnail (§9.2 step 9)', async () => {
+  it('degrades a failed thumbnail to no thumbnail', async () => {
     const { deps, hooks } = harness({
       zip: new Map([['IMG-0001.jpg', 12]]),
       thumbnail: () => Promise.resolve(null),
@@ -246,7 +246,7 @@ describe('writeImportMedia: classification (§9.2 steps 8–9)', () => {
   // eslint-enable max-lines-per-function -- one grouped classification suite
 });
 
-describe('writeImportMedia: written-path flushes (§9.2 step 8, §9.3)', () => {
+describe('writeImportMedia: written-path flushes', () => {
   it('flushes the cumulative list every 100 paths and once at the end', async () => {
     const count = 250;
     const names = Array.from({ length: count }, (_, i) => `IMG-${String(i).padStart(4, '0')}.jpg`);
@@ -263,7 +263,7 @@ describe('writeImportMedia: written-path flushes (§9.2 step 8, §9.3)', () => {
     expect(result.ok).toBe(true);
     // 100, 200, then the final 250: never one database write per file.
     expect(flushes.map((flush) => flush.length)).toEqual([100, 200, 250]);
-    // Every flush is a prefix of the final list (cumulative, §9.3).
+    // Every flush is a prefix of the final list (cumulative).
     for (const flush of flushes) {
       expect(written.slice(0, flush.length)).toEqual(flush);
     }
@@ -283,7 +283,7 @@ describe('writeImportMedia: written-path flushes (§9.2 step 8, §9.3)', () => {
   });
 });
 
-describe('writeImportMedia: rollback (§9.3)', () => {
+describe('writeImportMedia: rollback', () => {
   it('rolls back written files on cancellation', async () => {
     const { deps, hooks, deleted } = harness({
       zip: new Map([

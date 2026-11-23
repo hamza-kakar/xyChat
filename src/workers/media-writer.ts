@@ -1,9 +1,9 @@
 /**
- * Worker-only media writer (AGENTS.md §10.4): sync access handles are
+ * Worker-only media writer: sync access handles are
  * available only in dedicated workers, so this module is imported by
- * import.worker (M3). Main-thread reads live in storage/media-store.ts.
- * Failures return the shared Result type (§6.1) with a typed code union —
- * user-facing text is mapped from codes in i18n (§18.7), and expected
+ * import.worker. Main-thread reads live in storage/media-store.ts.
+ * Failures return the shared Result type with a typed code union —
+ * user-facing text is mapped from codes in i18n, and expected
  * failures never throw.
  */
 import { err, ok, type Result } from '../core/result';
@@ -17,7 +17,7 @@ export interface MediaWriteOk {
 /** Failure codes for a media write. */
 export type MediaWriteErrorCode = 'EMPTY_NAME' | 'QUOTA' | 'IO';
 
-/** A structured write failure (§18.7: logger-only detail, never user-facing). */
+/** A structured write failure (logger-only detail, never user-facing). */
 export interface MediaWriteError {
   readonly code: MediaWriteErrorCode;
   /** Engine-provided diagnostic text; contains no user content. */
@@ -32,7 +32,7 @@ function classify(error: unknown): MediaWriteErrorCode {
 }
 
 /**
- * Writes media bytes into OPFS via a sync access handle (worker-only, §10.4).
+ * Writes media bytes into OPFS via a sync access handle (worker-only).
  * Creates the chat directory as needed; closes the handle even when
  * write/flush fails — a leaked handle keeps the file locked for the session.
  *
@@ -42,7 +42,7 @@ function classify(error: unknown): MediaWriteErrorCode {
  */
 /** A streaming writer over one OPFS file's sync access handle: entries
  * stream chunk by chunk, so the largest in-memory object is one
- * decompressed chunk (§9.2 step 8). */
+ * decompressed chunk. */
 export interface MediaWriteSink {
   /** Appends one chunk at the tracked position. */
   write(chunk: Uint8Array): Promise<void>;
@@ -50,7 +50,7 @@ export interface MediaWriteSink {
   close(): Promise<void>;
 }
 
-/** Opens the streaming sink for one OPFS path (§10.4). The handle closes
+/** Opens the streaming sink for one OPFS path. The handle closes
  * even when a write fails — a leaked handle locks the file. */
 export async function openMediaWriteSink(
   path: string,
@@ -122,7 +122,7 @@ export async function writeMediaFile(path: string, bytes: Uint8Array): Promise<M
   }
 }
 
-/** A positional writer over one OPFS file (decoded audio, §13.2): the
+/** A positional writer over one OPFS file (decoded audio): the
  * payload streams in first and the header is patched in at the end. */
 export interface RandomAccessSink {
   /** Writes bytes at a byte offset. */

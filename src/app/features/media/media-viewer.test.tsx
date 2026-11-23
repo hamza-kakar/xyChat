@@ -16,7 +16,7 @@ function viewerItem(over: Partial<ViewerItem['attachment']>): ViewerItem {
   return { attachment: attachment(over), message: { seq: 4, tsLocal: NOV, authorName: 'Sara' } };
 }
 
-describe('MediaViewer (§12.6)', () => {
+describe('MediaViewer', () => {
   it('shows a document with its size and says when the file is gone', async () => {
     const onClose = vi.fn();
     const user = userEvent.setup();

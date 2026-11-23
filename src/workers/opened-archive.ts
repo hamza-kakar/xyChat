@@ -1,23 +1,23 @@
 /**
- * Opened-archive handle (AGENTS.md §9.2 step 8): ONE
+ * Opened-archive handle: ONE
  * ZipReader shared by the whole media phase — the central directory is
  * never re-parsed per file, and entries STREAM chunk-by-chunk into a sink
- * so nothing is buffered whole (§9.4). Split from archive-reader.ts for
- * the §18.2 file-size limit.
+ * so nothing is buffered whole. Split from archive-reader.ts for
+ * the file-size limit.
  */
 import * as zipJs from '@zip.js/zip.js';
 import { err, ok, type Result } from '../core/result';
 import { IMPORT_LIMITS } from '../core/limits';
 import { isBombEntry, isOversizedEntry, isSafeEntryName, type ArchiveError } from './archive-gates';
 
-/** Sink receiving one decompressed chunk (§9.2 step 8 streaming); returns
+/** Sink receiving one decompressed chunk (streaming); returns
  * the running byte count. */
 export type ChunkSink = (chunk: Uint8Array) => Promise<number> | number;
 
 /**
  * An opened archive for the MEDIA phase: the central
  * directory is parsed ONCE; entries stream chunk-by-chunk into a sink —
- * no entry is ever buffered whole (§9.2 step 8, §9.4).
+ * no entry is ever buffered whole.
  */
 export interface OpenedArchive {
   /** Safe non-text entries with their declared sizes. */
@@ -30,14 +30,14 @@ export interface OpenedArchive {
     sink: ChunkSink,
   ): Promise<Result<{ readonly bytes: number }, ArchiveError>>;
   /** Buffers one SMALL entry whole — thumbnail inputs only (images the
-   * user's own device produced; the §15.2 2 GB cap still applies, and the
+   * user's own device produced; the 2 GB cap still applies, and the
    * thumbnail pass needs decodable bytes anyway). */
   readEntry(name: string): Promise<Result<Uint8Array, ArchiveError>>;
   close(): Promise<void>;
 }
 
 /** zip.js Writer subclass forwarding every decompressed chunk into the
- * sink (§9.2 step 8: entries stream through the sync-access-handle writer
+ * sink (entries stream through the sync-access-handle writer
  * — the largest in-memory object is one decompressed chunk). */
 export class ChunkSinkWriter extends zipJs.Writer<void> {
   constructor(private readonly sink: ChunkSink) {
@@ -71,7 +71,7 @@ async function startsWithZipMagic(file: Blob): Promise<boolean> {
 /**
  * Opens the archive for the media phase: ONE ZipReader, entries indexed by
  * name. A plain-text export (no zip magic) opens as an archive with no
- * media, so `.txt` imports run the same pipeline (§1.1, §9.2 step 1).
+ * media, so `.txt` imports run the same pipeline.
  *
  * @param file The picked export blob.
  */
@@ -95,7 +95,7 @@ export async function openArchive(file: Blob): Promise<Result<OpenedArchive, Arc
       if (!isSafeEntryName(entry.filename) || isBombEntry(entry) || isOversizedEntry(entry)) {
         // The chat-text scan (readArchive) already rejected unsafe archives;
         // a media-phase handle only ever opens over a scanned file. Any
-        // unsafe entry here is a defensive stop (§15.2).
+        // unsafe entry here is a defensive stop.
         await reader.close();
         return err({ code: 'PATH_TRAVERSAL', detail: 'unsafe entry name' });
       }
@@ -142,7 +142,7 @@ function errorNameOf(error: unknown): string {
   return error instanceof Error ? error.name : 'unknown error';
 }
 
-/** Lists safe media entry names of an archive (detection phase, §12.8.4). */
+/** Lists safe media entry names of an archive (detection phase). */
 export async function listMediaEntries(
   file: Blob,
 ): Promise<Result<readonly { readonly name: string; readonly size: number }[], ArchiveError>> {

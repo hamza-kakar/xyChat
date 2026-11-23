@@ -1,5 +1,5 @@
 /**
- * Pure layout decisions for one chat row (AGENTS.md §12.5): day
+ * Pure layout decisions for one chat row: day
  * separators, consecutive-run grouping, alignment, sender names and the
  * accessible label. Kept free of React so it is unit-tested directly.
  */
@@ -8,7 +8,7 @@ import { en } from '../../i18n/en';
 import { formatString } from '../../i18n/format-string';
 import type { WindowMessage } from '../../../client/db-client';
 
-/** Bubbles by one author within this gap form a run (§12.5: 5 minutes). */
+/** Bubbles by one author within this gap form a run (5 minutes). */
 export const RUN_GAP_SECONDS = 300;
 
 /** What the chat needs to know to lay out a row. */
@@ -65,7 +65,7 @@ export function layoutRow(
   };
 }
 
-/** Short spoken description of a message's content (§16). */
+/** Short spoken description of a message's content. */
 export function describeContent(message: WindowMessage): string {
   const attachment = message.attachments[0];
   switch (message.kind) {
@@ -93,7 +93,7 @@ export function describeContent(message: WindowMessage): string {
   }
 }
 
-/** The accessible label: "{sender}, {date time}: {content}" (§16). */
+/** The accessible label: "{sender}, {date time}: {content}". */
 export function messageLabel(message: WindowMessage, context: RowContext): string {
   return formatString(en.chatView.messageLabel, {
     sender: message.authorName ?? en.chatView.systemSender,

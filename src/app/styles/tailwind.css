@@ -34,12 +34,11 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Safe areas (notch, home indicator) — AGENTS.md §12.1. Layered utilities,
+/* Safe areas (notch, home indicator) — . Layered utilities,
  * so they never silently override spacing utilities: an element carrying an
  * inset keeps its own spacing on a child box. The left/right insets are
  * PHYSICAL by nature (they describe hardware edges), so they map to physical
- * properties; this is a documented exception to the logical-properties rule
- * (§12.2), correct under RTL too because the notch does not move with
+ * properties; this is a documented exception to the logical-properties rule, correct under RTL too because the notch does not move with
  * document direction. */
 @utility safe-area {
   padding-top: env(safe-area-inset-top);

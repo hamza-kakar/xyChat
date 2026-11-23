@@ -1,14 +1,14 @@
 /**
- * OPFS media store (AGENTS.md §10.4): media and thumbnails live under
+ * OPFS media store: media and thumbnails live under
  * `media/<chatId>/` and `thumbs/<chatId>/`. Writes use sync access handles
  * in workers (iOS-supported); reads on the main thread use async handles.
  */
 import type { ChatId } from '../core/ids';
 
-/** OPFS root segment names (§10.4). */
+/** OPFS root segment names. */
 export const MEDIA_DIR = 'media';
 export const THUMBS_DIR = 'thumbs';
-/** Backup archives being written or offered for saving (§10.6). */
+/** Backup archives being written or offered for saving. */
 export const BACKUP_TMP_DIR = 'backup-tmp';
 
 /** Result of a media write. */
@@ -17,7 +17,7 @@ export type MediaWriteResult =
   | { readonly ok: false; readonly reason: string };
 
 /**
- * Builds the canonical OPFS path for an attachment (§10.4: stored by
+ * Builds the canonical OPFS path for an attachment (stored by
  * attachment id, never the original name).
  *
  * @param chatId Owning chat.
@@ -36,7 +36,7 @@ export function thumbPathFor(chatId: ChatId, attachmentId: string): string {
 }
 
 /**
- * Reads a media file as a Blob (main thread, async API §10.4).
+ * Reads a media file as a Blob (main thread, async API ).
  *
  * @returns null when the file does not exist.
  */
@@ -60,8 +60,7 @@ export async function readMediaFile(path: string): Promise<Blob | null> {
 }
 
 /**
- * Recursively collects every file path under a directory prefix (§9.3
- * orphan sweeping, §10.4 delete chat).
+ * Recursively collects every file path under a directory prefix (orphan sweeping, delete chat).
  */
 export async function listFilesUnder(prefix: string): Promise<readonly string[]> {
   const paths: string[] = [];
@@ -109,8 +108,8 @@ export async function deleteMediaFile(path: string): Promise<boolean> {
 }
 
 /**
- * Deletes every media/thumbnail file for one chat (§10.4: after the DB
- * commit; failures are caught later by the orphan sweeper §9.3).
+ * Deletes every media/thumbnail file for one chat (after the DB
+ * commit; failures are caught later by the orphan sweeper ).
  *
  * @returns Count of files actually removed.
  */
@@ -121,7 +120,7 @@ export async function deleteChatMedia(chatId: ChatId): Promise<number> {
 }
 
 /**
- * Removes a directory and everything in it (backup-tmp/ clean-up, §10.6).
+ * Removes a directory and everything in it (backup-tmp/ clean-up).
  *
  * @param path Root-relative directory path.
  * @returns The number of files removed (0 when absent).

@@ -66,7 +66,7 @@ afterEach(() => {
   restoreLayout();
 });
 
-describe('MediaScreen (§12.6)', () => {
+describe('MediaScreen', () => {
   it('shows photos grouped by month and focuses the heading', async () => {
     renderMedia(`/chat/${CHAT_ID}/media`);
     expect(await screen.findByRole('heading', { level: 1, name: 'Media' })).toHaveFocus();

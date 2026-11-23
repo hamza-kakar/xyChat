@@ -1,9 +1,9 @@
 /**
- * Import-commit performance test (AGENTS.md §17, ADR 0012): committing a
+ * Import-commit performance test (ADR 0012): committing a
  * 100k-message re-import into a chat that already stores 100k messages.
  * The stable case (all duplicates) budgets 2 s; the displaced case (every
  * stored row renumbered + 100k inserts) budgets 20 s — the measured floor
- * of the §11 trigram FTS and §10.2 indexes on sqlite-wasm, documented in
+ * of the trigram FTS and indexes on sqlite-wasm, documented in
  * ADR 0012. Chromium-only per ADR 0007.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -62,8 +62,7 @@ function storedRow(j: number): {
   };
 }
 
-/** The incoming twin of stored row j — same timestamp so planMerge rule 1
- * (§8.10) aligns every pair at the heads. */
+/** The incoming twin of stored row j — same timestamp so planMerge rule 1 aligns every pair at the heads. */
 function twinAt(j: number): ParsedMessage {
   const row = storedRow(j);
   return {
@@ -136,7 +135,7 @@ function supersetInput(importId: string, fileName: string): ImportCommitInput {
   };
 }
 
-/** Times one commitImport call against the §17 budget. */
+/** Times one commitImport call against the budget. */
 function timedCommit(input: ImportCommitInput): {
   readonly result: ReturnType<typeof commitImport>;
   readonly elapsed: number;
@@ -152,10 +151,10 @@ function median(values: readonly number[]): number {
   return sorted[Math.floor(sorted.length / 2)] ?? Number.NaN;
 }
 
-/** Timed runs per idempotent case; the median damps runner noise (§17). */
+/** Timed runs per idempotent case; the median damps runner noise. */
 const TIMED_RUNS = 3;
 
-/** Asserts seqs are 0..n-1 with no gaps after the merge (§8.10). */
+/** Asserts seqs are 0..n-1 with no gaps after the merge. */
 function assertNoSeqGaps(): void {
   const gaps = db.selectObjects(
     `SELECT COUNT(*) AS n FROM (SELECT seq, LAG(seq) OVER (ORDER BY seq) AS prev FROM messages WHERE chat_id = ?)
@@ -200,8 +199,8 @@ beforeEach(async () => {
   }
 });
 
-describe('import-commit performance (§17, ADR 0007)', () => {
-  // Test timeout > budget with headroom (§17; ADR 0012 for the floors).
+describe('import-commit performance (ADR 0007)', () => {
+  // Test timeout > budget with headroom (ADR 0012 for the floors).
   it('commits a 100k re-import into a 100k-message chat within budget', { timeout: 30_000 }, () => {
     beginImport('perf-commit-2', 'perf2.txt');
     const input: ImportCommitInput = {
@@ -251,7 +250,7 @@ describe('import-commit performance (§17, ADR 0007)', () => {
     () => {
       // The incoming messages carry EARLIER timestamps than the stored chat, so
       // the plan emits them all first: every stored row moves by +ROWS and the
-      // batched renumbering (§10.2 offset trick) is what gets timed.
+      // batched renumbering (offset trick) is what gets timed.
       beginImport('perf-commit-3', 'perf3.txt');
       const { result, elapsed } = timedCommit(supersetInput('perf-commit-3', 'perf3.txt'));
 

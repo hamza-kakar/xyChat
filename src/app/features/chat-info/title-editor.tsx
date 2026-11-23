@@ -1,5 +1,5 @@
 /**
- * Chat info: the editable chat name (§12.7).
+ * Chat info: the editable chat name.
  */
 import { useState } from 'react';
 import { en } from '../../i18n/en';

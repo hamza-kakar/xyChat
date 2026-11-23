@@ -1,5 +1,5 @@
 /**
- * The PIN forms of Settings → App lock (AGENTS.md §15.3): turn the lock on
+ * The PIN forms of Settings → App lock: turn the lock on
  * (new PIN twice), change it (current, then new twice) or turn it off
  * (current). A wrong current PIN counts towards the lockout.
  */

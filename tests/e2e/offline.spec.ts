@@ -1,5 +1,5 @@
 /**
- * Offline (AGENTS.md §14, §19.5 flow 14): once the service worker has
+ * Offline: once the service worker has
  * precached the app, an offline reload boots it and an imported chat
  * opens with its messages. Needs OPFS: Chromium runs it, Linux WebKit
  * skips (ADR 0007).
@@ -32,10 +32,7 @@ async function waitForPrecache(page: Page): Promise<void> {
   );
 }
 
-test('offline reload boots the app and opens an imported chat (flow 14)', async ({
-  page,
-  context,
-}) => {
+test('offline reload boots the app and opens an imported chat', async ({ page, context }) => {
   await installCspListener(page);
   const booted = await expectBootOrUnsupported(page);
   await skipWithoutOpfs(page);

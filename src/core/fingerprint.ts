@@ -1,5 +1,5 @@
 /**
- * Message fingerprinting (AGENTS.md §8.10). A fingerprint is the first 32
+ * Message fingerprinting. A fingerprint is the first 32
  * hex characters of SHA-256 over a canonical tuple, with an occurrence
  * counter so legitimately repeated messages (two "ok"s in the same minute)
  * keep distinct identities.

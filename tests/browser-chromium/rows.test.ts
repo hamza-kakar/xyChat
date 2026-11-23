@@ -1,5 +1,5 @@
 /**
- * Row validation tests (AGENTS.md §18.5, §10.5): poll/location extras,
+ * Row validation tests: poll/location extras,
  * invalid rows, and the error-message shape.
  */
 import { describe, expect, it } from 'vitest';

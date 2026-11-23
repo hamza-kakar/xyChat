@@ -1,6 +1,5 @@
 /**
- * Chat info, settings and app lock e2e (AGENTS.md §12.7, §12.9, §15.3,
- * §16; §19.5 flows 11 and 12; §22 M7). Chromium runs the storage path;
+ * Chat info, settings and app lock e2e. Chromium runs the storage path;
  * WebKit skips (ADR 0007).
  */
 import { test, expect, type Page } from '@playwright/test';
@@ -36,7 +35,7 @@ async function setVisibility(page: Page, state: 'hidden' | 'visible'): Promise<v
   }, state);
 }
 
-test('chat info, storage per chat, and delete frees the media (flow 11)', async ({ page }) => {
+test('chat info, storage per chat, and delete frees the media', async ({ page }) => {
   await importChat(page, {
     blob: await buildIosGroupZipWithImage(),
     name: 'WhatsApp Chat - Family.zip',
@@ -78,7 +77,7 @@ test('chat info, storage per chat, and delete frees the media (flow 11)', async 
   await expect(page.getByText('No orphaned files.')).toBeVisible();
 });
 
-test('settings sections render and pass axe in both themes (§12.9, §16)', async ({ page }) => {
+test('settings sections render and pass axe in both themes', async ({ page }) => {
   await page.getByRole('link', { name: 'Settings' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeFocused();
   for (const name of ['Appearance', 'App lock', 'Storage', 'Diagnostics', 'About']) {
@@ -99,7 +98,7 @@ test('settings sections render and pass axe in both themes (§12.9, §16)', asyn
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
 
-test('app lock: cover, lock, unlock, and backoff after failures (flow 12)', async ({ page }) => {
+test('app lock: cover, lock, unlock, and backoff after failures', async ({ page }) => {
   await page.getByRole('link', { name: 'Settings' }).click();
   const lock = page.getByRole('region', { name: 'App lock' });
   await lock.getByLabel('New PIN (4–8 digits)').fill('2468');
@@ -158,7 +157,7 @@ test('app lock: cover, lock, unlock, and backoff after failures (flow 12)', asyn
   await expect(page.getByRole('button', { name: 'Unlock' })).toBeDisabled();
 });
 
-test('the lock screen covers an open sheet and stays usable (§15.3)', async ({ page }) => {
+test('the lock screen covers an open sheet and stays usable', async ({ page }) => {
   await importChat(page, {
     blob: await buildIosGroupZipWithImage(),
     name: 'WhatsApp Chat - Family.zip',

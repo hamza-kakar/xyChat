@@ -48,7 +48,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe('LockGate (§15.3)', () => {
+describe('LockGate', () => {
   it('shows only the cover until the lock state is known', () => {
     db.getLockState.mockReturnValue(new Promise(() => undefined));
     const { container } = renderGate();

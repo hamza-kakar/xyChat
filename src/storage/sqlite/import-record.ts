@@ -1,5 +1,5 @@
 /**
- * The in_progress import row (AGENTS.md §9.3): created BEFORE media writes
+ * The in_progress import row: created BEFORE media writes
  * so boot rollback can find and clean up after a crash.
  */
 import type { SqliteDatabase } from './open';
@@ -12,7 +12,7 @@ export interface ImportRecordInput {
   readonly parserVersion: string;
 }
 
-/** Creates the in_progress import row — call BEFORE media writes (§9.3). */
+/** Creates the in_progress import row — call BEFORE media writes. */
 export function createImportRecord(db: SqliteDatabase, input: ImportRecordInput): void {
   const now = new Date().toISOString().replace(/\.\d{3}Z$/u, 'Z');
   db.run(

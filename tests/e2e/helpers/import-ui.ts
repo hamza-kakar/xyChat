@@ -4,7 +4,7 @@
  */
 import { expect, type Page } from '@playwright/test';
 
-/** Navigates through the install gate to the picker (§12.8.1 bypass). */
+/** Navigates through the install gate to the picker (bypass). */
 export async function openPicker(page: Page): Promise<void> {
   // The chat list renders after the async capability check + boot; with no
   // chats it shows the empty state's link, otherwise the toolbar's Import.

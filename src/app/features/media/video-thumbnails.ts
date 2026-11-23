@@ -1,5 +1,5 @@
 /**
- * Lazy video thumbnails (AGENTS.md §13.3). When a video tile without a
+ * Lazy video thumbnails. When a video tile without a
  * thumbnail shows, the main thread loads the video into an offscreen
  * element, seeks to min(1 s, duration / 2), draws the frame scaled to a
  * 320 px long edge and hands the JPEG to db.worker, which stores it and
@@ -68,7 +68,7 @@ function canvasToJpeg(canvas: HTMLCanvasElement): Promise<Uint8Array> {
 }
 
 /**
- * Grabs a frame from a video file (§13.3).
+ * Grabs a frame from a video file.
  *
  * @param file The stored video.
  * @returns The JPEG and the video's size.
@@ -204,7 +204,7 @@ export const videoThumbnailStore = new VideoThumbnailStore({
 
 /**
  * The thumbnail to show for a video: the stored one, else one made this
- * session; asks for one while the tile is mounted (§13.3).
+ * session; asks for one while the tile is mounted.
  *
  * @param attachment The video's id, file and stored thumbnail.
  * @returns A thumbnail path, or null for the type icon.

@@ -1,11 +1,11 @@
 /**
- * Voice-note playback support (AGENTS.md §13.2): whether the engine plays
+ * Voice-note playback support: whether the engine plays
  * Ogg Opus, and a tiny 16-bit PCM WAV encoder for the decoder fallback.
- * Free of DOM types so the decode worker can import it (§3.1); the probe
+ * Free of DOM types so the decode worker can import it; the probe
  * takes any object with `canPlayType`, such as an `<audio>` element.
  */
 
-/** The MIME type WhatsApp voice notes use (§13.2). */
+/** The MIME type WhatsApp voice notes use. */
 export const OGG_OPUS_TYPE = 'audio/ogg; codecs=opus';
 /** Size of the canonical WAV header (RIFF + fmt + data chunk headers). */
 export const WAV_HEADER_BYTES = 44;
@@ -25,7 +25,7 @@ export interface PlayTypeProbe {
 }
 
 /**
- * True when the engine can play Ogg Opus itself (§13.2: `''` means no).
+ * True when the engine can play Ogg Opus itself (`''` means no).
  *
  * @param probe An `<audio>` element or compatible object.
  * @returns False when the decoder fallback is needed.

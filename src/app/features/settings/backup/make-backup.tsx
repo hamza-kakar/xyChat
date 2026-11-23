@@ -1,5 +1,5 @@
 /**
- * Settings → Make a backup (AGENTS.md §10.6): all chats or one, with or
+ * Settings → Make a backup: all chats or one, with or
  * without media; the estimated size first (with the 1 GB iPhone warning),
  * then progress with Cancel, then Share / Save.
  */

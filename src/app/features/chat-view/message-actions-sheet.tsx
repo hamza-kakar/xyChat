@@ -1,5 +1,5 @@
 /**
- * Message actions (AGENTS.md §12.5): copy text, bookmark (or edit its
+ * Message actions: copy text, bookmark (or edit its
  * note / remove it), share text and message info (time with seconds,
  * sender, kind, and the import that stored it).
  */

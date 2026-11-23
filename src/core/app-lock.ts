@@ -1,19 +1,19 @@
 /**
- * App-lock rules (AGENTS.md §15.3): PIN shape, the PBKDF2 parameters, the
+ * App-lock rules: PIN shape, the PBKDF2 parameters, the
  * failed-attempt backoff and the constant-time comparison of derived keys.
  * Pure: the key derivation itself is injected by the caller.
  */
 import { APP_LOCK } from './limits';
 
-/** PBKDF2-SHA-256 iterations for the PIN hash (§15.3). */
+/** PBKDF2-SHA-256 iterations for the PIN hash. */
 export const PIN_HASH_ITERATIONS = APP_LOCK.pinHashIterations;
-/** Salt length in bytes (§15.3). */
+/** Salt length in bytes. */
 export const PIN_SALT_BYTES = APP_LOCK.pinSaltBytes;
 /** Derived key length in bytes (SHA-256 output size). */
 export const PIN_HASH_BYTES = APP_LOCK.pinHashBytes;
-/** Failed attempts allowed before the backoff starts (§15.3). */
+/** Failed attempts allowed before the backoff starts. */
 export const FREE_PIN_ATTEMPTS = APP_LOCK.freeAttempts;
-/** The auto-lock choices offered in Settings (§15.3), in minutes. */
+/** The auto-lock choices offered in Settings, in minutes. */
 export const AUTO_LOCK_MINUTES = APP_LOCK.autoLockMinutes;
 /** Minutes of inactivity before the app locks; 0 means immediately. */
 export type AutoLockMinutes = (typeof AUTO_LOCK_MINUTES)[number];

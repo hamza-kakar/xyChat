@@ -1,5 +1,5 @@
 /**
- * Bookmark queries and mutations (AGENTS.md §12.5, §18.4). Every change
+ * Bookmark queries and mutations. Every change
  * refreshes exactly two lists: the chat's and the all-chats one.
  */
 import { useCallback } from 'react';

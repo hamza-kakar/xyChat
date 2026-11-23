@@ -1,5 +1,5 @@
 /**
- * Links tab (AGENTS.md §12.6): every link sent in the chat, newest first,
+ * Links tab: every link sent in the chat, newest first,
  * with its domain, the message it came from, and "Show in chat".
  */
 import { memo, useCallback, useMemo } from 'react';

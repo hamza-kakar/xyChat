@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { RichText } from './rich-text';
 
-describe('RichText (§12.5, §15.2)', () => {
+describe('RichText', () => {
   it('renders WhatsApp styles as elements', () => {
     const { container } = render(<RichText body="*bold* _it_ ~gone~ `code`" />);
     expect(container.querySelector('strong')?.textContent).toBe('bold');

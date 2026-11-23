@@ -1,5 +1,5 @@
 /**
- * Backup snapshots (AGENTS.md §10.6): copies the chosen chats into a fresh
+ * Backup snapshots: copies the chosen chats into a fresh
  * in-memory database at the current schema and serializes it as the
  * backup's `db.sqlite3`. The copy runs synchronously inside db.worker, so
  * no other statement interleaves and the snapshot is consistent.
@@ -249,7 +249,7 @@ const THUMB_ESTIMATE_BYTES = 20_000;
 const ROW_ESTIMATE_BYTES = 120;
 
 /**
- * Estimates a backup's size before it is made (§10.6: shown first).
+ * Estimates a backup's size before it is made (shown first).
  *
  * @param db The app database.
  * @param chatIds The chats to include, or null for all of them.

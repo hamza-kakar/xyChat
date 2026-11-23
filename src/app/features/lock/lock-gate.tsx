@@ -1,5 +1,5 @@
 /**
- * App lock gate (AGENTS.md §15.3). The screens stay mounted underneath
+ * App lock gate. The screens stay mounted underneath
  * (an import keeps running) but are inert and hidden while the lock screen
  * or the privacy cover is up, and the overlay sits in the top layer above
  * any open sheet or viewer. Nothing renders before the lock state is

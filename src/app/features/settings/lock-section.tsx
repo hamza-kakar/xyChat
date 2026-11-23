@@ -1,5 +1,5 @@
 /**
- * Settings → App lock (AGENTS.md §15.3): the PIN, the auto-lock delay,
+ * Settings → App lock: the PIN, the auto-lock delay,
  * "Lock now", and the honest scope statement (a privacy screen, not
  * encryption; no PIN recovery).
  */

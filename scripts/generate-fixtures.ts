@@ -1,5 +1,5 @@
 /**
- * Synthetic export fixture generator (AGENTS.md §19.2). Each variant in
+ * Synthetic export fixture generator. Each variant in
  * `fixture-variants.ts` is a typed description of an export shape; running
  * this script renders the input text, runs the real parser, and writes
  * `tests/fixtures/whatsapp/<variant>/{chat.txt, expected.json, README.md}`.

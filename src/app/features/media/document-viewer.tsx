@@ -1,5 +1,5 @@
 /**
- * Document viewer (AGENTS.md §12.6, §13.4): type icon, name and size, and
+ * Document viewer: type icon, name and size, and
  * hand-off to the OS — Open (a new tab, where iOS previews PDFs), Share
  * (the share sheet with the file) and Save (a download). Contents are
  * never rendered inside the app.

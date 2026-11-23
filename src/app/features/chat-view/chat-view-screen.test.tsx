@@ -80,7 +80,7 @@ function renderChat(id: string = CHAT_ID) {
   );
 }
 
-describe('ChatViewScreen (§12.5)', () => {
+describe('ChatViewScreen', () => {
   it('renders the header, the log and its messages', async () => {
     renderChat();
 

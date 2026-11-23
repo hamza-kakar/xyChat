@@ -1,13 +1,13 @@
 /**
- * Keeps the last warn/error log entries across reloads (AGENTS.md §18.7):
+ * Keeps the last warn/error log entries across reloads:
  * entries from earlier sessions are loaded at boot for the Diagnostics
  * viewer, and new warn/error entries are written back, debounced, through
- * db.worker. Entries are codes plus small payloads only (§15.4).
+ * db.worker. Entries are codes plus small payloads only.
  */
 import { dbClient, type PersistedLogEntryView } from '../../client/db-client';
 import { logger, type LogEntry } from './logger';
 
-/** Entries kept in the database (§18.7). */
+/** Entries kept in the database. */
 const PERSISTED_LIMIT = 200;
 /** Quiet time before a batch of new entries is written. */
 const SAVE_DEBOUNCE_MS = 2000;

@@ -10,7 +10,7 @@ vi.mock('../../../platform/install', () => ({
   isIosSafari: () => install.ios,
 }));
 
-describe('InstallBanner (§12.10)', () => {
+describe('InstallBanner', () => {
   it('shows in an iOS Safari tab and can be dismissed', async () => {
     const user = userEvent.setup();
     render(<InstallBanner />);

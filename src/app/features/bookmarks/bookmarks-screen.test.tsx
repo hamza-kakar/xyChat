@@ -43,7 +43,7 @@ beforeEach(() => {
   db.removeBookmark.mockResolvedValue(undefined);
 });
 
-describe('BookmarksScreen (§12.5)', () => {
+describe('BookmarksScreen', () => {
   it('lists bookmarks with chat, sender, text and note', async () => {
     renderBookmarks();
     expect(await screen.findByRole('heading', { level: 1, name: 'Bookmarks' })).toHaveFocus();

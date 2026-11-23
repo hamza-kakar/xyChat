@@ -1,5 +1,5 @@
 /**
- * One-line description of a bookmarked message (AGENTS.md §12.5): its text,
+ * One-line description of a bookmarked message: its text,
  * or the kind's label when it has none.
  */
 import { en } from '../../i18n/en';

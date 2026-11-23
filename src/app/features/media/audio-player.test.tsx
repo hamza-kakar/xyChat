@@ -27,7 +27,7 @@ beforeEach(() => {
   vi.spyOn(URL, 'revokeObjectURL').mockReturnValue(undefined);
 });
 
-describe('AudioPlayer (§13.2)', () => {
+describe('AudioPlayer', () => {
   it('loads on first play, plays, stores the measured duration and cycles speed', async () => {
     const user = userEvent.setup();
     resolveAudioSource.mockResolvedValue({ file: new Blob(['wav']), durationMs: null });

@@ -1,5 +1,5 @@
 /**
- * Links tab entries (AGENTS.md §12.6): every allowed link of each message,
+ * Links tab entries: every allowed link of each message,
  * with its domain (or address, for mail and phone links) and the message
  * it came from.
  */

@@ -1,5 +1,5 @@
 /**
- * Per-session chat-view stores (AGENTS.md §12.5). Kept in memory while the
+ * Per-session chat-view stores. Kept in memory while the
  * app runs: the top-visible seq per chat (so returning restores the place;
  * the last chat's position also goes to `meta`), and which chats had the
  * "choose which person is you" banner dismissed.

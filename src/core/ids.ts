@@ -1,5 +1,5 @@
 /**
- * Branded identifier types (AGENTS.md §6.2). Branding prevents accidental
+ * Branded identifier types. Branding prevents accidental
  * mixing of plain strings with domain IDs at compile time. Raw strings may
  * only be cast to branded types inside this module and in
  * `storage/sqlite/rows.ts`.

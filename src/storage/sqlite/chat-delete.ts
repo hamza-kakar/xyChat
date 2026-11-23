@@ -1,14 +1,14 @@
 /**
- * Chat row deletion (AGENTS.md §10.4): removes a chat and everything that
+ * Chat row deletion: removes a chat and everything that
  * hangs off it. Runs inside the caller's transaction — deleting a chat and
- * replacing one from a backup (§10.6) share it.
+ * replacing one from a backup share it.
  */
 import type { SqliteDatabase } from './db-wrapper';
 
 /**
  * Deletes one chat's rows (bookmarks, attachments, messages, participants,
  * its finished import history, the chat). An import still in progress
- * keeps its row for the §9.3 rollback. Media files are the caller's job,
+ * keeps its row for the rollback. Media files are the caller's job,
  * after the commit.
  *
  * @param db The open database, inside a transaction.

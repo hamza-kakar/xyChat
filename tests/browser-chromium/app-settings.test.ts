@@ -1,5 +1,5 @@
 /**
- * App settings in `meta` (§15.3 app lock, §18.7 persisted logs, §12.9
+ * App settings in `meta` (app lock, persisted logs,
  * schema version) against real sqlite-wasm and crypto.subtle (ADR 0007).
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -41,7 +41,7 @@ afterEach(() => {
   db.close();
 });
 
-describe('app lock (§15.3)', () => {
+describe('app lock', () => {
   it('starts unlocked, locking immediately once a PIN is set', async () => {
     expect(readLockState(db, clock)).toEqual({
       hasPin: false,
@@ -115,7 +115,7 @@ describe('app lock (§15.3)', () => {
   });
 });
 
-describe('app lock attempts in parallel (§15.3)', () => {
+describe('app lock attempts in parallel', () => {
   it('queued parallel attempts cannot slip past the lockout', async () => {
     await changePin(db, { current: null, next: '2468' }, fastDeps);
     const queue = createSerialQueue();
@@ -137,7 +137,7 @@ describe('app lock attempts in parallel (§15.3)', () => {
   });
 });
 
-describe('persisted logs (§18.7)', () => {
+describe('persisted logs', () => {
   const entry = (code: string): PersistedLogEntry => ({
     timestamp: 1,
     level: 'warn',
@@ -162,7 +162,7 @@ describe('persisted logs (§18.7)', () => {
   });
 });
 
-describe('schema version (§12.9 diagnostics)', () => {
+describe('schema version (diagnostics)', () => {
   it('reports the migrated version', () => {
     expect(readSchemaVersion(db)).toBe(SCHEMA_VERSION);
   });

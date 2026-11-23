@@ -75,7 +75,7 @@ export function contrastRatio(foreground: string, background: string): number {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-/** Text/background pairs that must satisfy WCAG AA body text (AGENTS.md §12.2). */
+/** Text/background pairs that must satisfy WCAG AA body text. */
 const CONTRAST_PAIRS: readonly (readonly [string, string])[] = [
   ['text', 'surface'],
   ['text', 'surface-raised'],
@@ -92,7 +92,7 @@ const CONTRAST_PAIRS: readonly (readonly [string, string])[] = [
   // Search matches (<mark>) in results and in bubbles.
   ['text', 'highlight'],
   ['text-on-bubble', 'highlight'],
-  // Participant names (§12.2): on incoming bubbles, and as avatar initials
+  // Participant names: on incoming bubbles, and as avatar initials
   // on the list surfaces.
   ...Array.from({ length: 12 }, (_unused, index) => [
     ...(['bubble-in', 'surface', 'surface-raised'] as const).map(

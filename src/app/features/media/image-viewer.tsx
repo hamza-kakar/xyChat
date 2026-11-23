@@ -1,5 +1,5 @@
 /**
- * Full-screen image (AGENTS.md §12.6): pinch zoom, double-tap zoom, pan
+ * Full-screen image: pinch zoom, double-tap zoom, pan
  * when zoomed, and — at normal size — swipe sideways between items or down
  * to close. Pointer events only; the transform math lives in `zoom-pan.ts`.
  * Under reduced motion the image moves without transitions.

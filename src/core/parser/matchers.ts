@@ -1,4 +1,4 @@
-/** Combined fast-path matchers per locale (§8.7 table-driven, §19.2.7). */
+/** Combined fast-path matchers per locale (table-driven). */
 import type { LocalePatterns } from './locale/types';
 
 /** The union matchers for one locale, derived from its tables. */

@@ -29,7 +29,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe('log persistence (§18.7)', () => {
+describe('log persistence', () => {
   it('loads entries from earlier sessions', async () => {
     const listener = vi.fn();
     const unsubscribe = subscribeEarlierLogs(listener);

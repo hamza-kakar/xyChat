@@ -1,5 +1,5 @@
 /**
- * Chat info (AGENTS.md §12.3 `#/chat/:chatId/info`, §12.7): editable title,
+ * Chat info (`#/chat/:chatId/info`): editable title,
  * group or one-to-one, date range, totals by kind, media, participants
  * with "This is me", import history, update from a newer export, delete.
  */

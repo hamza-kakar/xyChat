@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vitest/config';
 
 /**
- * Unit + component test projects (AGENTS.md §19.1). Browser-mode tests have
+ * Unit + component test projects. Browser-mode tests have
  * their own config (vitest.browser.config.ts). TZ coverage for `core` comes
  * from the CI matrix (UTC, Asia/Karachi, America/Los_Angeles).
  */
@@ -51,7 +51,7 @@ export default defineConfig({
       // Worker coverage strategy (ADR 0007 addendum): the testable worker-side
       // logic lives in page modules — rpc-validate.ts (validation) and
       // rpc-call.ts (client timeout regime) — and is unit-tested here with
-      // §19.4 thresholds. The worker entry shells (db.worker.ts,
+      //  thresholds. The worker entry shells (db.worker.ts,
       // import-api.ts, media-writer.ts) run only inside real worker
       // contexts, outside v8 instrumentation; they are exercised end-to-end
       // by every e2e flow (ADR 0007).
@@ -80,7 +80,7 @@ export default defineConfig({
         'src/app/vite-env.d.ts',
       ],
       thresholds: {
-        // AGENTS.md §19.4: core ≥ 95% lines, ≥ 90% branches.
+        //  core ≥ 95% lines, ≥ 90% branches.
         'src/core/**': { lines: 95, branches: 90 },
         'src/app/**': { lines: 70 },
         'src/workers/rpc-validate.ts': { lines: 85 },

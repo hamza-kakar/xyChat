@@ -1,5 +1,5 @@
 /**
- * Media gallery statements (AGENTS.md §12.6, §13): gallery and link pages
+ * Media gallery statements: gallery and link pages
  * with their message context, lazily recorded video thumbnails and voice
  * note durations, and the decoded-audio cache paths that belong to chats.
  */
@@ -10,9 +10,9 @@ import { audioCachePathFor } from '../audio-cache';
 import { attachmentFromRow, messageContextFromRow } from './rows';
 import type { SqliteDatabase } from './open';
 
-/** Media types whose files may get a decoded-audio cache entry (§13.2). */
+/** Media types whose files may get a decoded-audio cache entry. */
 const AUDIO_TYPES = "('voice', 'audio')";
-/** Media types that get lazy video thumbnails (§13.3). */
+/** Media types that get lazy video thumbnails. */
 const VIDEO_TYPES: readonly string[] = ['video', 'gif'];
 
 /** Message columns joined onto gallery and link rows. */
@@ -27,7 +27,7 @@ function nextSeqCursor(rows: readonly Record<string, unknown>[], limit: number):
 
 /**
  * One gallery page: stored files of the given media types, newest message
- * first (§12.6). Omitted and missing media have no file and are left out.
+ * first. Omitted and missing media have no file and are left out.
  *
  * @param db Open database.
  * @param q Chat, media types, the seq to continue below (null for the
@@ -67,11 +67,11 @@ export function listGalleryItems(
   };
 }
 
-/** A body column (§18.5: validated before use). */
+/** A body column (validated before use). */
 const BodyRow = v.object({ m_body: v.string() });
 
 /**
- * One page of text messages that contain a link (§12.6 Links tab), newest
+ * One page of text messages that contain a link (Links tab), newest
  * first. The SQL narrows by scheme text; the app extracts the URLs.
  *
  * @param db Open database.
@@ -119,8 +119,7 @@ export function getAttachment(db: SqliteDatabase, attachmentId: AttachmentId): A
 }
 
 /**
- * Records a voice note's or audio file's duration, measured on first play
- * (§13.2). Only stored audio attachments are updated.
+ * Records a voice note's or audio file's duration, measured on first play. Only stored audio attachments are updated.
  *
  * @param db Open database.
  * @param attachmentId Attachment id.
@@ -139,7 +138,7 @@ export function setAttachmentDuration(
 }
 
 /**
- * Records a lazily generated video thumbnail (§13.3). The original size
+ * Records a lazily generated video thumbnail. The original size
  * fills only fields the import left empty.
  *
  * @param db Open database.
@@ -165,7 +164,7 @@ export function setVideoThumbnail(
   return updated.length > 0;
 }
 
-/** An attachment id column (§18.5). */
+/** An attachment id column. */
 const IdRow = v.object({ id: v.string() });
 
 /** Decoded-audio cache paths of the audio attachments matched by a WHERE
@@ -189,8 +188,8 @@ function audioCachePaths(
 }
 
 /**
- * Cache paths that may hold one chat's decoded audio (§13.2), read before
- * the chat is deleted so the files go with it (§10.4).
+ * Cache paths that may hold one chat's decoded audio, read before
+ * the chat is deleted so the files go with it.
  *
  * @param db Open database.
  * @param chatId Chat about to be deleted.
@@ -202,7 +201,7 @@ export function listChatAudioCachePaths(db: SqliteDatabase, chatId: ChatId): rea
 
 /**
  * Cache paths backed by a stored audio attachment; any other file under
- * `cache/audio/` is an orphan (§9.3 sweep).
+ * `cache/audio/` is an orphan (sweep).
  *
  * @param db Open database.
  * @returns Every legitimate decoded-audio path.

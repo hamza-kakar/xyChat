@@ -19,7 +19,7 @@ export interface ChatRowProps {
   readonly onOpenActions: (chat: ChatSummaryView) => void;
 }
 
-/** One chat-list row (§12.4): avatar, title, preview, last-message date,
+/** One chat-list row: avatar, title, preview, last-message date,
  * group icon; long-press, right-click or the ⋯ button open its actions. */
 export const ChatRow = memo(function ChatRow({
   chat,

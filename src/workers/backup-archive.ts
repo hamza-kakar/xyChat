@@ -1,8 +1,7 @@
 /**
- * Reading a backup archive for restore (AGENTS.md §10.6, §15.2). The zip
+ * Reading a backup archive for restore. The zip
  * is user-picked and untrusted: every entry passes the same name, size and
- * compression-ratio gates as an export (§15.2), the manifest is validated
- * (§18.5), and media entries stream into OPFS chunk by chunk (§9.4).
+ * compression-ratio gates as an export, the manifest is validated, and media entries stream into OPFS chunk by chunk.
  */
 import * as zipJs from '@zip.js/zip.js';
 import { err, ok, type Result } from '../core/result';
@@ -20,7 +19,7 @@ import {
 export type BackupArchiveErrorCode =
   'NOT_A_BACKUP' | 'INVALID_MANIFEST' | 'UNSAFE_ARCHIVE' | 'DATABASE_TOO_LARGE' | 'CORRUPT_ARCHIVE';
 
-/** A typed archive failure (counts only, §15.4). */
+/** A typed archive failure (counts only). */
 export interface BackupArchiveError {
   readonly code: BackupArchiveErrorCode;
 }
@@ -46,7 +45,7 @@ async function startsWithZipMagic(file: Blob): Promise<boolean> {
   return head.length === ZIP_MAGIC.length && ZIP_MAGIC.every((byte, index) => head[index] === byte);
 }
 
-/** Indexes the archive's file entries, rejecting unsafe ones (§15.2). */
+/** Indexes the archive's file entries, rejecting unsafe ones. */
 function indexEntries(
   entries: readonly zipJs.Entry[],
 ): Result<Map<string, zipJs.FileEntry>, BackupArchiveError> {

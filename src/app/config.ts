@@ -10,7 +10,7 @@ export { BACKUP_LIMITS, IMPORT_LIMITS } from '../core/limits';
 declare const __APP_VERSION__: string;
 export const APP_VERSION: string = __APP_VERSION__;
 
-/** Search tuning (AGENTS.md §11). */
+/** Search tuning. */
 export const SEARCH = {
   /** Keyset page size for search results. */
   PAGE_SIZE: 50,
@@ -22,22 +22,22 @@ export const SEARCH = {
   DEBOUNCE_MS: 250,
 } as const;
 
-/** How long a jumped-to message stays highlighted (§11, §12.5). */
+/** How long a jumped-to message stays highlighted. */
 export const JUMP_HIGHLIGHT_MS = 2500;
 
-/** Media gallery and playback tuning (AGENTS.md §12.6, §13). */
+/** Media gallery and playback tuning. */
 export const MEDIA = {
   /** Gallery and links page size. */
   PAGE_SIZE: 120,
-  /** Lazy video thumbnails made at once (§13.3). */
+  /** Lazy video thumbnails made at once. */
   VIDEO_THUMB_CONCURRENCY: 2,
-  /** Longest thumbnail edge (§9.2 step 9, §13.3). */
+  /** Longest thumbnail edge. */
   THUMB_MAX_EDGE: 320,
   /** JPEG quality of lazy video thumbnails. */
   THUMB_QUALITY: 0.8,
   /** Seek target for a video thumbnail, capped at half the duration (s). */
   VIDEO_THUMB_SEEK_S: 1,
-  /** Playback speeds the audio player cycles through (§13.2). */
+  /** Playback speeds the audio player cycles through. */
   PLAYBACK_RATES: [1, 1.5, 2],
 } as const;
 

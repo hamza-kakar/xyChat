@@ -1,5 +1,5 @@
 /**
- * Filter controls for global search (AGENTS.md §11): chat, sender (once a
+ * Filter controls for global search: chat, sender (once a
  * chat is chosen), message kinds and a date range.
  */
 import { useId } from 'react';

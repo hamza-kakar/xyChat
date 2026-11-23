@@ -1,5 +1,5 @@
 /**
- * Backup snapshot, backup reading and the restore commit (§10.6) against
+ * Backup snapshot, backup reading and the restore commit against
  * the real sqlite-wasm stack. Chromium-only per ADR 0007.
  */
 import { loadSqlite } from '../../src/storage/sqlite/open';

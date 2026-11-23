@@ -1,15 +1,15 @@
 /**
- * Transactional import commit (AGENTS.md §9.2 step 10, §8.10): resolves the
+ * Transactional import commit: resolves the
  * target chat, applies the planMerge of the stored chat and the incoming
  * export inside ONE transaction (see import-commit-apply.ts), recomputes
- * chat aggregates in-transaction (§10.2), and marks the import complete.
+ * chat aggregates in-transaction, and marks the import complete.
  */
 import type { ParsedMessage, SourcePlatform } from '../../core/model';
 import type { SqliteDatabase } from './open';
 import { applyPlan, loadStoredEntries } from './import-commit-apply';
 import type { ImportReport, ImportRunFacts } from './import-report';
 
-/** A message prepared for insertion (fingerprint already §8.10-complete). */
+/** A message prepared for insertion (fingerprint already -complete). */
 export interface InsertableMessage {
   readonly fingerprint: string;
   readonly message: ParsedMessage;
@@ -31,7 +31,7 @@ export interface InsertableAttachment {
   readonly status: 'present' | 'missing' | 'omitted';
 }
 
-/** Import-commit inputs assembled by import.worker (§9.2). */
+/** Import-commit inputs assembled by import.worker. */
 export interface ImportCommitInput {
   readonly importId: string;
   readonly targetChatId: string | null;
@@ -47,11 +47,11 @@ export interface ImportCommitInput {
   readonly fileName: string;
   readonly fileBytes: number;
   readonly parserVersion: string;
-  /** Run facts for the stored report (§9.2 step 11). */
+  /** Run facts for the stored report. */
   readonly report: ImportRunFacts;
 }
 
-/** Outcome counts for the import report (§9.2 step 11). */
+/** Outcome counts for the import report. */
 export interface ImportCommitResult {
   readonly chatId: string;
   readonly importId: string;
@@ -61,9 +61,8 @@ export interface ImportCommitResult {
   readonly mediaUpgraded: number;
 }
 
-/** Step 1: resolve the target chat — reuse or create (§12.8 target). The
- * media phase keys OPFS paths on the chat id BEFORE the commit (§9.2 step
- * 8), so the UI mints the id up front: a pre-minted id inserts its chats
+/** Step 1: resolve the target chat — reuse or create (target). The
+ * media phase keys OPFS paths on the chat id BEFORE the commit, so the UI mints the id up front: a pre-minted id inserts its chats
  * row here (INSERT OR IGNORE keeps an existing chat's title on merges); a
  * null target mints one now. */
 function resolveTargetChat(db: SqliteDatabase, input: ImportCommitInput, now: string): string {
@@ -86,7 +85,7 @@ function resolveTargetChat(db: SqliteDatabase, input: ImportCommitInput, now: st
   return chatId;
 }
 
-/** Step 7: recompute chat aggregates inside the transaction (§10.2). */
+/** Step 7: recompute chat aggregates inside the transaction. */
 function updateChatAggregates(db: SqliteDatabase, chatId: string, now: string): void {
   const agg =
     db.selectObjects(
@@ -129,8 +128,8 @@ export function commitTimestamp(): string {
 }
 
 /**
- * Applies an import inside the CALLER's transaction (§9.2 step 10): the
- * restore path (§10.6) commits several chats atomically with it.
+ * Applies an import inside the CALLER's transaction: the
+ * restore path commits several chats atomically with it.
  *
  * @param db The open database, inside a transaction.
  * @param input The assembled commit inputs (import row already in_progress).
@@ -168,7 +167,7 @@ export function applyImportCommit(
 }
 
 /**
- * Commits an import in ONE transaction (§9.2 step 10, §8.10 semantics).
+ * Commits an import in ONE transaction (semantics).
  *
  * @param db The open database (owned by db.worker).
  * @param input The assembled commit inputs (import row already in_progress —

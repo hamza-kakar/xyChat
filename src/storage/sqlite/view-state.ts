@@ -1,7 +1,7 @@
 /**
- * Chat-view state kept in the `meta` table (AGENTS.md §12.5): the last
+ * Chat-view state kept in the `meta` table: the last
  * opened chat and its scroll position, so a relaunch returns there. The
- * stored value is validated on read (§18.5); anything invalid reads as
+ * stored value is validated on read; anything invalid reads as
  * "no position".
  */
 import * as v from 'valibot';

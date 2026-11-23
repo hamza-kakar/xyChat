@@ -1,11 +1,11 @@
 /**
- * Wake-lock wrapper tests (§12.8.5): acquires when
+ * Wake-lock wrapper tests: acquires when
  * navigator.wakeLock exists, ok(null) when unsupported, err on rejection.
  */
 import { describe, expect, it, vi } from 'vitest';
 import { acquireScreenWakeLock } from './wake-lock';
 
-describe('acquireScreenWakeLock (§12.8.5)', () => {
+describe('acquireScreenWakeLock', () => {
   it('returns a handle that releases when wakeLock is supported', async () => {
     const release = vi.fn(() => Promise.resolve());
     vi.stubGlobal('navigator', {
@@ -22,7 +22,7 @@ describe('acquireScreenWakeLock (§12.8.5)', () => {
     vi.unstubAllGlobals();
   });
 
-  it('returns ok(null) when wakeLock is unsupported (§0.6)', async () => {
+  it('returns ok(null) when wakeLock is unsupported', async () => {
     vi.stubGlobal('navigator', {});
     const result = await acquireScreenWakeLock();
     expect(result.ok).toBe(true);
@@ -32,7 +32,7 @@ describe('acquireScreenWakeLock (§12.8.5)', () => {
     vi.unstubAllGlobals();
   });
 
-  it('returns err (name only) when the request rejects (§15.4)', async () => {
+  it('returns err (name only) when the request rejects', async () => {
     vi.stubGlobal('navigator', {
       wakeLock: { request: vi.fn(() => Promise.reject(new Error('denied on SECRET-VALUE'))) },
     });

@@ -1,6 +1,5 @@
 /**
- * Search filter state and its mapping onto a worker query (AGENTS.md §11:
- * chat, sender, kinds, date range). Dates come from `<input type="date">`
+ * Search filter state and its mapping onto a worker query (chat, sender, kinds, date range). Dates come from `<input type="date">`
  * as `YYYY-MM-DD` on the export's wall clock.
  */
 import * as v from 'valibot';

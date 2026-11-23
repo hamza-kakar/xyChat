@@ -1,5 +1,5 @@
 /**
- * One file tab of the gallery (AGENTS.md §12.6): pages of stored media,
+ * One file tab of the gallery: pages of stored media,
  * newest first, grouped under month headers — a 3-column grid on phones
  * (5+ on wide screens) for photos and videos, a list for audio and
  * documents — and the full-screen viewer over them.

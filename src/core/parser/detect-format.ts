@@ -1,5 +1,5 @@
 /**
- * Export format detection (AGENTS.md §8.4). Counts header-shaped lines per
+ * Export format detection. Counts header-shaped lines per
  * grammar, resolves the date order from evidence across the whole file, and
  * reads clock/seconds from the matched headers. Detection never parses the
  * whole file into messages — only header regex matching.
@@ -25,7 +25,7 @@ export interface FormatError {
   readonly code: FormatErrorCode;
 }
 
-/** Where the date-order decision came from (§8.4 step 4). */
+/** Where the date-order decision came from. */
 export type DateOrderSource = 'unambiguous' | 'locale-hint' | 'default' | 'user';
 
 /** The detected shape of an export file. */
@@ -38,7 +38,7 @@ export interface DetectedFormat {
   readonly hasSeconds: boolean;
   /** Share of header-like sample lines matched by the winning grammar. */
   readonly confidence: number;
-  /** First parsed messages for the confirm-screen preview (§12.8). */
+  /** First parsed messages for the confirm-screen preview. */
   readonly sampleMessages: readonly ParsedMessage[];
 }
 
@@ -47,7 +47,7 @@ export interface DetectFormatOptions {
   readonly localeHint?: string;
 }
 
-/** Sample size for grammar counting (§8.4 step 1). */
+/** Sample size for grammar counting. */
 const SAMPLE_LINE_COUNT = 1000;
 /** Minimum matched headers in a large file to accept a grammar. */
 const MIN_MATCHES_LARGE = 3;
@@ -62,7 +62,7 @@ const MONTH_FIRST_HINTS = new Set(['en-US', 'en-PH', 'fil-PH', 'en-CA']);
 /** A date component above this in D/M positions proves its role. */
 const MAX_DAY_IN_MONTH_POSITION = 12;
 
-/** True when a cleaned line looks header-shaped (§8.4 step 2). */
+/** True when a cleaned line looks header-shaped. */
 function isHeaderLike(cleaned: string): boolean {
   const startsDigit = cleaned.startsWith('[') ? /^\[\d/u.test(cleaned) : /^\d/u.test(cleaned);
   return startsDigit;
@@ -206,7 +206,7 @@ function collectEvidenceFor(
   return evidence;
 }
 /**
- * Resolves the date order from gathered evidence (§8.4 step 4). Conflicting
+ * Resolves the date order from gathered evidence. Conflicting
  * day/month evidence across the file is a hard error rather than a guess.
  */
 function resolveDateOrder(
@@ -231,7 +231,7 @@ function resolveDateOrder(
   }
   if (localeHint !== undefined) {
     // Any explicit hint is recorded as the source; month-first locales pick
-    // MDY, everything else keeps DMY (§8.4 step 4).
+    // MDY, everything else keeps DMY.
     const order: DateOrder = MONTH_FIRST_HINTS.has(localeHint) ? 'MDY' : 'DMY';
     return ok({ order, source: 'locale-hint' });
   }
@@ -271,14 +271,14 @@ export function detectFormatInternal(
   const normalized = normalizeNewlines(stripBom(text));
   const lines = normalized.split('\n');
   // One pass samples the first 1000 non-empty lines for the grammar vote; a
-  // second pass scans everything for the date order (§8.4 steps 2 and 4).
+  // second pass scans everything for the date order (and 4).
   // Small files — fewer than 3 header-like lines — need only 1 match.
   const sampleEvidence = collectAllEvidence(lines, SAMPLE_LINE_COUNT);
   const candidates = (
     ['ios-bracket', 'ios-bracket-nocomma', 'android-dash', 'android-dash-nocomma'] as const
   )
     .map((id) => ({ id, evidence: sampleEvidence.perGrammar[id] }))
-    // Tie-break is table order (§8.4 step 2): stable sort by count desc.
+    // Tie-break is table order: stable sort by count desc.
     .sort((a, b) => b.evidence.matches - a.evidence.matches);
 
   const best = candidates[0];
@@ -288,7 +288,7 @@ export function detectFormatInternal(
     return err({ code: 'UNRECOGNIZED_FORMAT' });
   }
 
-  // Date order scans all header lines in the file (§8.4 step 4) with the
+  // Date order scans all header lines in the file with the
   // winning grammar only — the vote is already settled.
   const fullEvidence = collectEvidenceFor(lines, FULL_SCAN, best.id);
   const order = resolveDateOrder(fullEvidence, options.localeHint);

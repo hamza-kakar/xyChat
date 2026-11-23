@@ -1,5 +1,5 @@
 /**
- * RPC caller tests (§18.8): timeouts carry the method name
+ * RPC caller tests: timeouts carry the method name
  * and diagnostic id, the timer never outlives settlement (no dangling
  * rejection), exempt methods skip the timeout, and every failure is reported
  * to the sink exactly once.
@@ -30,7 +30,7 @@ function withFakeTimers(): void {
   });
 }
 
-describe('rpc caller: timeout regime (§18.8)', () => {
+describe('rpc caller: timeout regime', () => {
   withFakeTimers();
 
   it('resolves and clears the timer — no dangling rejection', async () => {
@@ -82,7 +82,7 @@ describe('rpc caller: timeout regime (§18.8)', () => {
   });
 });
 
-describe('rpc caller: failure reporting (§18.7)', () => {
+describe('rpc caller: failure reporting', () => {
   withFakeTimers();
 
   it('wraps INTERNAL failures with the diagnostic id, reported once', async () => {

@@ -1,9 +1,9 @@
 /**
  * Synthetic media exports for the gallery and voice-note e2e flows
- * (§19.5 flows 8 and 9). The voice note is a real Ogg Opus stream built
+ *. The voice note is a real Ogg Opus stream built
  * here — one second of silent 20 ms CELT frames — so both the engine's own
  * decoder and the ogg-opus-decoder fallback can play it. No committed
- * media (§0 rule 9).
+ * media.
  */
 import * as zipJs from '@zip.js/zip.js';
 

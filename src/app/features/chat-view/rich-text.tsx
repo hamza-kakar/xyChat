@@ -1,6 +1,5 @@
 /**
- * Renders a message body through the formatting AST (AGENTS.md §12.5,
- * §15.2): React elements and text nodes only, never HTML strings. Text
+ * Renders a message body through the formatting AST: React elements and text nodes only, never HTML strings. Text
  * leaves are scanned for links; code spans are not.
  */
 import { Fragment, memo, useMemo, type ReactNode } from 'react';
@@ -107,7 +106,7 @@ export interface RichTextProps {
   readonly className?: string;
 }
 
-/** A formatted message body; direction follows its content (§12.5). */
+/** A formatted message body; direction follows its content. */
 export const RichText = memo(function RichText({ body, className }: RichTextProps) {
   const lines = useMemo(() => toLines(parseText(body).spans), [body]);
   return (

@@ -1,5 +1,5 @@
 /**
- * Search performance test (AGENTS.md §17, §22 M2): a search on 100k
+ * Search performance test: a search on 100k
  * messages must complete in ≤ 100 ms on CI Chromium. Uses in-memory
  * sqlite-wasm on the page (same SQL as production).
  */
@@ -68,7 +68,7 @@ beforeEach(async () => {
   seedRows(repo, chatId);
 });
 
-describe('search performance (§17, §22 M2)', () => {
+describe('search performance', () => {
   it('searches 100k messages in under 100 ms on Chromium', () => {
     const start = performance.now();
     const page = repo.search({

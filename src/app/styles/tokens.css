@@ -1,8 +1,8 @@
 /*
- * Design tokens (AGENTS.md §12.1–§12.2). Original palette — not a copy of
+ * Design tokens (–). Original palette — not a copy of
  * any existing product. The dark palette is defined ONCE as `--dark-*`
  * primitives and applied both by the system scheme (no explicit light
- * override) and by the manual `[data-theme='dark']` override (M7).
+ * override) and by the manual `[data-theme='dark']` override.
  * Values are WCAG-AA checked against their pairing backgrounds by
  * src/app/styles/tokens.test.ts; change pairs together.
  */
@@ -55,14 +55,14 @@
   --focus-ring: #0b6e5c;
   --border: #d5dadd;
 
-  /* Bubble-only text: timestamps and links (§12.5). */
+  /* Bubble-only text: timestamps and links. */
   --text-muted-on-bubble: #5c676d;
   --link-on-bubble: #0a6352;
 
-  /* Search matches and the jumped-to message (§11). */
+  /* Search matches and the jumped-to message. */
   --highlight: #fbe38e;
 
-  /* Participant names (§12.2), AA on bubble-in and the surfaces. */
+  /* Participant names, AA on bubble-in and the surfaces. */
   --name-0: #b42318;
   --name-1: #b54708;
   --name-2: #8a6100;
@@ -77,7 +77,7 @@
   --name-11: #7a4e2d;
 }
 
-/* System dark scheme, unless the user forced light (M7 override). */
+/* System dark scheme, unless the user forced light. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     --surface: var(--dark-surface);
@@ -111,7 +111,7 @@
   }
 }
 
-/* Manual dark override (Settings → Appearance, milestone M7). */
+/* Manual dark override (Settings → Appearance). */
 :root[data-theme='dark'] {
   --surface: var(--dark-surface);
   --surface-raised: var(--dark-surface-raised);

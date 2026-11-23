@@ -1,11 +1,11 @@
 /**
- * Participant upsert (§10.2): deterministic UUID-shaped ids per (chatId,
+ * Participant upsert: deterministic UUID-shaped ids per (chatId,
  * displayName) so re-imports upsert instead of duplicating, and the color
- * index from the §10.2 palette hash.
+ * index from the palette hash.
  */
 import type { SqliteDatabase } from './open';
 
-/** Deterministic participant id from a chat + display name (stable, §10.2). */
+/** Deterministic participant id from a chat + display name (stable). */
 function participantIdFor(chatId: string, displayName: string): string {
   const raw = `${chatId}:${displayName}`;
   let h1 = 0x811c9dc5;
@@ -20,7 +20,7 @@ function participantIdFor(chatId: string, displayName: string): string {
   return `${hex(h1).slice(0, 8)}-${hex(h1 ^ h2).slice(0, 4)}-4${hex(h2).slice(0, 3)}-8${hex(h1 ^ 0xa5a5a5a5).slice(0, 3)}-${hex(h2)}${hex(h1).slice(0, 4)}`;
 }
 
-/** Color index = stable hash of the display name modulo palette size (§10.2). */
+/** Color index = stable hash of the display name modulo palette size. */
 function colorIndexFor(displayName: string): number {
   let h = 0;
   for (let i = 0; i < displayName.length; i += 1) {

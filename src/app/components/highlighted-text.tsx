@@ -1,5 +1,5 @@
 /**
- * Text with search matches wrapped in `<mark>` (AGENTS.md §11): React text
+ * Text with search matches wrapped in `<mark>`: React text
  * nodes only, never FTS markup or HTML strings.
  */
 import { splitHighlights } from '../../core/text-format/highlight';

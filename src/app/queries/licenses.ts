@@ -1,7 +1,7 @@
 /**
  * Loads the license list generated at build time (`public/licenses.json`,
- * AGENTS.md §12.9 About). It is an app asset fetched from the app's own
- * origin and precached for offline use; it is validated on read (§18.5).
+ *  About). It is an app asset fetched from the app's own
+ * origin and precached for offline use; it is validated on read.
  */
 import * as v from 'valibot';
 

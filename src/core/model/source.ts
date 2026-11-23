@@ -1,5 +1,5 @@
 /**
- * Export-source characteristics detected from an export file (AGENTS.md §7).
+ * Export-source characteristics detected from an export file.
  */
 
 /** Which operating system produced the export. */

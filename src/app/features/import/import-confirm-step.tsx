@@ -5,7 +5,7 @@ import { formatBytes } from '../../i18n/format-string';
 import type { DetectReport } from '../../../workers/import-detect';
 import type { ChatId } from '../../../core/ids';
 
-/** What the start button hands back to the container (§12.8.4 choices). */
+/** What the start button hands back to the container (choices). */
 export interface ConfirmChoices {
   readonly confirmedTitle: string;
   readonly targetChatId: ChatId | null;
@@ -16,18 +16,18 @@ export interface ConfirmChoices {
 export interface ImportConfirmStepProps {
   readonly report: DetectReport;
   readonly file: File;
-  /** Existing chat whose title matched — the §12.8.4 "update existing"
+  /** Existing chat whose title matched — the "update existing"
    * preselect. Null when nothing matched. */
   readonly suggestedTargetChatId: ChatId | null;
-  /** True while the §12.8.4 order toggle re-runs detection. */
+  /** True while the order toggle re-runs detection. */
   readonly reorderRunning: boolean;
-  /** Called with the chosen order when the toggle changes (§12.8.4). */
+  /** Called with the chosen order when the toggle changes. */
   readonly onDateOrder: (order: 'DMY' | 'MDY') => void;
   readonly onStart: (report: DetectReport, file: File, choices: ConfirmChoices) => void;
   readonly onBack: () => void;
 }
 
-/** §12.8.4 live preview: the first 20 parsed messages as mini rows. */
+/**  live preview: the first 20 parsed messages as mini rows. */
 function MessagePreview(props: { readonly report: DetectReport; readonly locale: string }) {
   return (
     <section aria-label={en.import.confirmPreviewHeading} className="flex flex-col gap-2">
@@ -73,7 +73,7 @@ function ChoiceButton(props: {
   );
 }
 
-/** Confirmation step (§12.8.4): detected facts, the DMY/MDY toggle with a
+/** Confirmation step: detected facts, the DMY/MDY toggle with a
  * live preview when the order is ambiguous, editable title, "which one is
  * you", destination, and the summary. */
 export function ImportConfirmStep({

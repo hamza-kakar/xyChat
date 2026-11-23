@@ -1,5 +1,5 @@
 /**
- * Single-instance lock tests (§10.1): the opener is
+ * Single-instance lock tests: the opener is
  * dependency-injected, so the lifetime-lock semantics run in Node against a
  * fake Web Locks manager — second open fails with LOCK_UNAVAILABLE until the
  * first connection is closed.
@@ -19,7 +19,7 @@ class FakeLockManager implements InstanceLockManager {
   ): Promise<T> {
     const existing = this.held.get(name);
     if (existing !== undefined) {
-      // §10.1: ifAvailable resolves the callback with null (no lock).
+      //  ifAvailable resolves the callback with null (no lock).
       return Promise.resolve(callback(null));
     }
     const result = callback({ name });
@@ -69,7 +69,7 @@ async function flushRelease(): Promise<void> {
   });
 }
 
-describe('database opener single-instance lock (§10.1)', () => {
+describe('database opener single-instance lock', () => {
   it('fails a second open with LOCK_UNAVAILABLE while the first is open', async () => {
     const locks = new FakeLockManager();
     const first = await openerWith(stubDb(false), locks)();

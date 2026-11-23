@@ -1,7 +1,7 @@
 /**
- * Install detection (AGENTS.md §12.10): the app must run standalone
+ * Install detection: the app must run standalone
  * (Home Screen) for imports — Safari-tab storage is separate and can be
- * evicted. Pure platform wrapper (platform → core only, §3.1).
+ * evicted. Pure platform wrapper (platform → core only).
  */
 
 /** True when running as an installed standalone app (iOS Home Screen or

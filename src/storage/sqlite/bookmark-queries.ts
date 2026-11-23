@@ -1,5 +1,5 @@
 /**
- * Bookmark statements (AGENTS.md §10.2, §10.5, §12.5). A bookmark always
+ * Bookmark statements. A bookmark always
  * belongs to the chat of its message: the insert selects the message by id
  * AND chat, so a mismatched pair stores nothing.
  */
@@ -15,7 +15,7 @@ function nowStamp(): string {
 
 /**
  * Bookmarks a message, or replaces the note of its existing bookmark
- * (one bookmark per message, §10.2 `UNIQUE (message_id)`).
+ * (one bookmark per message, `UNIQUE (message_id)`).
  *
  * @param db Open database.
  * @param input Chat, message rowid and optional note.

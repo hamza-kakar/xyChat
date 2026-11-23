@@ -1,5 +1,5 @@
 /**
- * Layer rules from AGENTS.md §3.1. `client` may import `workers` because the
+ * Layer rules. `client` may import `workers` because the
  * RPC interfaces are imported type-only; the type-only constraint is enforced
  * in review (documented in ADR 0002).
  */

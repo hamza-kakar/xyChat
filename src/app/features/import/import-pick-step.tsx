@@ -6,7 +6,7 @@ export interface ImportPickStepProps {
   readonly onPicked: (file: File) => void;
 }
 
-/** File-picker step (§12.8.2): instructions plus the §12.8.2 input with the
+/** File-picker step: instructions plus the input with the
  * accepted types. The visible label is the input's control, so keyboard
  * and screen-reader users reach one named element. */
 export function ImportPickStep({ onPicked }: ImportPickStepProps) {

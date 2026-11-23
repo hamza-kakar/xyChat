@@ -1,5 +1,5 @@
 /**
- * RPC input validation for the media calls (AGENTS.md §13, §18.5): voice
+ * RPC input validation for the media calls: voice
  * note durations, lazily generated video thumbnails and opus decoding.
  * Invalid input throws RpcValidationError (the worker answers
  * INVALID_INPUT).
@@ -23,7 +23,7 @@ import { withSchema } from './rpc-validate';
 
 /** Longest duration accepted (24 h), in milliseconds. */
 const MAX_DURATION_MS = 86_400_000;
-/** Largest thumbnail accepted; real ones are a few tens of KB (§13.3). */
+/** Largest thumbnail accepted; real ones are a few tens of KB. */
 export const MAX_THUMBNAIL_BYTES = 1_048_576;
 /** JPEG files start with the SOI marker. */
 const JPEG_SOI = [0xff, 0xd8] as const;
@@ -53,7 +53,7 @@ const THUMBNAIL_INPUT = object({
   height: DIMENSION,
 });
 
-/** Stored media paths: `media/<chatId>/<attachmentId>.<ext>` (§10.4). */
+/** Stored media paths: `media/<chatId>/<attachmentId>.<ext>`. */
 const MEDIA_PATH = pipe(
   string(),
   maxLength(200),

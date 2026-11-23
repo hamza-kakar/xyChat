@@ -1,6 +1,6 @@
 /**
- * Persistent storage (AGENTS.md §12.9, §22 M3): requests durable storage
- * after the first successful import. Pure platform wrapper (§3.1).
+ * Persistent storage: requests durable storage
+ * after the first successful import. Pure platform wrapper.
  */
 
 /** True when the origin already holds persistent storage. */
@@ -12,8 +12,7 @@ export async function isStoragePersisted(): Promise<boolean> {
   }
 }
 
-/** Requests persistent storage; false when denied or unsupported (§0.6:
- * the import still completes — eviction risk is surfaced in Settings, M7). */
+/** Requests persistent storage; false when denied or unsupported (the import still completes — eviction risk is surfaced in Settings). */
 export async function requestPersistentStorage(): Promise<boolean> {
   try {
     return await navigator.storage.persist();
@@ -22,7 +21,7 @@ export async function requestPersistentStorage(): Promise<boolean> {
   }
 }
 
-/** Bytes used and available to this origin (§12.9). */
+/** Bytes used and available to this origin. */
 export interface StorageEstimateBytes {
   readonly usage: number;
   readonly quota: number;

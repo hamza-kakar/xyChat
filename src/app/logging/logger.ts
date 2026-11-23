@@ -1,5 +1,5 @@
 /**
- * Local-only structured logger (AGENTS.md §18.7). Entries carry a stable code
+ * Local-only structured logger. Entries carry a stable code
  * and a small structured payload of primitives — never message content, names
  * or file names. A fixed-size ring buffer keeps the last entries in memory
  * for the Diagnostics screen; `log-persistence.ts` keeps the last warn/error

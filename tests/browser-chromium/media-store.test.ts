@@ -1,6 +1,6 @@
 /**
- * Media-store tests (AGENTS.md §10.4): page-context async functions. The
- * sync-handle write path runs in workers (§10.4) and is exercised there.
+ * Media-store tests: page-context async functions. The
+ * sync-handle write path runs in workers and is exercised there.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
@@ -31,7 +31,7 @@ afterEach(async () => {
 });
 
 describe('media-store paths', () => {
-  it('builds canonical paths by attachment id (§10.4)', () => {
+  it('builds canonical paths by attachment id', () => {
     expect(mediaPathFor(CHAT, 'att-1', 'jpg')).toBe(`media/${CHAT}/att-1.jpg`);
     expect(thumbPathFor(CHAT, 'att-1')).toBe(`thumbs/${CHAT}/att-1.jpg`);
   });

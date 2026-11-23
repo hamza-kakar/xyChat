@@ -1,5 +1,5 @@
 /**
- * Media e2e (AGENTS.md §12.6, §13; §19.5 flows 8 and 9; §22 M6): the
+ * Media e2e: the
  * gallery tabs, the image viewer with "Show in chat", the document and
  * links tabs, and voice-note playback on the engine's own decoder and on
  * the forced Opus fallback. Chromium runs the storage path; WebKit skips
@@ -36,7 +36,7 @@ async function importAndOpenTrip(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { level: 1, name: 'Sara' })).toBeVisible();
 }
 
-test('gallery → image viewer → Show in chat (flow 8)', async ({ page }) => {
+test('gallery → image viewer → Show in chat', async ({ page }) => {
   await importAndOpenTrip(page);
   // A photo bubble opens the viewer on that photo; closing returns focus.
   const bubblePhoto = page.getByRole('log').getByRole('button', { name: 'Open Photo' }).last();
@@ -80,7 +80,7 @@ test('gallery → image viewer → Show in chat (flow 8)', async ({ page }) => {
   await expect(row).toBeInViewport();
 });
 
-test('documents and links tabs (§12.6)', async ({ page }) => {
+test('documents and links tabs', async ({ page }) => {
   await importAndOpenTrip(page);
   await page.getByRole('link', { name: 'Media, links and docs' }).click();
 
@@ -119,7 +119,7 @@ async function playVoiceNote(page: Page): Promise<void> {
   await expect(log.getByText(/^0:00 \/ 0:0[01]$/u)).toBeVisible();
 }
 
-test('a voice note plays in its bubble (flow 9)', async ({ page }) => {
+test('a voice note plays in its bubble', async ({ page }) => {
   await importAndOpenTrip(page);
   await playVoiceNote(page);
   expect(await countCachedWavs(page)).toBe(0);

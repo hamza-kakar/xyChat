@@ -1,8 +1,8 @@
 /**
- * The chat list (AGENTS.md §12.4): rows sorted by last activity (SQL),
+ * The chat list: rows sorted by last activity (SQL),
  * an instant local title filter, the Import action and the empty state.
  * It is the page's main content on its own route and a navigation pane
- * beside an open chat on wide screens (§12.1).
+ * beside an open chat on wide screens.
  */
 import { useCallback, useState } from 'react';
 import { Link, useMatch } from 'react-router';

@@ -1,5 +1,5 @@
 /**
- * Jump to date (AGENTS.md §12.5): a month calendar limited to the chat's
+ * Jump to date: a month calendar limited to the chat's
  * date range with days that have messages marked, plus first/last message
  * shortcuts. Picking a day jumps to its first message (findSeqByDate).
  */

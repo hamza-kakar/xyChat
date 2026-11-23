@@ -9,9 +9,8 @@ import { ChatInfoScreen } from './features/chat-info';
 import { AppErrorBoundary, ChatsLayout } from './features/shell';
 
 /**
- * Route table (AGENTS.md §12.3). Each route renders inside its own error
- * boundary; unknown routes redirect home. Screens for later milestones are
- * added as they land.
+ * Route table. Each route renders inside its own error
+ * boundary; unknown routes redirect home.
  */
 export function AppRoutes() {
   return (

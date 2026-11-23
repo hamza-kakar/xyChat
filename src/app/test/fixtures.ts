@@ -145,7 +145,7 @@ export function bookmarkView(
   };
 }
 
-/** A search hit (§11). */
+/** A search hit. */
 export function searchHit(over: Partial<SearchHitView> = {}): SearchHitView {
   return {
     messageRowId: 5,

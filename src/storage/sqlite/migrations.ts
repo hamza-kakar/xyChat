@@ -1,7 +1,7 @@
 /**
- * Migration registry (AGENTS.md §10.3): an ordered list of `{ version, up }`
+ * Migration registry: an ordered list of `{ version, up }`
  * steps. Each runs inside one transaction; there are no down-migrations —
- * backup before migrating (§10.6).
+ * backup before migrating.
  */
 import type { SqliteDatabase } from './open';
 import { SQL_0001_INIT } from './migrations/0001-init';

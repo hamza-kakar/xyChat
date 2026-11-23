@@ -1,7 +1,7 @@
 /**
- * Production wiring of the backup and restore runs (AGENTS.md §10.6):
+ * Production wiring of the backup and restore runs:
  * OPFS through sync access handles and the storage estimate. Worker-only;
- * the runs themselves take these as injected dependencies (§18.4).
+ * the runs themselves take these as injected dependencies.
  */
 import {
   BACKUP_TMP_DIR,

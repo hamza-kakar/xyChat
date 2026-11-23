@@ -1,6 +1,5 @@
 /**
- * Search, jump to date and bookmarks e2e (AGENTS.md §11, §12.5; §19.5
- * flows 6, 7 and 10; §22 M5). Chromium runs the storage path; WebKit
+ * Search, jump to date and bookmarks e2e. Chromium runs the storage path; WebKit
  * skips (ADR 0007).
  */
 import { test, expect, type Page } from '@playwright/test';
@@ -46,7 +45,7 @@ async function importPlans(page: Page): Promise<void> {
 }
 
 /** Safe-area insets sit on the header and its own spacing on the row
- * inside, so neither overrides the other (§12.1). */
+ * inside, so neither overrides the other. */
 async function expectHeaderSpacing(page: Page): Promise<void> {
   const header = page.locator('main header').first();
   await expect(header).toHaveCSS('padding-bottom', '0px');
@@ -59,7 +58,7 @@ function highlightedRow(page: Page) {
   return page.getByRole('log').locator('article[aria-current="true"]');
 }
 
-test('global search opens the hit in its chat, highlighted (flow 6)', async ({ page }) => {
+test('global search opens the hit in its chat, highlighted', async ({ page }) => {
   await importPlans(page);
   await page.getByRole('link', { name: 'Search all chats' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Search' })).toBeFocused();
@@ -84,9 +83,7 @@ test('global search opens the hit in its chat, highlighted (flow 6)', async ({ p
   await expect(page.getByText('Type at least 3 characters to search all chats.')).toBeVisible();
 });
 
-test('in-chat search steps through matches; jump to date and to latest (flow 7)', async ({
-  page,
-}) => {
+test('in-chat search steps through matches; jump to date and to latest', async ({ page }) => {
   await importPlans(page);
   await page.getByRole('link', { name: /Plans/u }).click();
   const log = page.getByRole('log');
@@ -139,7 +136,7 @@ test('in-chat search steps through matches; jump to date and to latest (flow 7)'
   await expect(page.getByRole('heading', { level: 1, name: 'Plans' })).toBeFocused();
 });
 
-test('bookmark a message, edit its note, find it and remove it (flow 10)', async ({ page }) => {
+test('bookmark a message, edit its note, find it and remove it', async ({ page }) => {
   await importChat(page, {
     blob: await buildIosGroupZipWithImage(),
     name: 'WhatsApp Chat - Family.zip',

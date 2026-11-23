@@ -1,5 +1,5 @@
 /**
- * The virtualized message log (AGENTS.md §12.5, §16, §17). Every seq is a
+ * The virtualized message log. Every seq is a
  * row, so the list length is the chat's message count and loading older
  * blocks never shifts what is on screen. Blocks of 300 load for the
  * visible range plus a margin; rows whose block is pending show a
@@ -21,7 +21,7 @@ import type { RowContext } from './row-model';
 
 /** First-guess row height before measuring (px). */
 const ESTIMATED_ROW_PX = 72;
-/** Rows rendered beyond the viewport on each side (§12.5: ~10). */
+/** Rows rendered beyond the viewport on each side (~10). */
 const OVERSCAN_ROWS = 10;
 /** Rows of data loaded beyond the rendered range, so neighbors (day
  * separators, run grouping) are known before they scroll in. */
@@ -202,7 +202,7 @@ function mergeBlocks(a: readonly number[], b: readonly number[]): readonly numbe
 }
 
 /** Floating "jump to the latest message" button with the count below the
- * viewport (§12.5). */
+ * viewport. */
 function JumpToLatest({
   count,
   onClick,

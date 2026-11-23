@@ -1,5 +1,5 @@
 /**
- * Local-date-time helpers (AGENTS.md §7, §12.1). Timestamps from exports are
+ * Local-date-time helpers. Timestamps from exports are
  * wall-clock values with no timezone; every conversion here treats them as if
  * they were UTC so that no timezone ever shifts a displayed time.
  */

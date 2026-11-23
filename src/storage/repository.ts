@@ -1,5 +1,5 @@
 /**
- * Persisted chat-archive entities (AGENTS.md §7, §10.2): camelCase domain
+ * Persisted chat-archive entities: camelCase domain
  * mirrors of the SQL schema rows, with branded IDs. `rows.ts` validates raw
  * SQLite rows into these types at every read.
  */
@@ -103,10 +103,10 @@ export interface ImportRecord {
   readonly parserVersion: string;
   readonly startedAt: string;
   readonly finishedAt: string | null;
-  /** CUMULATIVE written-path list (§9.3 crash rollback bookkeeping; each
+  /** CUMULATIVE written-path list (crash rollback bookkeeping; each
    * flush replaces the row with a superset). Empty until the first flush. */
   readonly writtenPaths: readonly string[];
-  /** Counts from a completed import (§9.2 step 11), else null. */
+  /** Counts from a completed import, else null. */
   readonly report: ImportReport | null;
 }
 
@@ -126,14 +126,14 @@ export interface ChatSummary {
   readonly lastMediaType: MediaType | null;
 }
 
-/** A window of messages around an anchor seq (§12.5). */
+/** A window of messages around an anchor seq. */
 export interface MessageWindow {
   readonly messages: readonly (Message & { readonly attachments: readonly Attachment[] })[];
   readonly hasBefore: boolean;
   readonly hasAfter: boolean;
 }
 
-/** A search hit (§11): never contains FTS HTML markup. */
+/** A search hit: never contains FTS HTML markup. */
 export interface SearchHit {
   readonly messageRowId: number;
   readonly chatId: Brand<string, 'ChatId'>;
@@ -151,14 +151,14 @@ export interface SearchPage {
   readonly nextCursor: SearchPageCursor | null;
 }
 
-/** Keyset cursor fields for search paging (§11). */
+/** Keyset cursor fields for search paging. */
 export interface SearchPageCursor {
   readonly tsKey: number;
   readonly rowId: number;
   readonly seq: number;
 }
 
-/** Query parameters for search (§11). */
+/** Query parameters for search. */
 export interface SearchQuery {
   readonly chatId: Brand<string, 'ChatId'> | null;
   readonly query: string;
@@ -170,7 +170,7 @@ export interface SearchQuery {
   readonly cursor: SearchPageCursor | null;
 }
 
-/** An in-chat search for navigation (§11): every matching seq, no paging. */
+/** An in-chat search for navigation: every matching seq, no paging. */
 export interface InChatSearchQuery {
   readonly chatId: Brand<string, 'ChatId'>;
   readonly query: string;
@@ -187,7 +187,7 @@ export interface MatchingSeqs {
   readonly isCapped: boolean;
 }
 
-/** Where a gallery item or link sits in its chat (§12.6 "Show in chat"). */
+/** Where a gallery item or link sits in its chat ("Show in chat"). */
 export interface MessageContext {
   readonly messageRowId: number;
   readonly seq: number;
@@ -208,7 +208,7 @@ export interface AttachmentPage {
   readonly nextCursor: number | null;
 }
 
-/** A text message that contains a link (§12.6 Links tab); the app
+/** A text message that contains a link (Links tab); the app
  * extracts the URLs with the same linkifier the bubbles use. */
 export interface LinkMessage extends MessageContext {
   readonly chatId: Brand<string, 'ChatId'>;
@@ -221,7 +221,7 @@ export interface LinkPage {
   readonly nextCursor: number | null;
 }
 
-/** Chat-info statistics (§12.7). */
+/** Chat-info statistics. */
 export interface ChatStats {
   readonly totalsByKind: Readonly<Record<MessageKind, number>>;
   readonly mediaCounts: Readonly<Record<MediaType, number>>;
@@ -229,13 +229,13 @@ export interface ChatStats {
   readonly dateRange: { readonly first: LocalDateTime; readonly last: LocalDateTime } | null;
 }
 
-/** Storage usage aggregates (§12.9). */
+/** Storage usage aggregates. */
 export interface StorageUsage {
   readonly totalBytes: number;
   readonly perChat: readonly { readonly chatId: Brand<string, 'ChatId'>; readonly bytes: number }[];
 }
 
-/** Where the user last was in a chat (§12.5: restored on return). */
+/** Where the user last was in a chat (restored on return). */
 export interface ChatPosition {
   readonly chatId: Brand<string, 'ChatId'>;
   /** Seq of the first message visible at the top of the list. */
@@ -248,7 +248,7 @@ export interface BookmarkView {
   readonly message: Message;
 }
 
-/** Clock/date-order/format shape needed by import confirmation (§12.8). */
+/** Clock/date-order/format shape needed by import confirmation. */
 export interface ExportFormat {
   readonly platform: SourcePlatform;
   readonly dateOrder: DateOrder;

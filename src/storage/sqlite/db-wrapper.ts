@@ -1,7 +1,7 @@
 /**
- * Typed wrapper over the sqlite3 OO API (AGENTS.md §10.1): the only surface
+ * Typed wrapper over the sqlite3 OO API: the only surface
  * the repository is allowed to use. All statement binding is parameterized —
- * string-concatenated SQL is forbidden (§10.5).
+ * string-concatenated SQL is forbidden.
  */
 import type { Database } from '@sqlite.org/sqlite-wasm';
 
@@ -15,7 +15,7 @@ export interface SqliteDatabase {
   ): Record<string, unknown>[];
   /**
    * Runs a parameterized statement returning rows as positional arrays —
-   * the cheap row shape for large scans (§17: object rows cost a key
+   * the cheap row shape for large scans (object rows cost a key
    * mapping per cell on the wasm bridge).
    */
   selectArrays(sql: string, params?: readonly (string | number | null)[]): unknown[][];
@@ -23,7 +23,7 @@ export interface SqliteDatabase {
   run(sql: string, params?: readonly (string | number | null)[]): void;
   /**
    * Runs one parameterized statement per params list, preparing the SQL a
-   * single time (§17: exec() re-parses the SQL text on every call, which
+   * single time (exec() re-parses the SQL text on every call, which
    * dominates bulk insert/update paths).
    */
   runEach(sql: string, paramsList: readonly (readonly (string | number | null)[])[]): void;
@@ -115,7 +115,7 @@ export function wrapDatabase(db: Database): SqliteDatabase {
 }
 
 /**
- * Verifies FTS5 with the trigram tokenizer (§10.1, ADR 0008): the
+ * Verifies FTS5 with the trigram tokenizer (ADR 0008): the
  * capability-gate half of the boot check. Throws when FTS5 is missing —
  * the caller surfaces the failure as a capability error, never silent
  * degradation.

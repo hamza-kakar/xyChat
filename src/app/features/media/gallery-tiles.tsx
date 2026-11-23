@@ -1,5 +1,5 @@
 /**
- * Gallery items (AGENTS.md §12.6, §13.1, §13.3): square thumbnail tiles
+ * Gallery items: square thumbnail tiles
  * for photos and videos, and list rows for audio and documents. Each opens
  * the full-screen viewer.
  */

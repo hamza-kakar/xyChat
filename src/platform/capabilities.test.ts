@@ -120,7 +120,7 @@ describe('boot budget', () => {
     // The constant is the boot bound: a hung worker is abandoned after 5 s
     // and reported as a failure (timeouts are final - no retry). happy-dom
     // cannot spawn real module workers, so the hung-worker runtime path is
-    // exercised in browser mode when M2 lands; this pins the bound itself.
+    // exercised by the browser-mode tests; this pins the bound itself.
     expect(WORKER_PROBE_TIMEOUT_MS).toBe(5000);
   });
 });

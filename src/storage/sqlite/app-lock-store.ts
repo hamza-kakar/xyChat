@@ -1,5 +1,5 @@
 /**
- * App-lock state in `meta` (AGENTS.md §15.3): the PIN as a PBKDF2-SHA-256
+ * App-lock state in `meta`: the PIN as a PBKDF2-SHA-256
  * hash with its salt, the auto-lock delay, and the failed-attempt counter
  * with its lockout deadline (persisted, so a reload doesn't reset it).
  * The PIN hash never leaves db.worker; callers only learn pass or fail.
@@ -104,7 +104,7 @@ function recordFailure(db: SqliteDatabase, now: number): number | null {
 }
 
 /**
- * Checks a PIN, counting failures (§15.3: exponential delay after five).
+ * Checks a PIN, counting failures (exponential delay after five).
  *
  * @param db The open database.
  * @param pin The entered PIN.

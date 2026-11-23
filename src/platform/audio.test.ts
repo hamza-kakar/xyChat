@@ -12,7 +12,7 @@ function tag(bytes: Uint8Array, offset: number): string {
   return String.fromCharCode(...bytes.slice(offset, offset + 4));
 }
 
-describe('opus support (§13.2)', () => {
+describe('opus support', () => {
   it('reads canPlayType: an empty answer means the fallback is needed', () => {
     const asked: string[] = [];
     const probe = (answer: string) => ({
@@ -36,7 +36,7 @@ describe('opus support (§13.2)', () => {
   });
 });
 
-describe('WAV encoding (§13.2)', () => {
+describe('WAV encoding', () => {
   it('writes a canonical PCM header', () => {
     const header = wavHeader({ sampleRate: 48_000, channels: 2, dataBytes: 1000 });
     const view = new DataView(header.buffer);

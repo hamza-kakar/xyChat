@@ -1,6 +1,6 @@
 /**
  * Chat info: participants with their message counts as a CSS bar chart
- * (no chart library), and the "This is me" choice (§12.7).
+ * (no chart library), and the "This is me" choice.
  */
 import { en } from '../../i18n/en';
 import { formatCount } from '../../i18n/format-string';

@@ -1,5 +1,5 @@
 /**
- * Attachment media typing (AGENTS.md §8.8). File names from iOS and Android
+ * Attachment media typing. File names from iOS and Android
  * follow recognizable patterns; everything else falls back to the extension.
  * MIME is derived from a static table — no sniffing.
  */

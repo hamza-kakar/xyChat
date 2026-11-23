@@ -1,5 +1,5 @@
 /**
- * Parser public API (AGENTS.md §8.2). `detectFormat` runs before parsing and
+ * Parser public API. `detectFormat` runs before parsing and
  * may be user-adjusted; `parseChat`/`parseChatIterator` consume a format.
  * The parser is pure, synchronous, deterministic and total: it never throws
  * on any input string.
@@ -56,7 +56,7 @@ export interface DetectFormatOptions {
 }
 
 export interface ParseOptions {
-  /** The format from `detectFormat` (possibly user-adjusted, §12.8). */
+  /** The format from `detectFormat` (possibly user-adjusted). */
   readonly format: DetectedFormat;
   /** Locale tables to classify with; defaults to the bundled locales. */
   readonly locales?: readonly LocalePatterns[];
@@ -128,7 +128,7 @@ export function parseChat(text: string, options: ParseOptions): Result<ParseResu
 /**
  * Streaming parse: yields message, warning and progress events, returning
  * the full summary at the end. The format may be user-adjusted before this
- * call (date-order override, §12.8).
+ * call (date-order override).
  */
 export function* parseChatIterator(
   text: string,

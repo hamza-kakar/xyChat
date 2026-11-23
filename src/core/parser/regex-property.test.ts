@@ -1,5 +1,5 @@
 /**
- * Property-based tokenizer tests (AGENTS.md §19.2.6–§19.2.7). The tokenizer
+ * Property-based tokenizer tests (–). The tokenizer
  * never throws; leaf text equals the generated leaf fragments; and every
  * locale regex stays linear-time on adversarial inputs.
  */
@@ -29,7 +29,7 @@ const arbitraryBody = fc
   .array(fc.oneof(arbitraryLeaf, arbitraryInline), { minLength: 0, maxLength: 6 })
   .map((parts) => parts.join('\n'));
 
-describe('property: tokenizer never throws and leaves equal fragments (§19.2.6)', () => {
+describe('property: tokenizer never throws and leaves equal fragments', () => {
   it('holds on generated bodies', () => {
     const prop = fc.property(arbitraryBody, (body) => {
       const ast = parseText(body);
@@ -56,7 +56,7 @@ describe('property: tokenizer never throws and leaves equal fragments (§19.2.6)
   });
 });
 
-describe('property: locale regexes stay fast (§19.2.7)', () => {
+describe('property: locale regexes stay fast', () => {
   it('processes adversarial 10k inputs under 50ms each', () => {
     const adversarial = [
       'a'.repeat(10_000),
@@ -85,7 +85,7 @@ describe('property: locale regexes stay fast (§19.2.7)', () => {
     }
     // Median of 7 runs: a single call can absorb a GC pause or scheduler
     // hiccup under coverage instrumentation; the median reflects the regex's
-    // actual cost, which is what §19.2 budgets.
+    // actual cost, which is what budgets.
     const RUNS_PER_REGEX = 7;
     for (const input of adversarial) {
       for (const re of regexes) {

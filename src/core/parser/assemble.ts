@@ -1,5 +1,5 @@
 /**
- * Message assembly (AGENTS.md §8.5, §8.2). Walks the export line by line:
+ * Message assembly. Walks the export line by line:
  * header-shaped lines start messages, everything else is a continuation.
  * Malformed headers become warnings, never crashes; no non-empty line is
  * ever lost (it lands in a body, a consumed marker, or a counted warning).
@@ -62,13 +62,13 @@ export interface AssemblyFormat {
   readonly platform: SourcePlatform;
 }
 
-/** Lines between progress events (AGENTS.md §8.2). */
+/** Lines between progress events. */
 const PROGRESS_INTERVAL_LINES = 5_000;
-/** Minimum spacing between out-of-order warnings (AGENTS.md §8.5). */
+/** Minimum spacing between out-of-order warnings. */
 const OUT_OF_ORDER_WARNING_SPACING = 1_000;
 /** Largest 2-digit year that still maps into the 2000s. */
 const TWO_DIGIT_YEAR_MAX = 99;
-/** Base added to 2-digit years (AGENTS.md §7). */
+/** Base added to 2-digit years. */
 const TWO_DIGIT_YEAR_BASE = 2000;
 /** Noon, the pivot of 12-hour meridiem conversion. */
 const NOON_HOUR = 12;
@@ -245,7 +245,7 @@ interface HeaderLineInput {
 
 /**
  * Starts a new pending message from a header-shaped line: invalid dates and
- * times are downgraded to continuations (§8.5); accepted headers flush the
+ * times are downgraded to continuations; accepted headers flush the
  * previous message, record order warnings, and honor the sample cap.
  *
  * @returns True when the sample cap says to stop parsing.
@@ -259,7 +259,7 @@ function startMessage(
   const { header, rawLine, sourceLine } = input;
   const resolved = resolveTimestamp(header, context.dateOrder);
   if (!resolved.ok) {
-    // Invalid date/time: keep the line as continuation text (§8.5).
+    // Invalid date/time: keep the line as continuation text.
     warnAt(state, sourceLine, resolved.error, `line ${sourceLine}`);
     absorbNonHeaderLine(state, rawLine);
     return { stop: false, flushed: null };

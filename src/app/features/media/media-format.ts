@@ -1,5 +1,5 @@
 /**
- * Small media display helpers (AGENTS.md §12.6, §13.2).
+ * Small media display helpers.
  */
 import type { LocalDateTime } from '../../../core/model';
 import { formatDate } from '../../../core/dates';
@@ -32,7 +32,7 @@ export function mediaLabel(item: Pick<GalleryItemView, 'attachment'>): string {
 }
 
 /**
- * Spoken label of a gallery item: type, sender and date (§16).
+ * Spoken label of a gallery item: type, sender and date.
  *
  * @param item The gallery item.
  * @param locale Display locale.

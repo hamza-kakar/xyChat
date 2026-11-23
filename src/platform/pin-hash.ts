@@ -1,5 +1,5 @@
 /**
- * PIN key derivation (AGENTS.md §15.3): PBKDF2-SHA-256 over the PIN with a
+ * PIN key derivation: PBKDF2-SHA-256 over the PIN with a
  * random salt, through `crypto.subtle`. Worker-safe (no DOM).
  */
 import { PIN_HASH_BYTES, PIN_SALT_BYTES } from '../core/app-lock';

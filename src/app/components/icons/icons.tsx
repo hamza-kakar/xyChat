@@ -1,5 +1,5 @@
 /**
- * Original inline SVG icons (AGENTS.md §4.2: no icon fonts). Decorative by
+ * Original inline SVG icons (no icon fonts). Decorative by
  * default (`aria-hidden`); the surrounding control carries the label.
  * Strokes use currentColor so icons follow the text token.
  */

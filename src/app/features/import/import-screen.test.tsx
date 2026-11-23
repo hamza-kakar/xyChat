@@ -1,6 +1,6 @@
 /**
- * Import screen container tests (§12.8): the pick → detect → confirm →
- * begin flow with both worker clients mocked (§18.4); the report and
+ * Import screen container tests: the pick → detect → confirm →
+ * begin flow with both worker clients mocked; the report and
  * error branches.
  */
 import { screen, waitFor } from '@testing-library/react';
@@ -127,7 +127,7 @@ async function confirmAsSara(user: ReturnType<typeof userEvent.setup>): Promise<
   await user.click(screen.getByRole('button', { name: 'Start import' }));
 }
 
-describe('ImportScreen (§12.8)', () => {
+describe('ImportScreen', () => {
   beforeEach(() => {
     detectMock.mockReset();
     beginMock.mockReset();
@@ -170,9 +170,9 @@ describe('ImportScreen (§12.8)', () => {
         targetChatId: null,
       }),
     );
-    // §12.8.4: the self choice persists via setSelf after the commit.
+    //  the self choice persists via setSelf after the commit.
     expect(setSelfMock).toHaveBeenCalledWith('chat-9', 'p-1');
-    // §12.9: persistent storage is requested exactly once after success.
+    //  persistent storage is requested exactly once after success.
     expect(persistMock).toHaveBeenCalledTimes(1);
   });
 
@@ -215,7 +215,7 @@ describe('ImportScreen (§12.8)', () => {
     expect(screen.getByText('This doesn’t look like a WhatsApp export.')).toBeInTheDocument();
   });
 
-  it('marks CANCELLED when begin reports it (§9.3)', async () => {
+  it('marks CANCELLED when begin reports it', async () => {
     const user = userEvent.setup();
     detectMock.mockResolvedValue({ report, suggestedTargetChatId: null });
     beginMock.mockResolvedValue({ code: 'CANCELLED', detail: 'cancelled during media writes' });
@@ -260,7 +260,7 @@ describe('ImportScreen (§12.8)', () => {
   });
 });
 
-describe('ImportScreen and the update prompt (§12.12)', () => {
+describe('ImportScreen and the update prompt', () => {
   beforeEach(() => {
     detectMock.mockReset();
     beginMock.mockReset();
@@ -268,7 +268,7 @@ describe('ImportScreen and the update prompt (§12.12)', () => {
     installGateDone(true);
   });
 
-  it('keeps the update prompt away until begin answers, even after leaving (§12.12)', async () => {
+  it('keeps the update prompt away until begin answers, even after leaving', async () => {
     const user = userEvent.setup();
     detectMock.mockResolvedValue({ report, suggestedTargetChatId: null });
     let answer: (value: unknown) => void = () => undefined;

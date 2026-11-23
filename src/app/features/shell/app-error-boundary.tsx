@@ -11,7 +11,7 @@ interface AppErrorBoundaryState {
 }
 
 /**
- * The single class component allowed in the codebase (AGENTS.md §18.4):
+ * The single class component allowed in the codebase:
  * catches unexpected render errors and shows a plain recovery screen.
  */
 export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorBoundaryState> {

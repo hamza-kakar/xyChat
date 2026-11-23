@@ -1,5 +1,5 @@
 /**
- * Chat info: import history (§12.7) — when, which file, how many messages
+ * Chat info: import history — when, which file, how many messages
  * were added or already there, the parser version and a warnings summary.
  * Import times are app bookkeeping instants (not chat timestamps), shown
  * in the device's time zone.

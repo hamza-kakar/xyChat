@@ -1,5 +1,5 @@
 /**
- * Bookmark note editor (AGENTS.md §12.5 "Bookmark / Edit note"). An empty
+ * Bookmark note editor ("Bookmark / Edit note"). An empty
  * note is stored as no note.
  */
 import { useState } from 'react';

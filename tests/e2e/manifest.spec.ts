@@ -63,9 +63,7 @@ test('apple-touch-icon link resolves', async ({ page }) => {
 
 test('manifest name matches the APP_NAME constant', async ({ page, request }) => {
   await page.goto('/');
-  const response = await request.get(
-    `${new URL(page.url()).origin}/xychat/manifest.webmanifest`,
-  );
+  const response = await request.get(`${new URL(page.url()).origin}/xychat/manifest.webmanifest`);
   const manifest = (await response.json()) as { name?: string; short_name?: string };
   // APP_NAME lives in src/app/app-name.ts; read it from source for the check.
   const source = readFileSync('src/app/app-name.ts', 'utf8');

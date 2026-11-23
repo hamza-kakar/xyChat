@@ -1,5 +1,5 @@
 /**
- * Settings queries and mutations (AGENTS.md §12.9, §15.3, §18.4): app
+ * Settings queries and mutations: app
  * lock, storage, diagnostics and the license list.
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -13,7 +13,7 @@ import {
 import { loadLicenses } from './licenses';
 import { queryKeys } from './keys';
 
-/** App-lock state: PIN set, auto-lock delay, active lockout (§15.3). */
+/** App-lock state: PIN set, auto-lock delay, active lockout. */
 export function useLockState() {
   return useQuery({ queryKey: queryKeys.lockState(), queryFn: () => dbClient.getLockState() });
 }
@@ -29,7 +29,7 @@ export function useVerifyPin() {
   });
 }
 
-/** Sets, changes or removes the PIN (§15.3). */
+/** Sets, changes or removes the PIN. */
 export function useChangePin() {
   const client = useQueryClient();
   return useMutation({
@@ -41,7 +41,7 @@ export function useChangePin() {
   });
 }
 
-/** Stores the auto-lock delay (§15.3). */
+/** Stores the auto-lock delay. */
 export function useSetAutoLock() {
   const client = useQueryClient();
   return useMutation({
@@ -52,7 +52,7 @@ export function useSetAutoLock() {
   });
 }
 
-/** Media bytes per chat (§12.9). */
+/** Media bytes per chat. */
 export function useStorageUsage() {
   return useQuery({
     queryKey: queryKeys.storageUsage(),
@@ -60,17 +60,17 @@ export function useStorageUsage() {
   });
 }
 
-/** The browser's usage and quota estimate (§12.9). */
+/** The browser's usage and quota estimate. */
 export function useStorageEstimate() {
   return useQuery({ queryKey: queryKeys.storageEstimate(), queryFn: () => estimateStorage() });
 }
 
-/** Whether the origin holds persistent storage (§12.9). */
+/** Whether the origin holds persistent storage. */
 export function useStoragePersisted() {
   return useQuery({ queryKey: queryKeys.storagePersisted(), queryFn: () => isStoragePersisted() });
 }
 
-/** Asks for persistent storage (§12.9 "Request"). */
+/** Asks for persistent storage ("Request"). */
 export function useRequestPersistence() {
   const client = useQueryClient();
   return useMutation({
@@ -81,7 +81,7 @@ export function useRequestPersistence() {
   });
 }
 
-/** Lists stored files that no attachment references (§9.3 sweeper). */
+/** Lists stored files that no attachment references (sweeper). */
 export function useFindOrphanMedia() {
   return useMutation({ mutationFn: () => dbClient.listOrphanMedia() });
 }
@@ -97,7 +97,7 @@ export function useDeleteOrphanMedia() {
   });
 }
 
-/** Schema version of the open database (§12.9 diagnostics). */
+/** Schema version of the open database (diagnostics). */
 export function useSchemaVersion() {
   return useQuery({
     queryKey: queryKeys.schemaVersion(),
@@ -112,7 +112,7 @@ export interface CapabilityStatus {
   readonly ok: boolean;
 }
 
-/** The capability report for Diagnostics (§12.9, §12.11). */
+/** The capability report for Diagnostics. */
 export function useCapabilityReport() {
   return useQuery({
     queryKey: queryKeys.capabilities(),
@@ -128,7 +128,7 @@ export function useCapabilityReport() {
   });
 }
 
-/** The bundled dependencies' licenses (§12.9 About). */
+/** The bundled dependencies' licenses (About). */
 export function useLicenses() {
   return useQuery({ queryKey: queryKeys.licenses(), queryFn: () => loadLicenses() });
 }

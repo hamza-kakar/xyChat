@@ -1,6 +1,6 @@
 /**
- * The persisted import report (AGENTS.md §9.2 step 11, §12.7 import
- * history): counts only — never message content or file names (§15.4).
+ * The persisted import report (import
+ * history): counts only — never message content or file names.
  * The import worker sends the run facts with the commit; the commit adds
  * its own counts and stores the whole report in `imports.report_json`.
  */
@@ -15,7 +15,7 @@ const DURATION_MS = v.pipe(
   v.minValue(0),
   v.maxValue(Number.MAX_SAFE_INTEGER),
 );
-/** Parse warning codes are short identifiers (§8.2). */
+/** Parse warning codes are short identifiers. */
 const WARNING_CODE = v.pipe(v.string(), v.regex(/^[A-Z_]{1,64}$/u));
 /** At most one entry per warning code. */
 const MAX_WARNING_CODES = 32;
@@ -51,7 +51,7 @@ export type ImportReport = v.InferOutput<typeof ImportReportSchema>;
  *
  * @param text The column value (null until the import completes).
  * @returns The validated report, or null when absent or invalid (an
- *   invalid report is shown as "no details", never guessed, §18.5).
+ *   invalid report is shown as "no details", never guessed).
  */
 export function parseImportReport(text: string | null): ImportReport | null {
   if (text === null) {

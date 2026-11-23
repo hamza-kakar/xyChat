@@ -1,6 +1,6 @@
 /**
  * Repository contract: media gallery, links, durations, video thumbnails
- * and decoded-audio cache paths (§12.6, §13). Chromium against real
+ * and decoded-audio cache paths. Chromium against real
  * sqlite-wasm per ADR 0007.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -110,7 +110,7 @@ afterEach(() => {
   db.close();
 });
 
-describe('repository contract: media gallery (§12.6)', () => {
+describe('repository contract: media gallery', () => {
   it('lists stored media of the requested types, newest first, with context', () => {
     const page = repo.listAttachments({
       chatId,
@@ -147,7 +147,7 @@ describe('repository contract: media gallery (§12.6)', () => {
   });
 });
 
-describe('repository contract: links (§12.6)', () => {
+describe('repository contract: links', () => {
   it('lists text messages with links, newest first, paged by seq', () => {
     const page = repo.listLinks({ chatId, cursor: null, limit: 50 });
     expect(page.messages.map((message) => message.seq)).toEqual([7, 0]);
@@ -161,7 +161,7 @@ describe('repository contract: links (§12.6)', () => {
   });
 });
 
-describe('repository contract: durations and video thumbnails (§13.2, §13.3)', () => {
+describe('repository contract: durations and video thumbnails', () => {
   it('stores a duration only on stored audio', () => {
     repo.setAttachmentDuration(asAttachmentId('att-3'), 4200);
     repo.setAttachmentDuration(asAttachmentId('att-1'), 4200);
@@ -183,7 +183,7 @@ describe('repository contract: durations and video thumbnails (§13.2, §13.3)',
   });
 });
 
-describe('repository contract: decoded-audio cache paths (§13.2)', () => {
+describe('repository contract: decoded-audio cache paths', () => {
   it('deletes a chat with its audio cache paths and keeps known ones out of orphans', () => {
     expect(repo.listChatMediaPaths(chatId)).toContain('cache/audio/att-3.wav');
     const orphans = repo.listOrphanMedia(['cache/audio/att-3.wav', 'cache/audio/gone.wav']);

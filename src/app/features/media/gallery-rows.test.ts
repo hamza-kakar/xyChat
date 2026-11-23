@@ -10,7 +10,7 @@ const at = (year: number, month: number) => ({
   second: 0,
 });
 
-describe('gallery rows (§12.6)', () => {
+describe('gallery rows', () => {
   it('groups by month and splits rows by column count', () => {
     const items = [
       { id: 'a', ts: at(2026, 5) },

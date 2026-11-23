@@ -1,11 +1,11 @@
 /**
- * Pick-step test (§12.8.2): the labelled file input forwards the chosen file.
+ * Pick-step test: the labelled file input forwards the chosen file.
  */
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ImportPickStep } from './import-pick-step';
 
-describe('ImportPickStep (§12.8.2)', () => {
+describe('ImportPickStep', () => {
   it('forwards the picked file through the hidden input', () => {
     const onPicked = vi.fn();
     render(<ImportPickStep onPicked={onPicked} />);

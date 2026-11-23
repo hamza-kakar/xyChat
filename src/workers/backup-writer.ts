@@ -1,5 +1,5 @@
 /**
- * Backup archive writer (AGENTS.md §10.6): streams the manifest, the
+ * Backup archive writer: streams the manifest, the
  * database snapshot and the media files into a zip in OPFS
  * (`backup-tmp/`) through a sync-access-handle sink, so a large backup is
  * never held in memory. Media is stored without recompression; it is
@@ -14,12 +14,12 @@ import type { TransferHooks } from './transfer-hooks';
 /** Why writing the archive stopped. */
 export type BackupWriteErrorCode = 'CANCELLED' | 'QUOTA' | 'IO';
 
-/** A typed write failure (no content, §15.4). */
+/** A typed write failure (no content). */
 export interface BackupWriteError {
   readonly code: BackupWriteErrorCode;
 }
 
-/** File access the writer needs (§18.4 test seam). */
+/** File access the writer needs (test seam). */
 export interface BackupWriterDeps {
   /** Opens the archive's output file. */
   readonly openSink: (path: string) => Promise<Result<MediaWriteSink, MediaWriteError>>;

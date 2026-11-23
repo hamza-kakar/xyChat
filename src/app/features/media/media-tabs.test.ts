@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { isGridTab, parseTab, TAB_TYPES } from './media-tabs';
 
-describe('gallery tabs (§12.6)', () => {
+describe('gallery tabs', () => {
   it('parses ?tab= and falls back to photos', () => {
     expect(parseTab('videos')).toBe('videos');
     expect(parseTab('links')).toBe('links');

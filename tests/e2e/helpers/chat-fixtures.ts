@@ -1,6 +1,6 @@
 /**
- * Synthetic exports for the chat-view e2e flows (§19.5 flow 17, §22 M4).
- * Generated at test time; no committed chat data (§0 rule 9).
+ * Synthetic exports for the chat-view e2e flows.
+ * Generated at test time; no committed chat data.
  */
 import { buildZipBlob, IOS_GROUP_TEXT } from './import-fixtures';
 import * as zipJs from '@zip.js/zip.js';
@@ -32,7 +32,7 @@ export async function buildRtlZip(): Promise<Blob> {
 }
 
 /** An Android 1:1 export of `count` text messages, spread over days so
- * day separators appear while scrolling (§17 scroll budget). */
+ * day separators appear while scrolling (scroll budget). */
 export function largeChatText(count: number): string {
   const lines: string[] = [];
   const authors = ['Sara', 'Ali Khan'];

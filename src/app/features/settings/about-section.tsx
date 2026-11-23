@@ -1,5 +1,5 @@
 /**
- * Settings → About (AGENTS.md §12.9): the privacy statement, the reminder
+ * Settings → About: the privacy statement, the reminder
  * that the original exports are the backup, the source link, and the
  * licenses of the bundled dependencies.
  */

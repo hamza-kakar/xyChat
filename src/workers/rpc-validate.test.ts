@@ -1,5 +1,5 @@
 /**
- * RPC input validation tests (§18.5): every validator
+ * RPC input validation tests: every validator
  * rejects malformed worker input with RpcValidationError and passes fully
  * valid data through unchanged.
  */
@@ -54,7 +54,7 @@ function firstMessageOf(input: Record<string, unknown>): {
   return first;
 }
 
-describe('RPC validation: commitImport input (§18.5)', () => {
+describe('RPC validation: commitImport input', () => {
   it('rejects non-hex fingerprints', () => {
     expect(() =>
       rpcInput.commitImport('commitImport', validCommitInput({ fingerprint: 'zz' })),
@@ -91,7 +91,7 @@ describe('RPC validation: commitImport input (§18.5)', () => {
   });
 });
 
-describe('RPC validation: search input (§18.5)', () => {
+describe('RPC validation: search input', () => {
   it('rejects bad search queries and clamps nothing silently', () => {
     const base = {
       chatId: null,
@@ -135,7 +135,7 @@ describe('RPC validation: search input (§18.5)', () => {
   });
 });
 
-describe('RPC validation: ids, windows and records (§18.5)', () => {
+describe('RPC validation: ids, windows and records', () => {
   it('brands ids only after length validation', () => {
     expect(rpcInput.chatId('getChat', 'chat-123')).toBe('chat-123');
     expect(() => rpcInput.chatId('getChat', '')).toThrow(RpcValidationError);
@@ -179,8 +179,8 @@ describe('RPC validation: ids, windows and records (§18.5)', () => {
   });
 });
 
-describe('RPC validation: paths, queries and timestamps (§18.5)', () => {
-  it('validates written-path lists and rejects traversal (§15.2)', () => {
+describe('RPC validation: paths, queries and timestamps', () => {
+  it('validates written-path lists and rejects traversal', () => {
     expect(rpcInput.writtenPaths('recordWrittenPaths', ['media/c/a.jpg'])).toEqual([
       'media/c/a.jpg',
     ]);

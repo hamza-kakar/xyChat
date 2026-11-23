@@ -1,5 +1,5 @@
 /**
- * RPC input validation for backup and restore (AGENTS.md §10.6, §18.5).
+ * RPC input validation for backup and restore.
  */
 import * as v from 'valibot';
 import { RpcValidationError } from './rpc-validate';

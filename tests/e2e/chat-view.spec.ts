@@ -1,6 +1,5 @@
 /**
- * Chat list and chat view e2e (AGENTS.md §12.4, §12.5, §16, §17; §19.5
- * flow 17; §22 M4): rendering of an imported group, message actions,
+ * Chat list and chat view e2e: rendering of an imported group, message actions,
  * rename and delete, the self banner, RTL direction, and the 100k-message
  * scroll budget. Chromium runs the storage path; WebKit skips (ADR 0007).
  */
@@ -38,7 +37,7 @@ async function importFamily(page: Page, self?: string): Promise<void> {
   });
 }
 
-test('chat list and chat view render an imported group (§12.4, §12.5)', async ({ page }) => {
+test('chat list and chat view render an imported group', async ({ page }) => {
   await importFamily(page, 'Sara');
   await page.getByRole('button', { name: 'Done' }).click();
 
@@ -95,7 +94,7 @@ test('chat list and chat view render an imported group (§12.4, §12.5)', async 
   await expectAxeClean(page);
 });
 
-test('message actions: copy and message info (§12.5)', async ({ page, context }) => {
+test('message actions: copy and message info', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await importFamily(page, 'Sara');
   await page.getByRole('button', { name: 'Open chat' }).click();
@@ -118,7 +117,7 @@ test('message actions: copy and message info (§12.5)', async ({ page, context }
   await expect(info).toHaveCount(0);
 });
 
-test('rename and delete a chat from the list (§12.4, §10.4)', async ({ page }) => {
+test('rename and delete a chat from the list', async ({ page }) => {
   await importFamily(page);
   await page.getByRole('button', { name: 'Done' }).click();
   expect(await countOpfsMediaFiles(page)).toBe(1);
@@ -138,7 +137,7 @@ test('rename and delete a chat from the list (§12.4, §10.4)', async ({ page })
   await expect.poll(async () => countOpfsMediaFiles(page)).toBe(0);
 });
 
-test('self banner: choosing who is me moves their bubbles (§12.5)', async ({ page }) => {
+test('self banner: choosing who is me moves their bubbles', async ({ page }) => {
   await importFamily(page);
   await page.getByRole('button', { name: 'Open chat' }).click();
   await expect(page.getByText('Choose which person is you')).toBeVisible();
@@ -155,7 +154,7 @@ test('self banner: choosing who is me moves their bubbles (§12.5)', async ({ pa
   }
 });
 
-test('RTL messages take their direction from their content (§12.5, flow 17)', async ({ page }) => {
+test('RTL messages take their direction from their content', async ({ page }) => {
   await importChat(page, { blob: await buildRtlZip(), name: 'WhatsApp Chat with علی.zip' });
   await page.getByRole('button', { name: 'Open chat' }).click();
   const log = page.getByRole('log');
@@ -167,7 +166,7 @@ test('RTL messages take their direction from their content (§12.5, flow 17)', a
   await expectAxeClean(page);
 });
 
-test('100k-message chat: opens fast, scrolls without long tasks, restores place (§17)', async ({
+test('100k-message chat: opens fast, scrolls without long tasks, restores place', async ({
   page,
 }) => {
   test.setTimeout(240_000);
@@ -181,7 +180,7 @@ test('100k-message chat: opens fast, scrolls without long tasks, restores place 
   const row = page.getByRole('link', { name: /Big/u });
   await expect(row).toBeVisible();
 
-  // §17: first bubbles painted within 300 ms of opening (DB already ready).
+  //  first bubbles painted within 300 ms of opening (DB already ready).
   const openMs = await page.evaluate(async () => {
     const link = [...document.querySelectorAll('a')].find((a) => a.textContent.includes('Big'));
     if (link === undefined) {
@@ -206,7 +205,7 @@ test('100k-message chat: opens fast, scrolls without long tasks, restores place 
   const log = page.getByRole('log');
   await expect(log.getByText('message 99999 with some ordinary words')).toBeVisible();
 
-  // §17: a scripted fast scroll produces no long task over 50 ms.
+  //  a scripted fast scroll produces no long task over 50 ms.
   const longTasks = await page.evaluate(async () => {
     const durations: number[] = [];
     const observer = new PerformanceObserver((list) => {
@@ -226,7 +225,7 @@ test('100k-message chat: opens fast, scrolls without long tasks, restores place 
   });
   expect(longTasks.filter((duration) => duration > 50)).toEqual([]);
 
-  // Leaving and coming back restores the place (§12.5).
+  // Leaving and coming back restores the place.
   await expect(log.locator('article:not([aria-busy])').first()).toBeVisible();
   const topBefore = await log.locator('article[data-seq]').first().getAttribute('data-seq');
   await page.getByRole('link', { name: 'Back to chats' }).click();

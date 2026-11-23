@@ -1,7 +1,7 @@
 /**
- * Backup and restore API types (AGENTS.md §10.6): requests, results and
+ * Backup and restore API types: requests, results and
  * typed errors shared by the db.worker API and the runs. Types only, so
- * the client can import them without the worker's OPFS modules (§3.1).
+ * the client can import them without the worker's OPFS modules.
  */
 import type { BackupArchiveErrorCode } from './backup-archive';
 import type { BackupReadErrorCode } from '../storage/sqlite/backup-read';
@@ -45,7 +45,7 @@ export type RestoreErrorCode =
   | 'NOTHING_TO_RESTORE'
   | 'TARGET_NOT_FOUND';
 
-/** A typed restore failure (codes only, §15.4). */
+/** A typed restore failure (codes only). */
 export interface RestoreError {
   readonly code: RestoreErrorCode;
 }
@@ -69,7 +69,7 @@ export interface RestorePreviewChat {
   readonly match: RestoreMatch | null;
 }
 
-/** The restore preview (§10.6). */
+/** The restore preview. */
 export interface RestorePreview {
   readonly createdAt: string;
   readonly appVersion: string;

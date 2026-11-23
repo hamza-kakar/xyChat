@@ -1,6 +1,5 @@
 /**
- * Progress and cancellation state of a running backup or restore
- * (AGENTS.md §10.6, §18.8). The callbacks are stable, so they can travel
+ * Progress and cancellation state of a running backup or restore. The callbacks are stable, so they can travel
  * to the worker once; cancelling flips a flag the worker polls.
  */
 import { useCallback, useMemo, useRef, useState } from 'react';

@@ -1,5 +1,5 @@
 /**
- * Migration runner (AGENTS.md §10.3): applies `MIGRATIONS` in order inside
+ * Migration runner: applies `MIGRATIONS` in order inside
  * transactions, tracking `meta.schema_version`. Refuses to open a database
  * newer than the app (never corrupt data).
  */

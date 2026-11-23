@@ -1,5 +1,5 @@
 /**
- * Contact card (AGENTS.md §12.5): the name from the stored `.vcf` (parsed
+ * Contact card: the name from the stored `.vcf` (parsed
  * in db.worker, size-capped), plus Share or Save for the card itself.
  */
 import { useState } from 'react';

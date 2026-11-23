@@ -1,15 +1,15 @@
 /**
- * Archive reader (AGENTS.md §9.2 steps 1–3, §15.2): opens a
+ * Archive reader: opens a
  * `.zip` or `.txt` export, validates size and magic bytes, enforces the
  * zip-bomb and entry limits, checks free storage quota, locates the chat
  * text, and decodes it. The media phase opens the archive ONCE and streams
  * entries chunk-by-chunk into OPFS through the sync-handle sink — the
  * central directory is never re-parsed per file, and no entry is buffered
- * whole (§9.2 step 8, §9.4).
+ * whole.
  *
- * Storage estimation is dependency-injected (§18.4) so the safety checks
+ * Storage estimation is dependency-injected so the safety checks
  * run in Node tests against a fake. Error details carry COUNTS ONLY —
- * never entry names or raw exception text (§15.4).
+ * never entry names or raw exception text.
  */
 import * as zipJs from '@zip.js/zip.js';
 import { err, ok, type Result } from '../core/result';
@@ -25,19 +25,19 @@ import {
 export type { ArchiveError, ArchiveErrorCode } from './archive-gates';
 export { isSafeEntryName } from './archive-gates';
 
-/** The located chat text plus archive facts for the report (§9.2 step 11). */
+/** The located chat text plus archive facts for the report. */
 export interface ArchiveContent {
   /** Chat text decoded as UTF-8 (lossy on invalid sequences). */
   readonly text: string;
   /** True when the input was a zip archive (vs a bare .txt). */
   readonly wasZip: boolean;
-  /** Replacement characters inserted by lossy decoding (§9.2 step 3). */
+  /** Replacement characters inserted by lossy decoding. */
   readonly replacementChars: number;
-  /** Total uncompressed size of scanned archive entries (quota check §9.2 step 1). */
+  /** Total uncompressed size of scanned archive entries (quota check ). */
   readonly uncompressedTotalBytes: number;
 }
 
-/** Injectable storage estimate (§18.4 test seam). */
+/** Injectable storage estimate (test seam). */
 export interface ArchiveReaderDeps {
   /** Returns the device's free storage in bytes (quota − usage). */
   readonly estimateFreeBytes: () => Promise<number>;
@@ -51,7 +51,7 @@ export const productionArchiveReaderDeps: ArchiveReaderDeps = {
   },
 };
 
-/** ZIP local-file-header magic (§9.2 step 1). */
+/** ZIP local-file-header magic. */
 const ZIP_MAGIC = [0x50, 0x4b, 0x03, 0x04];
 
 /** True when the leading bytes match the ZIP magic. */
@@ -61,7 +61,7 @@ function hasZipMagic(bytes: Uint8Array): boolean {
   );
 }
 
-/** Checks free quota against 1.1× the expected footprint (§9.2 step 1). */
+/** Checks free quota against 1.1× the expected footprint. */
 async function checkQuota(
   deps: ArchiveReaderDeps,
   uncompressedTotalBytes: number,
@@ -71,7 +71,7 @@ async function checkQuota(
   try {
     free = await deps.estimateFreeBytes();
   } catch {
-    // An unavailable estimate must not fail the import (§0.6 conservative:
+    // An unavailable estimate must not fail the import (conservative:
     // proceed; OPFS writes surface their own QUOTA errors later).
     return ok(true);
   }
@@ -88,7 +88,7 @@ async function checkQuota(
  * @param file The user-selected blob from the import picker.
  * @param fileName The picker's file name (extension gate + title source).
  * @param deps Storage estimate; production default uses
- *   `navigator.storage.estimate` (§9.2 step 1).
+ *   `navigator.storage.estimate`.
  * @returns The decoded chat text plus archive facts, or a structured error.
  * @example
  * const result = await readArchive(file, 'export.zip');
@@ -99,7 +99,7 @@ export async function readArchive(
   fileName: string,
   deps: ArchiveReaderDeps = productionArchiveReaderDeps,
 ): Promise<Result<ArchiveContent, ArchiveError>> {
-  // §9.2 step 1: validate size and type before touching the contents.
+  //  validate size and type before touching the contents.
   if (!hasAcceptedExtension(fileName)) {
     return err({ code: 'UNSUPPORTED_FILE_TYPE', detail: 'extension not accepted' });
   }
@@ -151,9 +151,8 @@ interface ZipScan {
   readonly uncompressedTotalBytes: number;
 }
 
-/** Scans the central directory: safety checks per entry (§15.2), totals the
- * uncompressed size, and picks the chat text entry (§9.2 step 2:
- * _chat.txt → WhatsApp Chat*.txt → largest .txt). Metadata only — no
+/** Scans the central directory: safety checks per entry, totals the
+ * uncompressed size, and picks the chat text entry (_chat.txt → WhatsApp Chat*.txt → largest .txt). Metadata only — no
  * decompression happens here. */
 async function scanZip(file: Blob): Promise<Result<ZipScan, ArchiveError>> {
   let reader: zipJs.ZipReader<zipJs.BlobReader> | null = null;
@@ -173,11 +172,11 @@ async function scanZip(file: Blob): Promise<Result<ZipScan, ArchiveError>> {
         continue;
       }
       const name = entry.filename;
-      // §15.2: reject traversal/absolute/NUL names anywhere in the archive.
+      //  reject traversal/absolute/NUL names anywhere in the archive.
       if (!isSafeEntryName(name)) {
         return err({ code: 'PATH_TRAVERSAL', detail: 'unsafe entry name' });
       }
-      // §15.2: zip-bomb and per-entry size caps from declared metadata.
+      //  zip-bomb and per-entry size caps from declared metadata.
       if (isBombEntry(entry)) {
         return err({
           code: 'COMPRESSION_RATIO',
@@ -187,7 +186,7 @@ async function scanZip(file: Blob): Promise<Result<ZipScan, ArchiveError>> {
       if (isOversizedEntry(entry)) {
         return err({ code: 'ENTRY_TOO_LARGE', detail: `${entry.uncompressedSize} bytes` });
       }
-      // §9.2 step 2: ignore macOS metadata and dotfiles.
+      //  ignore macOS metadata and dotfiles.
       if (name.includes('__MACOSX') || name.split('/').pop()?.startsWith('.') === true) {
         continue;
       }
@@ -263,9 +262,9 @@ export {
   type ChunkSink,
 } from './opened-archive';
 
-/** Raw exception TEXT can echo file names or values (§15.4) — diagnostics
+/** Raw exception TEXT can echo file names or values — diagnostics
  * carry the error's class name only; the full text goes to the worker
- * logger sink, never to the UI (§18.7). */
+ * logger sink, never to the UI. */
 function errorNameOf(error: unknown): string {
   return error instanceof Error ? error.name : 'unknown error';
 }
@@ -284,7 +283,7 @@ function decodeTextLossy(text: string): {
   return { text, replacementChars };
 }
 
-/** Decodes raw bytes as UTF-8 with replacement chars counted (§9.2 step 3). */
+/** Decodes raw bytes as UTF-8 with replacement chars counted. */
 function decodeUtf8Lossy(buffer: ArrayBuffer): {
   readonly text: string;
   readonly replacementChars: number;

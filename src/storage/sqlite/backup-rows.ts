@@ -1,5 +1,5 @@
 /**
- * Row schemas for reading a backup database (AGENTS.md §10.6, §18.5):
+ * Row schemas for reading a backup database:
  * every value from a user-picked backup is checked here before it becomes
  * restore input. Split from backup-read.ts.
  */
@@ -10,7 +10,7 @@ import type { MediaType, MessageKind } from '../../core/model';
 /** Why a backup database can't be used. */
 export type BackupReadErrorCode = 'CORRUPT_DATABASE' | 'SCHEMA_TOO_NEW';
 
-/** A typed backup-read failure; the detail carries no content (§15.4). */
+/** A typed backup-read failure; the detail carries no content. */
 export interface BackupReadError {
   readonly code: BackupReadErrorCode;
   readonly detail: string;

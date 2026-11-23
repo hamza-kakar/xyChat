@@ -1,5 +1,5 @@
 /**
- * Search-match highlighting (AGENTS.md §11): splits text into plain and
+ * Search-match highlighting: splits text into plain and
  * matching segments so the app renders `<mark>` nodes — never HTML
  * strings. Matching is case-insensitive like the FTS trigram index.
  */

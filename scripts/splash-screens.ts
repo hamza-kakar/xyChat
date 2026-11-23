@@ -1,5 +1,5 @@
 /**
- * iOS launch images (AGENTS.md §14): the device sizes, their file names and
+ * iOS launch images: the device sizes, their file names and
  * the `apple-touch-startup-image` link tags. The images themselves are drawn
  * by `generate-icons.ts`; `vite.config.ts` puts the tags into index.html.
  * iOS only shows a launch image whose media query matches the device

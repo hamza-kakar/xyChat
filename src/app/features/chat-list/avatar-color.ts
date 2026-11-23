@@ -1,4 +1,4 @@
-/** Number of participant/avatar colors (§12.2). */
+/** Number of participant/avatar colors. */
 export const PALETTE_SIZE = 12;
 
 /** Stable palette index from a title (FNV-1a), same on every launch. */

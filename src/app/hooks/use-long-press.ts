@@ -1,5 +1,5 @@
 /**
- * Long-press and context-menu handling (AGENTS.md §12.4, §12.5): touch
+ * Long-press and context-menu handling: touch
  * users hold, mouse users right-click, keyboard users use the explicit
  * button the caller also renders. A completed long press swallows the
  * click that follows it, so a link under the finger doesn't navigate.

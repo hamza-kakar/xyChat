@@ -1,5 +1,5 @@
 /**
- * Object URL for a stored media file (§10.4): served from the shared LRU
+ * Object URL for a stored media file: served from the shared LRU
  * cache, read from OPFS on a miss. Null while loading or when the file is
  * missing.
  */
