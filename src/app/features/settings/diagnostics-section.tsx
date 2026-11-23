@@ -86,19 +86,19 @@ export function DiagnosticsSection() {
 
   return (
     <SettingsSection heading={en.settings.diagnostics.heading} id="diagnostics">
-      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+      <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 text-sm">
         {versions.map(([label, value]) => (
           <div key={label} className="contents">
             <dt className="text-text-muted">{label}</dt>
-            <dd className="text-text">{value}</dd>
+            <dd className="text-text break-words">{value}</dd>
           </div>
         ))}
       </dl>
       <h3 className="text-text-muted text-sm">{en.settings.diagnostics.capabilitiesHeading}</h3>
       <ul className="flex flex-col gap-1 text-sm">
         {(capabilities.data ?? []).map((row) => (
-          <li key={row.id} className="flex justify-between gap-3">
-            <span className="text-text">{en.capability[row.id]}</span>
+          <li key={row.id} className="flex flex-wrap justify-between gap-x-3">
+            <span className="text-text min-w-0 break-words">{en.capability[row.id]}</span>
             <span className={row.ok ? 'text-text-muted' : 'text-danger font-semibold'}>
               {row.ok ? en.settings.diagnostics.available : en.settings.diagnostics.missing}
             </span>

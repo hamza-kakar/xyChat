@@ -170,7 +170,8 @@ describe('MessageContent media (§12.5, §13.1)', () => {
     );
     expect(screen.getByText('report.pdf')).toBeInTheDocument();
     expect(screen.getByText('5 KB')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Open Document' }));
+    // The visible name and size are part of the button's name (WCAG 2.5.3).
+    await user.click(screen.getByRole('button', { name: 'Open report.pdf 5 KB' }));
     expect(openMedia).toHaveBeenCalledWith(docMessage, doc);
   });
 

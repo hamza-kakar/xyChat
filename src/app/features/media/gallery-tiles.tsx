@@ -102,10 +102,10 @@ export const GalleryListRow = memo(function GalleryListRow({
     : attachment.byteSize === null
       ? null
       : formatBytes(attachment.byteSize);
+  // The row's visible text is its accessible name (WCAG 2.5.3).
   return (
     <button
       type="button"
-      aria-label={galleryItemLabel(item, navigator.language)}
       className="border-border flex min-h-14 w-full items-center gap-3 border-b px-4 py-2 text-start"
       onClick={() => {
         onOpen(index);

@@ -34,15 +34,15 @@ export function ChatListPane({ asSidebar }: ChatListPaneProps) {
       aria-label={asSidebar ? en.chatList.heading : undefined}
       className="bg-surface safe-area flex min-h-dvh w-full flex-col"
     >
-      <header className="border-border flex items-center gap-2 border-b py-2 ps-4 pe-2">
+      <header className="border-border flex flex-wrap items-center gap-x-2 border-b py-2 ps-4 pe-2">
         <Heading
           ref={asSidebar ? undefined : headingRef}
           tabIndex={-1}
-          className="text-text flex-1 text-xl font-bold outline-none"
+          className="text-text min-w-32 flex-1 text-xl font-bold break-words outline-none"
         >
           {APP_NAME}
         </Heading>
-        <nav aria-label={en.chatList.toolbarLabel} className="flex items-center">
+        <nav aria-label={en.chatList.toolbarLabel} className="ms-auto flex flex-wrap items-center">
           <Link
             to="/search"
             aria-label={en.chatList.searchButton}
