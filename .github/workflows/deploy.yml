@@ -1,4 +1,4 @@
-# Production deploy: builds waChatBack and publishes to GitHub Pages.
+# Production deploy: builds xyChat and publishes to GitHub Pages.
 # Triggered ONLY by a successful CI run on main (§20.4).
 name: Deploy to GitHub Pages
 

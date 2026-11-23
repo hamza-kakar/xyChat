@@ -50,7 +50,7 @@ describe('ChatListPane (§12.4)', () => {
     expect(links[0]).toHaveAttribute('href', `/chat/${CHAT_ID}`);
     expect(screen.getByText('Sara: see you soon')).toBeInTheDocument();
     expect(screen.getByText('Group')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 1, name: 'waChatBack' })).toHaveFocus();
+    expect(screen.getByRole('heading', { level: 1, name: 'xyChat' })).toHaveFocus();
   });
 
   it('filters titles locally as you type', async () => {
@@ -81,7 +81,7 @@ describe('ChatListPane (§12.4)', () => {
   it('becomes navigation beside an open chat and marks it current', async () => {
     renderList(`/chat/${CHAT_ID}`);
     expect(await screen.findByRole('navigation', { name: 'Chats' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: 'waChatBack' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'xyChat' })).toBeInTheDocument();
     expect(await screen.findByRole('link', { name: /Family/u })).toHaveAttribute(
       'aria-current',
       'page',

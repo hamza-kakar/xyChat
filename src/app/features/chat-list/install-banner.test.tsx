@@ -14,19 +14,19 @@ describe('InstallBanner (§12.10)', () => {
   it('shows in an iOS Safari tab and can be dismissed', async () => {
     const user = userEvent.setup();
     render(<InstallBanner />);
-    expect(screen.getByText(/Install waChatBack to your Home Screen/u)).toBeInTheDocument();
+    expect(screen.getByText(/Install xyChat to your Home Screen/u)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Dismiss' }));
-    expect(screen.queryByText(/Install waChatBack/u)).toBeNull();
+    expect(screen.queryByText(/Install xyChat/u)).toBeNull();
   });
 
   it('stays hidden when installed or not on iOS Safari', () => {
     install.standalone = true;
     const { unmount } = render(<InstallBanner />);
-    expect(screen.queryByText(/Install waChatBack/u)).toBeNull();
+    expect(screen.queryByText(/Install xyChat/u)).toBeNull();
     unmount();
     install.standalone = false;
     install.ios = false;
     render(<InstallBanner />);
-    expect(screen.queryByText(/Install waChatBack/u)).toBeNull();
+    expect(screen.queryByText(/Install xyChat/u)).toBeNull();
   });
 });

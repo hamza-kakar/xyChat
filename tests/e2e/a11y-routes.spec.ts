@@ -31,7 +31,7 @@ interface RouteCheck {
 }
 
 const ROUTES: readonly RouteCheck[] = [
-  { path: () => '#/', heading: 'waChatBack' },
+  { path: () => '#/', heading: 'xyChat' },
   { path: (chat) => chat, heading: 'Sara' },
   { path: (chat) => `${chat}/info`, heading: 'Chat info' },
   { path: (chat) => `${chat}/media?tab=photos`, heading: 'Media' },

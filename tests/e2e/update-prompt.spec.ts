@@ -23,7 +23,7 @@ test.afterEach(async () => {
   await server.close();
 });
 
-const appHeading = (page: Page) => page.getByRole('heading', { level: 1, name: 'waChatBack' });
+const appHeading = (page: Page) => page.getByRole('heading', { level: 1, name: 'xyChat' });
 
 /** Opens the app and waits until the service worker controls the page. A
  * worker only waits while it has a page to wait for, so the first visit

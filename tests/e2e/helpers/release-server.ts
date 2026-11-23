@@ -11,7 +11,7 @@ import { extname, normalize, resolve, sep } from 'node:path';
 import type { AddressInfo } from 'node:net';
 
 const DIST = resolve(import.meta.dirname, '../../../dist');
-const BASE_PATH = process.env['E2E_BASE_PATH'] ?? '/wachatback/';
+const BASE_PATH = process.env['E2E_BASE_PATH'] ?? '/xychat/';
 
 const CONTENT_TYPES: Readonly<Record<string, string>> = {
   '.html': 'text/html; charset=utf-8',

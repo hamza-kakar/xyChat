@@ -62,7 +62,7 @@ and how a backup chat is matched to a local one.
   `missing`; re-importing the original export later fills them in (§8.10
   media upgrade).
 - **File name.** `<app name>-backup-YYYYMMDD-HHMM.zip` with the app name
-  lower-cased (`APP_NAME` is waChatBack, so `wachatback-backup-…`), in
+  lower-cased (`APP_NAME` is xyChat, so `xychat-backup-…`), in
   device time.
 - **Offering the file.** "Share backup" uses `navigator.share({ files })`
   when `navigator.canShare` accepts the file; "Save backup" downloads it

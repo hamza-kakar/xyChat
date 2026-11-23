@@ -42,4 +42,4 @@ export const MEDIA = {
 } as const;
 
 /** The public source repository (Settings → About). */
-export const SOURCE_URL = 'https://github.com/hamza-kakar/wachatback';
+export const SOURCE_URL = 'https://github.com/hamza-kakar/xychat';

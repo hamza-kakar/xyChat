@@ -2,7 +2,7 @@
 
 ## Context
 
-waChatBack needs a real database (100k+ messages, FTS5 substring search) in a
+xyChat needs a real database (100k+ messages, FTS5 substring search) in a
 browser, without cross-origin isolation (GitHub Pages cannot set COOP/COEP,
 so `SharedArrayBuffer` is unavailable — §2).
 
