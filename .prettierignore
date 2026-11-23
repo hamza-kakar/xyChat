@@ -1,2 +1,3 @@
-# Machine-generated files — formatting them is fragile and pointless.
+# Machine-generated files (lockfile, release-please changelog) — formatting them is fragile and pointless.
 pnpm-lock.yaml
+CHANGELOG.md
