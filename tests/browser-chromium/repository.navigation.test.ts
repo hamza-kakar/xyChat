@@ -65,8 +65,10 @@ describe('repository contract: in-chat match list', () => {
         `2026-11-17T23:${String(Math.floor(i / 60)).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}`,
     });
     const capped = repo.listMatchingSeqs({ ...base, chatId, query: 'zq' });
+    // Navigation starts at the newest match, so the cap keeps the newest.
     expect(capped.seqs).toHaveLength(500);
-    expect(capped.seqs[0]).toBe(100);
+    expect(capped.seqs[0]).toBe(101);
+    expect(capped.seqs.at(-1)).toBe(600);
     expect(capped.isCapped).toBe(true);
   });
 });

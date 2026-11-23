@@ -151,8 +151,9 @@ export function searchMessages(db: SqliteDatabase, q: SearchQuery): SearchPage {
 /**
  * Every matching seq of an in-chat search, ascending (in-chat
  * navigation: the counter and next/previous need the full ordered list,
- * not a page of snippets). FTS matches stop at IN_CHAT_MATCH_CAP, the 1–2
- * char LIKE fallback at its 500-result cap.
+ * not a page of snippets). Navigation starts at the newest match, so a
+ * capped list keeps the newest IN_CHAT_MATCH_CAP matches (the 1–2 char
+ * LIKE fallback: its 500-result cap).
  */
 export function listMatchingSeqs(db: SqliteDatabase, q: InChatSearchQuery): MatchingSeqs {
   const cap = q.query.length < 3 ? LIKE_RESULT_CAP : IN_CHAT_MATCH_CAP;
@@ -163,12 +164,13 @@ export function listMatchingSeqs(db: SqliteDatabase, q: InChatSearchQuery): Matc
     `SELECT group_concat(seq, ',' ORDER BY seq) FROM (
        SELECT m.seq FROM messages m ${joins}
        WHERE ${conditions.join(' AND ')}
-       ORDER BY m.seq ASC
+       ORDER BY m.seq DESC
        LIMIT ?
      )`,
     [...params, cap + 1],
   );
   const all = unpackIntegers(rows[0]?.[0]);
-  const seqs = all.slice(0, cap);
-  return { seqs, isCapped: all.length > cap };
+  // `all` is ascending; with one extra row fetched, the oldest is the extra.
+  const isCapped = all.length > cap;
+  return { seqs: isCapped ? all.slice(1) : all, isCapped };
 }
