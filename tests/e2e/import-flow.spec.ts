@@ -7,6 +7,7 @@
  */
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { cspViolations, installCspListener } from './helpers/csp-violations';
 import { expectBootOrUnsupported, skipWithoutOpfs } from './helpers/skip-without-opfs';
 import { openPicker, pickFile } from './helpers/import-ui';
 import {
@@ -22,11 +23,16 @@ import {
 test.describe.configure({ mode: 'serial' });
 
 test.beforeEach(async ({ page }) => {
+  await installCspListener(page);
   const booted = await expectBootOrUnsupported(page);
   await skipWithoutOpfs.call(undefined, page);
   // The flows below drive the real pipeline — they need a booted app with
   // storage (Chromium; WebKit skips per ADR 0007).
   test.skip(!booted, 'Engine not supported; storage flows run on Chromium.');
+});
+
+test.afterEach(async ({ page }) => {
+  await expect(cspViolations(page)).resolves.toEqual([]);
 });
 
 test('flow 2: import an iOS group zip — confirm, self choice, report', async ({ page }) => {
