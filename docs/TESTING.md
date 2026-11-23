@@ -7,7 +7,26 @@ storage or import. Record results (date, device, OS, pass/fail) per run.
 
 - [ ] Open the Pages URL in Safari; app loads, no console errors.
 - [ ] Add to Home Screen; opens standalone (no Safari chrome).
-- [ ] Airplane mode → reload → app still boots.
+- [ ] Airplane mode → reload → app still boots, and an imported chat opens.
+- [ ] Launch from the Home Screen shows the launch image (light and dark
+      appearance), not a white flash.
+
+## Updates (from M9)
+
+- [ ] After a new deploy, reopening the app shows "Update available";
+      nothing reloads until Reload is tapped; Reload brings up the new
+      version (Settings → About shows it).
+- [ ] With an import (or a backup/restore) running, the message doesn't
+      appear; it shows once the import reaches its report.
+- [ ] "Later" hides the message until the next launch.
+
+## Large text (from M9)
+
+- [ ] Settings → Accessibility → Display & Text Size → Larger Text at the
+      largest accessibility size: the chat list, a chat, chat info, the
+      gallery, search, import and settings stay readable with no sideways
+      scrolling; header buttons move below the title instead of covering
+      it.
 
 ## Import (from M3)
 
@@ -130,3 +149,11 @@ Record the device, iOS version and date with the results.
   re-import the FTS triggers are dropped for the duration of the
   transaction and the index backfills scoped to the import's own rows
   (ADR 0012).
+
+## Run log
+
+Record each on-device run here: date, device, iOS version, build (Settings
+→ About), sections run, and any failure with its diagnostic code.
+
+| Date | Device | iOS | Build | Sections | Result |
+| ---- | ------ | --- | ----- | -------- | ------ |
