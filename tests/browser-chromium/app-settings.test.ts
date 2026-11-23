@@ -18,6 +18,7 @@ import {
 import { readSchemaVersion } from '../../src/storage/sqlite/meta';
 import { SCHEMA_VERSION } from '../../src/storage/sqlite/migrations';
 import { derivePinHash, randomPinSalt } from '../../src/platform/pin-hash';
+import { createSerialQueue } from '../../src/workers/serial-queue';
 import { openContractDb } from './contract-helpers';
 import type { SqliteDatabase } from '../../src/storage/sqlite/open';
 
@@ -111,6 +112,28 @@ describe('app lock (§15.3)', () => {
     await changePin(db, { current: null, next: '13579' }, realDeps);
     expect((await verifyPin(db, '13579', realDeps)).ok).toBe(true);
     expect((await verifyPin(db, '13578', realDeps)).ok).toBe(false);
+  });
+});
+
+describe('app lock attempts in parallel (§15.3)', () => {
+  it('queued parallel attempts cannot slip past the lockout', async () => {
+    await changePin(db, { current: null, next: '2468' }, fastDeps);
+    const queue = createSerialQueue();
+    let derivations = 0;
+    const countingDeps: PinDeps = {
+      ...fastDeps,
+      derive: async (pin, salt, iterations) => {
+        derivations += 1;
+        return fastDeps.derive(pin, salt, iterations);
+      },
+    };
+    const attempts = Array.from({ length: 20 }, () =>
+      queue(() => verifyPin(db, '0000', countingDeps)),
+    );
+    const results = await Promise.all(attempts);
+    expect(derivations).toBe(5);
+    expect(results.every((result) => !result.ok)).toBe(true);
+    expect(results.at(-1)?.lockedUntil).toBe(clock + 30_000);
   });
 });
 

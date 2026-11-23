@@ -34,9 +34,14 @@ import {
 import { readPersistedLogs, writePersistedLogs } from '../storage/sqlite/persisted-logs';
 import { readSchemaVersion } from '../storage/sqlite/meta';
 import { derivePinHash, randomPinSalt } from '../platform/pin-hash';
+import { createSerialQueue } from './serial-queue';
 
 /** Production crypto and clock for the app lock (§15.3). */
 const pinDeps: PinDeps = { derive: derivePinHash, randomSalt: randomPinSalt, now: Date.now };
+
+/** PIN checks run one at a time: the lockout is read before the slow key
+ * derivation, so parallel attempts would otherwise all slip past it. */
+const pinQueue = createSerialQueue();
 
 let repository: SqliteChatRepository | null = null;
 
@@ -280,9 +285,15 @@ const api: DbApi = {
   getSchemaVersion: () => wrap(() => readSchemaVersion(repo().database)),
   getLockState: () => wrap(() => readLockState(repo().database, Date.now())),
   verifyPin: (pin) =>
-    wrap(() => verifyPin(repo().database, rpcSettingsInput.pinAttempt('verifyPin', pin), pinDeps)),
+    wrap(() => {
+      const attempt = rpcSettingsInput.pinAttempt('verifyPin', pin);
+      return pinQueue(() => verifyPin(repo().database, attempt, pinDeps));
+    }),
   changePin: (input) =>
-    wrap(() => changePin(repo().database, rpcSettingsInput.changePin('changePin', input), pinDeps)),
+    wrap(() => {
+      const change = rpcSettingsInput.changePin('changePin', input);
+      return pinQueue(() => changePin(repo().database, change, pinDeps));
+    }),
   setAutoLock: (minutes) =>
     wrap(() => {
       setAutoLockMinutes(repo().database, rpcSettingsInput.autoLockMinutes('setAutoLock', minutes));
