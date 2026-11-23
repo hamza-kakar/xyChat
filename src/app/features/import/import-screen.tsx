@@ -13,6 +13,7 @@ import { ImportReportStep } from './import-report-step';
 import { ImportErrorStep } from './import-error-step';
 import { installGateDone } from './install-gate-state';
 import { useImportFlow } from './hooks/use-import-flow';
+import { useHoldLongTask } from '../../hooks/use-long-task';
 
 /** Props for the pure step renderer. */
 interface RenderDeps {
@@ -102,6 +103,10 @@ function renderStep(deps: RenderDeps) {
 export function ImportScreen() {
   const { state, dispatch, runDetect, startImport, cancel } = useImportFlow();
   const navigate = useNavigate();
+  // From the picked file until the report, the import is running: the
+  // update prompt waits (§12.12).
+  const step = state.step.name;
+  useHoldLongTask(step === 'detecting' || step === 'confirm' || step === 'progress');
   return renderStep({
     state,
     dispatch,

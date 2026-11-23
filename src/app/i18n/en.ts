@@ -32,6 +32,11 @@ export const en = {
     description: 'An unexpected error occurred. Your imported chats are safe.',
     reloadButton: 'Reload app',
   },
+  update: {
+    available: 'Update available',
+    reload: 'Reload',
+    later: 'Later',
+  },
   home: {
     versionLabel: 'Version {version}',
     importButton: 'Import a chat',
