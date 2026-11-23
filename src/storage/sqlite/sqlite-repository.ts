@@ -38,6 +38,7 @@ import {
 } from './media-queries';
 import { addBookmark, listBookmarks } from './bookmark-queries';
 import { listMessageDays } from './day-queries';
+import { deleteChatRows } from './chat-delete';
 import type { Participant } from '../repository';
 import type {
   Attachment,
@@ -286,11 +287,7 @@ export class SqliteChatRepository {
   /** Deletes a chat; OPFS media deletion is the caller's follow-up (§10.4). */
   deleteChat(chatId: ChatId): void {
     this.db.transaction(() => {
-      this.db.run('DELETE FROM bookmarks WHERE chat_id = ?', [chatId]);
-      this.db.run('DELETE FROM attachments WHERE chat_id = ?', [chatId]);
-      this.db.run('DELETE FROM messages WHERE chat_id = ?', [chatId]);
-      this.db.run('DELETE FROM participants WHERE chat_id = ?', [chatId]);
-      this.db.run('DELETE FROM chats WHERE id = ?', [chatId]);
+      deleteChatRows(this.db, chatId);
     });
   }
 
