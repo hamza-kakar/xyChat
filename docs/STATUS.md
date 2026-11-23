@@ -44,14 +44,16 @@ M6 — Media: merged (PR #9).
   cover goes up synchronously whenever the app is hidden, then the lock
   follows the auto-lock setting (on hide, or after inactivity). The
   screens stay mounted but inert underneath, so an import keeps running.
-  Five free attempts, then 30 s doubling (capped at a day), persisted
-  across reloads.
+  The overlay is its own modal dialog, so it stacks above any open sheet
+  or media viewer. Five free attempts, then 30 s doubling (capped at a
+  day), persisted across reloads; db.worker checks attempts one at a time.
 - Logging (§18.7): the last 200 warn/error entries are written to `meta`
   (debounced) and shown under "Earlier sessions".
 - E2E (Chromium): flow 11 (chat info → storage per chat → delete from
   chat info → media files and storage entry gone, nothing orphaned), flow
   12 (set PIN, cover on hide, lock, unlock, five failures → lockout that
-  survives a reload), Settings sections with axe in light and dark, the
+  survives a reload), the lock covering an open sheet and staying
+  usable, Settings sections with axe in light and dark, the
   theme surviving a reload, chat info and lock screen axe-checked.
 - Bundle: 158.3 kB JS / 6.8 kB CSS gzip (budgets 170 / 25).
 
