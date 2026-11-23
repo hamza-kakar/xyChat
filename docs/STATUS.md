@@ -4,11 +4,60 @@ Progress tracker for waChatBack. Updated in every PR.
 
 ## Current milestone
 
-M6 — Media (branch `m6-media`, PR open).
+M7 — Chat info, settings, app lock, storage management (branch
+`m7-info-settings-lock`, PR open).
 
-M5 — Search, jump to date, bookmarks: merged (PR #8).
+M6 — Media: merged (PR #9).
 
-## What's done (M6)
+## What's done (M7)
+
+- Chat info (§12.3 `#/chat/:chatId/info`, §12.7): editable title, group
+  or one-to-one, date range (from the stored wall-clock times), totals by
+  message kind, stored media counts and bytes with a gallery link,
+  participants with message counts as a CSS bar chart, "This is me",
+  import history (time, file, added/already there, parser version,
+  warnings), "Update from a newer export" (to the import flow, which
+  pre-selects the matching chat) and Delete chat. Reached from the chat
+  header's info button and the chat list's row menu.
+- Import reports (§9.2 step 11): the commit now stores the report in
+  `imports.report_json` (counts and warning codes only), validated on
+  read. It was never written before.
+- Settings (§12.3 `#/settings`, §12.9), from the chat-list toolbar:
+  - Appearance: System / Light / Dark. The choice is the one value in
+    localStorage (§15.4) and applies before the first paint.
+  - App lock (§15.3): 4–8 digit PIN as PBKDF2-SHA-256 (600,000
+    iterations, 16-byte salt) in `meta`, checked in db.worker with a
+    constant-time compare; auto-lock Immediately / 1 / 5 / 15 min
+    (default Immediately); Lock now; changing or removing the PIN needs
+    the current one. The scope statement (privacy screen, not
+    encryption; no recovery) is in Settings and on the lock screen.
+  - Storage: used/quota estimate, media per chat, persistent-storage
+    status with Request, and "Clean up orphaned files" behind a
+    confirmation (§9.3 sweeper).
+  - Diagnostics: app, parser and schema versions, the browser capability
+    report, and the log viewer (this session plus earlier sessions) with
+    Copy and Clear.
+  - About: privacy statement, the original-exports reminder, source link
+    and the bundled dependencies' licenses, generated at build time into
+    `licenses.json` (precached).
+- Lock screen and privacy cover: locked at launch with a PIN; an opaque
+  cover goes up synchronously whenever the app is hidden, then the lock
+  follows the auto-lock setting (on hide, or after inactivity). The
+  screens stay mounted but inert underneath, so an import keeps running.
+  Five free attempts, then 30 s doubling (capped at a day), persisted
+  across reloads.
+- Logging (§18.7): the last 200 warn/error entries are written to `meta`
+  (debounced) and shown under "Earlier sessions".
+- E2E (Chromium): flow 11 (chat info → storage per chat → delete from
+  chat info → media files and storage entry gone, nothing orphaned), flow
+  12 (set PIN, cover on hide, lock, unlock, five failures → lockout that
+  survives a reload), Settings sections with axe in light and dark, the
+  theme surviving a reload, chat info and lock screen axe-checked.
+- Bundle: 158.3 kB JS / 6.8 kB CSS gzip (budgets 170 / 25).
+
+Screenshots (iPhone viewport, light and dark): `docs/screenshots/m7/`.
+
+## Previously (M6)
 
 - Gallery (§12.3 `#/chat/:chatId/media?tab=`, §12.6): Photos (with
   stickers and GIFs), Videos, Audio (voice notes and audio), Documents
@@ -263,11 +312,10 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
 
 ## What's next
 
-- M7 — chat info, settings, app lock, storage management (§12.7, §12.9,
-  §15.3; e2e flows 11, 12). The chat header's info button and the list
-  toolbar's Settings entry arrive with it.
-- Manual iPhone check of voice notes (`docs/TESTING.md`, Voice notes and
-  media): needs a real device.
+- M8 — backup and restore (§10.6; e2e flow 13), with its Settings
+  section.
+- Manual iPhone checks of voice notes and the app lock
+  (`docs/TESTING.md`): need a real device.
 
 ## Verified results (M2 + audit rounds 2–3)
 
@@ -352,9 +400,6 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
   reviewer-approved approach requested in round 1).
 - ADR 0009: PWA installability gate replaced (Lighthouse 12 removed the
   audit).
-- M4/M5: the chat header omits the chat-info button and the list toolbar
-  the Settings entry until M7 builds those screens (no buttons that lead
-  nowhere, §0 rule 4).
 - M5: the repository gains `listMatchingSeqs` (in-chat navigation needs
   every matching seq, not a page of snippets) and `listMessageDays`
   (calendar marks) beyond the §10.5 interface; `addBookmark` returns
@@ -385,3 +430,14 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
   gallery's `useVirtualizer`.
 - ADR 0013: workers bundle as ES modules; the unused Opus ML chunk is not
   precached.
+- ADR 0014 (M7): the lock is an overlay over inert screens; the privacy
+  cover goes up on every hide, PIN or not; auto-lock defaults to
+  Immediately; the backoff caps at one day; changing or removing the PIN
+  needs the current PIN; chat-info media counts cover stored files; the
+  license list is generated at build time and precached.
+- M7: Settings has no Backup section yet (M8). The toolbar's Import is
+  now an icon button (same accessible name) so four actions fit beside the
+  title on a phone.
+- M7: the repository gains settings methods beyond §10.5
+  (`getLockState`, `verifyPin`, `changePin`, `setAutoLock`,
+  `getSchemaVersion`, `listPersistedLogs`, `savePersistedLogs`).

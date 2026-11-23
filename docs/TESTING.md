@@ -74,13 +74,38 @@ Record the device, iOS version and date with the results.
 
 ## Lock (from M7)
 
-- [ ] Set PIN; background the app → privacy cover in app switcher.
-- [ ] Failed attempts trigger the growing delay.
+- [ ] Set a PIN in Settings → App lock; the number pad opens for the PIN
+      fields.
+- [ ] Swipe up to the app switcher: the snapshot shows only the app name,
+      never a chat (with every auto-lock setting).
+- [ ] "Immediately": reopening the app shows the lock screen; the right
+      PIN unlocks to the same screen.
+- [ ] "After 1 min": a short trip to the app switcher doesn't lock; a
+      minute untouched (or away) does.
+- [ ] Five wrong PINs start a 30 s wait; the sixth a 60 s wait; closing
+      and reopening the app keeps the countdown.
+- [ ] An import keeps running while the app is locked, and its progress
+      is there after unlocking.
+- [ ] Change the PIN, then turn the lock off; both ask for the current
+      PIN.
+
+## Settings (from M7)
+
+- [ ] Theme: System follows the phone; Light and Dark override it, with
+      no flash of the other theme when the app starts.
+- [ ] Chat info: rename, "This is me", import history, media gallery link
+      and delete work; the participant bars match the counts.
+- [ ] Diagnostics: versions, browser features, the log; Copy puts the
+      report on the clipboard; Clear empties it.
+- [ ] About: the license list opens offline (airplane mode).
 
 ## Storage & backup (from M7/M8)
 
-- [ ] Persistent storage granted after first import.
-- [ ] Delete chat frees storage.
+- [ ] Persistent storage granted after first import; Settings shows the
+      status, and "Request persistent storage" when it isn't.
+- [ ] Delete chat frees storage (used total drops; the chat leaves the
+      media-per-chat list).
+- [ ] "Clean up orphaned files" reports none after normal use.
 - [ ] Backup → delete → restore round-trips.
 
 ## Import memory notes (M3, §17 manual targets)
