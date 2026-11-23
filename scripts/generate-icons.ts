@@ -5,12 +5,23 @@
  * needed (ADR 0006). The design is original artwork: a rounded-square badge
  * with a chat bubble and three dots.
  *
+ * The iOS launch images (public/splash/*.png, sizes in splash-screens.ts)
+ * are the same badge centered on each theme's surface color.
+ *
  * Usage: pnpm icons  (also run automatically as part of `pnpm build`)
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { deflateSync } from 'node:zlib';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  SPLASH_BACKGROUNDS,
+  SPLASH_ICON_CSS_PX,
+  splashImages,
+  splashPath,
+  type SplashScreen,
+  type SplashTheme,
+} from './splash-screens';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -221,6 +232,61 @@ function render(size: number, design: IconDesign): Buffer {
   return encodePng(size, size, rgba);
 }
 
+/** Sampled badge pixels per size: launch images of one pixel ratio share
+ * them, which keeps the build fast. */
+const badgeCache = new Map<number, readonly (SampledPixel | null)[]>();
+
+function sampleBadge(size: number, design: IconDesign): readonly (SampledPixel | null)[] {
+  const cached = badgeCache.get(size);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const step = 1024 / size;
+  const pixels: (SampledPixel | null)[] = [];
+  for (let py = 0; py < size; py += 1) {
+    for (let px = 0; px < size; px += 1) {
+      pixels.push(samplePixel(px, py, step, design));
+    }
+  }
+  badgeCache.set(size, pixels);
+  return pixels;
+}
+
+/**
+ * Renders a launch image: the theme's background with the badge centered
+ * on it. Only the badge's square is sampled; the rest is a flat fill.
+ */
+function renderSplash(screen: SplashScreen, theme: SplashTheme, design: IconDesign): Buffer {
+  const width = screen.width * screen.ratio;
+  const height = screen.height * screen.ratio;
+  const background = SPLASH_BACKGROUNDS[theme];
+  const rgba = new Uint8Array(width * height * 4);
+  for (let offset = 0; offset < rgba.length; offset += 4) {
+    rgba[offset] = background[0];
+    rgba[offset + 1] = background[1];
+    rgba[offset + 2] = background[2];
+    rgba[offset + 3] = 255;
+  }
+  const iconSize = SPLASH_ICON_CSS_PX * screen.ratio;
+  const left = Math.floor((width - iconSize) / 2);
+  const top = Math.floor((height - iconSize) / 2);
+  const badge = sampleBadge(iconSize, design);
+  for (let py = 0; py < iconSize; py += 1) {
+    for (let px = 0; px < iconSize; px += 1) {
+      const pixel = badge[py * iconSize + px];
+      if (pixel !== undefined && pixel !== null) {
+        const offset = ((top + py) * width + left + px) * 4;
+        for (let channel = 0; channel < 3; channel += 1) {
+          const over = pixel.color[channel] ?? 0;
+          const under = background[channel] ?? 0;
+          rgba[offset + channel] = Math.round(over * pixel.coverage + under * (1 - pixel.coverage));
+        }
+      }
+    }
+  }
+  return encodePng(width, height, rgba);
+}
+
 /* ---------- Output ---------- */
 
 const ROUNDED: IconDesign = { contentScale: 1, badgeRadius: 224 };
@@ -242,4 +308,12 @@ for (const output of outputs) {
   mkdirSync(dirname(absolute), { recursive: true });
   writeFileSync(absolute, render(output.size, output.design));
   console.log(`wrote ${output.path} (${output.size}x${output.size})`);
+}
+
+for (const { screen, theme } of splashImages()) {
+  const path = `public/${splashPath(screen, theme)}`;
+  const absolute = resolve(projectRoot, path);
+  mkdirSync(dirname(absolute), { recursive: true });
+  writeFileSync(absolute, renderSplash(screen, theme, ROUNDED));
+  console.log(`wrote ${path}`);
 }

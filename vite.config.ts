@@ -6,6 +6,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { type Plugin, defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { APP_NAME } from './src/app/app-name';
+import { splashLinkTags } from './scripts/splash-screens';
 
 const projectRoot = dirname(fileURLToPath(import.meta.url));
 
@@ -38,8 +39,10 @@ function injectBuildMeta(): Plugin {
       const metaTag = `<meta http-equiv="Content-Security-Policy" content="${CSP_DIRECTIVES}">`;
       // The app name lives in one constant (AGENTS.md header); index.html
       // gets it injected at build time so a rename is a one-line change.
+      // The iOS launch images (§14) are generated with the icons.
       return html
         .replace('</title>', `</title>\n    ${metaTag}`)
+        .replace('</head>', `  ${splashLinkTags()}\n  </head>`)
         .replaceAll('{{APP_NAME}}', APP_NAME);
     },
   };
