@@ -1,6 +1,6 @@
 # Manual on-device test checklist
 
-Run on a real iPhone (iOS 17+) before each milestone merge that touches UI,
+Run on a real iPhone (iOS 17+) before a release, or after changes that touch UI,
 storage or import. Record results (date, device, OS, pass/fail) per run.
 
 ## Install & boot
@@ -11,7 +11,7 @@ storage or import. Record results (date, device, OS, pass/fail) per run.
 - [ ] Launch from the Home Screen shows the launch image (light and dark
       appearance), not a white flash.
 
-## Updates (from M9)
+## Updates
 
 - [ ] After a new deploy, reopening the app shows "Update available";
       nothing reloads until Reload is tapped; Reload brings up the new
@@ -20,7 +20,7 @@ storage or import. Record results (date, device, OS, pass/fail) per run.
       appear; it shows once the import reaches its report.
 - [ ] "Later" hides the message until the next launch.
 
-## Large text (from M9)
+## Large text
 
 - [ ] Settings → Accessibility → Display & Text Size → Larger Text at the
       largest accessibility size: the chat list, a chat, chat info, the
@@ -28,7 +28,7 @@ storage or import. Record results (date, device, OS, pass/fail) per run.
       scrolling; header buttons move below the title instead of covering
       it.
 
-## Import (from M3)
+## Import
 
 - [ ] Export a chat from WhatsApp (with media) → import → bubbles, media,
       dates correct.
@@ -38,7 +38,7 @@ storage or import. Record results (date, device, OS, pass/fail) per run.
 - [ ] Re-import newer export → only new messages added.
 - [ ] 1 GB+ archive import completes with screen kept awake; no crash.
 
-## Chat view (from M4)
+## Chat view
 
 - [ ] Smooth scroll on a 100k-message chat.
 - [ ] Day separators correct around midnight.
@@ -49,7 +49,7 @@ storage or import. Record results (date, device, OS, pass/fail) per run.
       selection loupe); long-press on a chat-list row opens its actions (no
       link preview).
 
-## Search, jump and bookmarks (from M5)
+## Search, jump and bookmarks
 
 - [ ] Global search on a 100k-message chat returns results quickly; the
       keyboard's Search key does not reload the page.
@@ -62,14 +62,14 @@ storage or import. Record results (date, device, OS, pass/fail) per run.
 - [ ] Bookmark a message, add a note, find it under Bookmarks, show it in
       the chat, remove it.
 
-## VoiceOver (from M4)
+## VoiceOver
 
 - [ ] Navigate chat list; rows announce title + preview.
 - [ ] Open a chat; messages announce "sender, date time, text".
 - [ ] Use search with VoiceOver.
 - [ ] Operate the lock screen.
 
-## Voice notes and media (from M6)
+## Voice notes and media
 
 Record the device, iOS version and date with the results.
 
@@ -91,7 +91,7 @@ Record the device, iOS version and date with the results.
       file; Save downloads it.
 - [ ] Links tab opens links in Safari.
 
-## Lock (from M7)
+## Lock
 
 - [ ] Set a PIN in Settings → App lock; the number pad opens for the PIN
       fields.
@@ -108,7 +108,7 @@ Record the device, iOS version and date with the results.
 - [ ] Change the PIN, then turn the lock off; both ask for the current
       PIN.
 
-## Settings (from M7)
+## Settings
 
 - [ ] Theme: System follows the phone; Light and Dark override it, with
       no flash of the other theme when the app starts.
@@ -118,7 +118,7 @@ Record the device, iOS version and date with the results.
       report on the clipboard; Clear empties it.
 - [ ] About: the license list opens offline (airplane mode).
 
-## Storage & backup (from M7/M8)
+## Storage & backup
 
 - [ ] Persistent storage granted after first import; Settings shows the
       status, and "Request persistent storage" when it isn't.
@@ -136,7 +136,7 @@ Record the device, iOS version and date with the results.
       new appears in Storage and "Clean up orphaned files" finds none.
 - [ ] The screen stays awake while a backup or restore runs.
 
-## Import memory notes (M3, §17 manual targets)
+## Import memory notes
 
 - The media phase STREAMS entries from the opened archive chunk-by-chunk
   into OPFS sync-handle sinks — the largest in-memory object is one
@@ -155,5 +155,6 @@ Record the device, iOS version and date with the results.
 Record each on-device run here: date, device, iOS version, build (Settings
 → About), sections run, and any failure with its diagnostic code.
 
-| Date | Device | iOS | Build | Sections | Result |
-| ---- | ------ | --- | ----- | -------- | ------ |
+| Date       | Device        | iOS    | Build | Sections                                   | Result                                                                                                                                                                          |
+| ---------- | ------------- | ------ | ----- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-23 | iPhone 17 Pro | 27.2.1 | 0.1.0 | Install & boot (load, Home Screen); Import | Load and install pass. Launch image not confirmed. Short exports import correctly; a 500+ MB zip failed with FILE_TOO_LARGE, fixed in 1.0.0. Rest of the checklist not yet run. |
