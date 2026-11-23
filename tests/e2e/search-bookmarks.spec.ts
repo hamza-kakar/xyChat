@@ -98,8 +98,22 @@ test('in-chat search steps through matches; jump to date and to latest', async (
   await expect(page.getByText('7 of 8')).toBeVisible();
   await expect(highlightedRow(page)).toContainText('trip idea number 1500');
   await expect(highlightedRow(page)).toBeInViewport();
+  // Further back, past the block the chat opened in: every step still
+  // lands on its match.
+  for (const [counter, number] of [
+    ['6 of 8', 1250],
+    ['5 of 8', 1000],
+    ['4 of 8', 750],
+  ] as const) {
+    await page.getByRole('button', { name: 'Previous match (older)' }).click();
+    await expect(page.getByText(counter)).toBeVisible();
+    await expect(highlightedRow(page)).toContainText(`trip idea number ${String(number)}`);
+    await expect(highlightedRow(page)).toBeInViewport();
+  }
   await page.getByRole('button', { name: 'Next match (newer)' }).click();
-  await expect(page.getByText('8 of 8')).toBeVisible();
+  await expect(page.getByText('5 of 8')).toBeVisible();
+  await expect(highlightedRow(page)).toContainText('trip idea number 1000');
+  await expect(highlightedRow(page)).toBeInViewport();
   await expectAxeCleanBothThemes(page);
   await page.getByRole('button', { name: 'Close search' }).click();
 
