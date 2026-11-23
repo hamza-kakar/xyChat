@@ -37,7 +37,7 @@ const ManifestSchema = v.object({
 test('manifest validates and all icons resolve', async ({ page, request }) => {
   await page.goto('/');
   const origin = new URL(page.url()).origin;
-  const response = await request.get(`${origin}/xychat/manifest.webmanifest`);
+  const response = await request.get(`${origin}/xyChat/manifest.webmanifest`);
   expect(response.status()).toBe(200);
   const manifest: unknown = await response.json();
   const parsed = v.safeParse(ManifestSchema, manifest);
@@ -45,7 +45,7 @@ test('manifest validates and all icons resolve', async ({ page, request }) => {
 
   if (parsed.success) {
     for (const icon of parsed.output.icons) {
-      const iconResponse = await request.get(`${origin}/xychat/${icon.src}`);
+      const iconResponse = await request.get(`${origin}/xyChat/${icon.src}`);
       expect(iconResponse.status(), icon.src).toBe(200);
       expect(iconResponse.headers()['content-type'] ?? '').toMatch(/image\//u);
     }
@@ -63,7 +63,7 @@ test('apple-touch-icon link resolves', async ({ page }) => {
 
 test('manifest name matches the APP_NAME constant', async ({ page, request }) => {
   await page.goto('/');
-  const response = await request.get(`${new URL(page.url()).origin}/xychat/manifest.webmanifest`);
+  const response = await request.get(`${new URL(page.url()).origin}/xyChat/manifest.webmanifest`);
   const manifest = (await response.json()) as { name?: string; short_name?: string };
   // APP_NAME lives in src/app/app-name.ts; read it from source for the check.
   const source = readFileSync('src/app/app-name.ts', 'utf8');

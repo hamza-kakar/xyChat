@@ -5,14 +5,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/hamza-kakar/xychat/actions/workflows/ci.yml"><img src="https://github.com/hamza-kakar/xychat/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/hamza-kakar/xyChat/actions/workflows/ci.yml"><img src="https://github.com/hamza-kakar/xyChat/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license"></a>
   <img src="https://img.shields.io/badge/iOS-17%2B-black.svg" alt="iOS 17+">
   <img src="https://img.shields.io/badge/works-offline-success.svg" alt="Works offline">
 </p>
 
 <p align="center">
-  <a href="https://hamza-kakar.github.io/xychat/"><strong>Open the app</strong></a> ·
+  <a href="https://hamza-kakar.github.io/xyChat/"><strong>Open the app</strong></a> ·
   <a href="#install-on-iphone">Install</a> ·
   <a href="#import-a-chat">Import a chat</a> ·
   <a href="#privacy">Privacy</a>
@@ -94,7 +94,7 @@ storage. **Your chats never leave your device.**
 
 Requires iOS or iPadOS 17 or later.
 
-1. Open <https://hamza-kakar.github.io/xychat/> in **Safari**.
+1. Open <https://hamza-kakar.github.io/xyChat/> in **Safari**.
 2. Tap **Share**, then **Add to Home Screen**, then **Add**.
 3. Open xyChat from your Home Screen.
 
