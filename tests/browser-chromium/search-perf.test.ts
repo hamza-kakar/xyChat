@@ -101,6 +101,9 @@ describe('search performance', () => {
     });
     const elapsed = performance.now() - start;
     expect(matches.seqs.length).toBe(10_000);
+    // The cap keeps the newest matches: the list ends at the last needle row.
+    expect(matches.seqs.at(-1)).toBe(99_997);
+    expect(matches.isCapped).toBe(true);
     expect(
       elapsed,
       `in-chat match list took ${elapsed.toFixed(0)}ms (budget ${BUDGET_MS}ms)`,
