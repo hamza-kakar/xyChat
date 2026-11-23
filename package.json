@@ -1,7 +1,7 @@
 {
   "name": "wachatback",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Private, offline viewer for exported WhatsApp chats. Your chats never leave this device.",
   "license": "MIT",
   "type": "module",
