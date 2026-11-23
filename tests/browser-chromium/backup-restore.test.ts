@@ -2,7 +2,7 @@
  * Backup snapshot, backup reading and the restore commit (§10.6) against
  * the real sqlite-wasm stack. Chromium-only per ADR 0007.
  */
-import initSqlite3 from '@sqlite.org/sqlite-wasm';
+import { loadSqlite } from '../../src/storage/sqlite/open';
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { commitImport, type ImportCommitInput } from '../../src/storage/sqlite/import-commit';
 import { createImportRecord } from '../../src/storage/sqlite/import-record';
@@ -26,7 +26,7 @@ let db: SqliteDatabase;
 let repo: SqliteChatRepository;
 
 beforeAll(async () => {
-  scratch = createScratchDatabases(await initSqlite3());
+  scratch = createScratchDatabases(await loadSqlite());
 });
 
 beforeEach(async () => {

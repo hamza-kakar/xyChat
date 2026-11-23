@@ -39,7 +39,7 @@ export interface OpenedArchive {
 /** zip.js Writer subclass forwarding every decompressed chunk into the
  * sink (§9.2 step 8: entries stream through the sync-access-handle writer
  * — the largest in-memory object is one decompressed chunk). */
-class ChunkSinkWriter extends zipJs.Writer<void> {
+export class ChunkSinkWriter extends zipJs.Writer<void> {
   constructor(private readonly sink: ChunkSink) {
     super();
   }

@@ -92,12 +92,9 @@ export function commitRestore(
   return db.transaction(() =>
     plans.map((plan) => {
       if (plan.replaceChatId !== null) {
-        deleteChatRows(db, plan.replaceChatId);
         // The replaced chat's history goes with it; this restore's own
         // import row is still in progress and stays.
-        db.run("DELETE FROM imports WHERE chat_id = ? AND status <> 'in_progress'", [
-          plan.replaceChatId,
-        ]);
+        deleteChatRows(db, plan.replaceChatId);
       }
       const result = applyImportCommit(db, plan.commit, now);
       restoreSelf(db, result.chatId, plan.selfName);
