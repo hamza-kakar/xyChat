@@ -70,6 +70,18 @@ describe('archive reader: type and size gates (§9.2 step 1)', () => {
   });
 });
 
+describe('archive reader: large zip exports (§9.2 step 1, §17)', () => {
+  it('does not apply the text cap to a zip file as a whole', async () => {
+    const zip = await buildZip({ '_chat.txt': CHAT_TEXT });
+    // A zip with media is routinely far larger than the 200 MB text cap.
+    Object.defineProperty(zip, 'size', { value: 1024 * 1024 * 1024 });
+    const result = await readArchive(zip, 'WhatsApp Chat - Big.zip', generousDeps);
+    if (!result.ok) {
+      expect(result.error.code).not.toBe('FILE_TOO_LARGE');
+    }
+  });
+});
+
 describe('archive reader: text files (§9.2 steps 2–3)', () => {
   it('decodes a plain .txt export', async () => {
     const result = await readArchive(textFile(CHAT_TEXT), 'export.txt', generousDeps);

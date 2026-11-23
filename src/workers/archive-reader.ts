@@ -103,14 +103,15 @@ export async function readArchive(
   if (!hasAcceptedExtension(fileName)) {
     return err({ code: 'UNSUPPORTED_FILE_TYPE', detail: 'extension not accepted' });
   }
-  if (file.size > IMPORT_LIMITS.maxTextFileBytes) {
-    return err({ code: 'FILE_TOO_LARGE', detail: `${file.size} bytes` });
-  }
-
   const head = new Uint8Array(await file.slice(0, ZIP_MAGIC.length).arrayBuffer());
   const isZip = hasZipMagic(head);
 
   if (!isZip) {
+    // The text cap is for the chat text, so it applies to a plain .txt
+    // export; a zip is bounded by its entries' sizes and the quota instead.
+    if (file.size > IMPORT_LIMITS.maxTextFileBytes) {
+      return err({ code: 'FILE_TOO_LARGE', detail: `${file.size} bytes` });
+    }
     const result = await readTextFile(file);
     if (!result.ok) {
       return result;
@@ -212,6 +213,9 @@ async function scanZip(file: Blob): Promise<Result<ZipScan, ArchiveError>> {
 
     if (chatEntry === null) {
       return err({ code: 'NO_CHAT_TEXT_FOUND', detail: `${entries.length} entries scanned` });
+    }
+    if (chatEntry.uncompressedSize > IMPORT_LIMITS.maxTextFileBytes) {
+      return err({ code: 'FILE_TOO_LARGE', detail: `${chatEntry.uncompressedSize} bytes` });
     }
     return ok({ chatEntryName, uncompressedTotalBytes });
   } catch (error) {
