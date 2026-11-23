@@ -35,7 +35,7 @@ Thumbs.db
 # pnpm
 .pnpm-store/
 
-# Coding-agent workspace config (not part of the product layout, §5)
+# Local editor and tool config
 .zcode/
 
 # Generated at build time, not committed
