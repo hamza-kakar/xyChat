@@ -105,19 +105,15 @@ export function MessageList(props: MessageListProps) {
   }, [targetLoaded, target, initialAlign, virtualizer, onTopSeqChange]);
 
   // Runs after the landing effect above, also in the commit that lands the
-  // list: a jump requested before the first block arrived waits for it.
+  // list: a jump requested before the first landing waits for it. After
+  // that, only the jump's own block matters; the opening seq's block may
+  // long since have scrolled out and been dropped.
   useLayoutEffect(() => {
-    if (
-      jump !== null &&
-      jumpLoaded &&
-      targetLoaded &&
-      positioned.current &&
-      handledJump.current !== jump.token
-    ) {
+    if (jump !== null && jumpLoaded && positioned.current && handledJump.current !== jump.token) {
       handledJump.current = jump.token;
       virtualizer.scrollToIndex(jump.seq, { align: 'center' });
     }
-  }, [jump, jumpLoaded, targetLoaded, virtualizer]);
+  }, [jump, jumpLoaded, virtualizer]);
 
   const topSeq = virtualizer.range?.startIndex;
   const endSeq = virtualizer.range?.endIndex;
