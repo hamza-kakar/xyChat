@@ -4,11 +4,39 @@ Progress tracker for waChatBack. Updated in every PR.
 
 ## Current milestone
 
-M8 — Backup and restore (branch `m8-backup-restore`, PR open).
+M9 — PWA hardening and release (branch `m9-pwa-release`, PR open).
 
-M7 — Chat info, settings, app lock, storage management: merged (PR #10).
+M8 — Backup and restore: merged (PR #11).
 
-## What's done (M8)
+## What's done (M9)
+
+- Update prompt (§12.12, ADR 0016): when a new service worker waits, an
+  "Update available" toast offers Reload and Later. Nothing reloads on
+  its own; Reload activates the waiting worker and reloads once it takes
+  control. The toast waits while an import (picked file → report), a
+  backup or a restore (picked backup → report) runs, and sits under the
+  lock screen.
+- iOS launch images (§14): the app badge on each theme's surface color
+  for the 11 iPhone screens that run iOS 17+, light and dark, generated
+  with the icons and linked with exact device media queries.
+- Accessibility pass (§16): a new e2e sweep runs axe on every route in
+  both themes and checks each at double text size for sideways overflow.
+  It found and fixed: document/audio buttons whose label hid their
+  visible file name (WCAG 2.5.3), the import picker's unlabelled file
+  input (now a labelled control with a focus ring), and the chat-list and
+  chat headers, banners and diagnostics rows squeezing or overflowing at
+  large text (the actions now wrap below the title).
+- E2E: flow 14 now opens an imported chat after an offline reload; flow
+  15 (update prompt, and its suppression during an import) runs against
+  a local release server that publishes a byte-different `sw.js`; the
+  import flows assert no CSP violations like every other flow.
+- README final: install guide, importing, updates, privacy, limitations.
+  `docs/TESTING.md` gains update, launch-image and large-text checks and
+  a run log for on-device results.
+- Local gates: 706 unit, 95 browser, 34 Chromium e2e. Bundle 162.9 kB JS
+  / 7.0 kB CSS gzip (budgets 170 / 25).
+
+## Previously (M8)
 
 - Settings → Backup and restore (§10.6, §12.9):
   - Make a backup of all chats or one, with or without media. The
@@ -356,12 +384,11 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
 
 ## What's next
 
-- M9 — PWA hardening and release: the update prompt (suppressed during
-  imports and restores, §12.12), splash screens, full offline and CSP
-  e2e, Lighthouse budgets, the full accessibility pass, `docs/TESTING.md`
-  on a real iPhone, README final, v1.0.0.
-- Manual iPhone checks of voice notes and the app lock
-  (`docs/TESTING.md`): need a real device.
+- The owner runs the `docs/TESTING.md` checklist on a real iPhone
+  (voice notes, lock, large imports, VoiceOver, launch images, updates)
+  and records it in the run log.
+- v1.0.0: the release-please PR tags it when the owner merges it.
+- A license for the repository (the README says none is chosen yet).
 
 ## Verified results (M2 + audit rounds 2–3)
 
@@ -493,3 +520,6 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
   the restore; the archive name uses the app name (`wachatback-backup-…`).
 - M8: the db.worker API gains `estimateBackup`, `createBackup`,
   `clearBackupFiles`, `inspectBackup` and `restoreBackup` (beyond §10.5).
+- ADR 0016 (M9): the update prompt also waits during backups and during
+  the import's detect and confirm steps, and has a Later button; launch
+  images cover iPhones only.
