@@ -54,4 +54,11 @@ export const queryKeys = {
   schemaVersion: () => ['schema-version'] as const,
   capabilities: () => ['capabilities'] as const,
   licenses: () => ['licenses'] as const,
+  /** A finished backup archive in OPFS (§10.6). */
+  backupFile: (path: string) => ['backup-file', path] as const,
+  /** Every backup-size estimate (prefix for invalidation). */
+  backupEstimates: () => ['backup-estimate'] as const,
+  /** The estimated size of one backup choice (§10.6). */
+  backupEstimate: (chatId: string | null, includeMedia: boolean) =>
+    ['backup-estimate', chatId, includeMedia] as const,
 };

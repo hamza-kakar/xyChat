@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { en } from '../../i18n/en';
-import { acquireScreenWakeLock, type WakeLockHandle } from '../../../platform/wake-lock';
+import { useScreenWakeLock } from '../../hooks/use-screen-wake-lock';
 import { onImportProgress } from '../../../client/import-client';
 
 /** Props for {@link ImportProgressStep}. */
@@ -36,36 +36,8 @@ export function ImportProgressStep({ onCancel, isCancelling = false }: ImportPro
     return unsubscribe;
   }, []);
 
-  // §12.8.5: keep the screen awake while the import
-  // runs; released on unmount (done/cancel/fail) and re-acquired when the
-  // tab becomes visible again.
-  useEffect(() => {
-    // A wake lock resolving after unmount must release immediately:
-    // `active` guards the late resolution.
-    let active = true;
-    let handle: WakeLockHandle | null = null;
-    const acquire = (): void => {
-      void acquireScreenWakeLock().then((result) => {
-        if (active && result.ok && result.value !== null) {
-          handle = result.value;
-        } else if (result.ok && result.value !== null) {
-          void result.value.release();
-        }
-      });
-    };
-    acquire();
-    const onVisible = (): void => {
-      if (document.visibilityState === 'visible') {
-        acquire();
-      }
-    };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => {
-      active = false;
-      document.removeEventListener('visibilitychange', onVisible);
-      void handle?.release();
-    };
-  }, []);
+  // §12.8.5: keep the screen awake while the import runs.
+  useScreenWakeLock(true);
 
   const phaseIndex = PHASES.findIndex((phase) => phase.id === current.phase);
   const activeIndex = phaseIndex === -1 ? 0 : phaseIndex;

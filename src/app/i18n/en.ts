@@ -5,9 +5,11 @@
  * APP_NAME via `{appName}` — it is never hard-coded here.
  */
 import { enSettings } from './en-settings';
+import { enBackup } from './en-backup';
 
 export const en = {
   ...enSettings,
+  ...enBackup,
   tagline: 'Your chats, kept private on this device.',
   boot: {
     checkingCapabilities: 'Checking browser support…',

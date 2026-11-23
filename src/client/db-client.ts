@@ -217,8 +217,10 @@ export type TransferProgress = TransferProgressEvent;
 export type BackupOutcome = Awaited<ReturnType<DbApi['createBackup']>>;
 /** A restore preview or why the file can't be restored. */
 export type RestoreInspection = Awaited<ReturnType<DbApi['inspectBackup']>>;
+/** A valid backup's preview. */
+export type RestorePreviewView = (RestoreInspection & { ok: true })['value'];
 /** One backup chat in the restore preview. */
-export type RestorePreviewChatView = (RestoreInspection & { ok: true })['value']['chats'][number];
+export type RestorePreviewChatView = RestorePreviewView['chats'][number];
 /** A restore's outcome. */
 export type RestoreOutcome = Awaited<ReturnType<DbApi['restoreBackup']>>;
 /** The user's choice for one backup chat. */
