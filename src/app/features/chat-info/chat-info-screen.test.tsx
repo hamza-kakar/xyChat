@@ -102,7 +102,7 @@ describe('ChatInfoScreen (§12.7)', () => {
     const totals = screen.getByRole('region', { name: 'Messages by type' });
     expect(within(totals).getByText('System message')).toBeInTheDocument();
     expect(within(totals).queryByText('Poll')).not.toBeInTheDocument();
-    expect(screen.getByText('1 files stored · 2 KB')).toBeInTheDocument();
+    expect(screen.getByText('1 file stored · 2 KB')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open media gallery' })).toHaveAttribute(
       'href',
       `/chat/${CHAT_ID}/media`,

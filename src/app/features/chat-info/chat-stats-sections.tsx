@@ -7,7 +7,7 @@ import { Link } from 'react-router';
 import { formatDate } from '../../../core/dates';
 import type { MediaType, MessageKind } from '../../../core/model';
 import { en } from '../../i18n/en';
-import { formatBytes, formatString } from '../../i18n/format-string';
+import { formatBytes, formatCount, formatString } from '../../i18n/format-string';
 import { SettingsSection } from '../../components/settings-section';
 import { useChatStats } from '../../queries/chat-queries';
 import type { ChatStatsView, ChatView } from '../../../client/db-client';
@@ -78,9 +78,7 @@ export function ChatStatsSections({ chat }: ChatStatsSectionsProps) {
         <p className="text-text">{chat.isGroup ? en.chatInfo.group : en.chatInfo.oneToOne}</p>
         <p className="text-text">{dateRangeText(stats.data)}</p>
         <p className="text-text-muted text-sm">
-          {formatString(en.chatInfo.totalMessages, {
-            count: chat.messageCount.toLocaleString(),
-          })}
+          {formatCount(chat.messageCount, en.chatInfo.totalMessages)}
         </p>
       </SettingsSection>
       {kinds.length === 0 ? null : (
@@ -92,8 +90,7 @@ export function ChatStatsSections({ chat }: ChatStatsSectionsProps) {
         <p className="text-text">
           {chat.mediaCount === 0
             ? en.chatInfo.noMedia
-            : formatString(en.chatInfo.mediaSummary, {
-                count: chat.mediaCount.toLocaleString(),
+            : formatCount(chat.mediaCount, en.chatInfo.mediaSummary, {
                 bytes: formatBytes(chat.mediaBytes),
               })}
         </p>

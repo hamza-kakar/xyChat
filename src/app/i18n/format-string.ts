@@ -16,6 +16,19 @@ export function formatString(
   });
 }
 
+/** Picks the singular or plural template for a count and fills it in
+ * (`{count}` gets the locale-formatted number). English needs two forms. */
+export function formatCount(
+  count: number,
+  templates: { readonly one: string; readonly other: string },
+  params: Readonly<Record<string, string | number>> = {},
+): string {
+  return formatString(count === 1 ? templates.one : templates.other, {
+    ...params,
+    count: count.toLocaleString(),
+  });
+}
+
 /** Binary byte formatting for §12.8 summaries (1 decimal on MB/GB). */
 export function formatBytes(bytes: number): string {
   const gib = bytes / 1024 ** 3;
