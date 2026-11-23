@@ -157,3 +157,45 @@ test('app lock: cover, lock, unlock, and backoff after failures (flow 12)', asyn
   await expect(page.getByRole('alert')).toContainText(/Try again in \d+ s/u);
   await expect(page.getByRole('button', { name: 'Unlock' })).toBeDisabled();
 });
+
+test('the lock screen covers an open sheet and stays usable (§15.3)', async ({ page }) => {
+  await importChat(page, {
+    blob: await buildIosGroupZipWithImage(),
+    name: 'WhatsApp Chat - Family.zip',
+    self: 'Sara',
+  });
+  await page.getByRole('button', { name: 'Done' }).click();
+  await page.getByRole('link', { name: 'Settings' }).click();
+  const lock = page.getByRole('region', { name: 'App lock' });
+  await lock.getByLabel('New PIN (4–8 digits)').fill('2468');
+  await lock.getByLabel('Repeat the new PIN').fill('2468');
+  await lock.getByRole('button', { name: 'Turn on app lock' }).click();
+  await expect(lock.getByText('App lock is on.')).toBeVisible();
+
+  await page.goBack();
+  await page.getByRole('link', { name: /Family/u }).click();
+  await page.getByRole('link', { name: 'Chat info' }).click();
+  await page.getByRole('button', { name: 'Delete chat' }).click();
+  const confirm = page.getByRole('dialog', { name: 'Delete “Family”?' });
+  await expect(confirm).toBeVisible();
+
+  await setVisibility(page, 'hidden');
+  const lockHeading = page.getByRole('heading', { name: 'waChatBack is locked' });
+  await expect(lockHeading).toBeVisible();
+  // The sheet must not paint over the lock screen (top layer order).
+  const topmostIsLock = await page.evaluate(() => {
+    const hit = document.elementFromPoint(window.innerWidth / 2, window.innerHeight - 20);
+    return hit?.closest('dialog')?.textContent.includes('is locked') ?? false;
+  });
+  expect(topmostIsLock).toBe(true);
+  await setVisibility(page, 'visible');
+
+  // A real click proves the PIN field isn't covered or inert.
+  await page.getByLabel('PIN').click();
+  await page.keyboard.type('2468');
+  await page.getByRole('button', { name: 'Unlock' }).click();
+  await expect(lockHeading).toBeHidden();
+  await expect(confirm).toBeVisible();
+  await confirm.getByRole('button', { name: 'Close' }).click();
+  await expect(confirm).toBeHidden();
+});

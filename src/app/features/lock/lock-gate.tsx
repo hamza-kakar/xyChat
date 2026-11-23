@@ -1,7 +1,8 @@
 /**
  * App lock gate (AGENTS.md §15.3). The screens stay mounted underneath
  * (an import keeps running) but are inert and hidden while the lock screen
- * or the privacy cover is up. Nothing renders before the lock state is
+ * or the privacy cover is up, and the overlay sits in the top layer above
+ * any open sheet or viewer. Nothing renders before the lock state is
  * known, so a locked app never flashes its chats at launch.
  */
 import { useMemo, type ReactNode } from 'react';
@@ -11,6 +12,7 @@ import { formatString } from '../../i18n/format-string';
 import { useLockState } from '../../queries/settings-queries';
 import { LockContext } from './lock-context';
 import { LockScreen } from './lock-screen';
+import { TopLayerOverlay } from './top-layer-overlay';
 import { useLockController } from './use-lock-controller';
 
 /** Props for {@link LockGate}. */
@@ -74,7 +76,7 @@ export function LockGate({ children }: LockGateProps) {
       <div className="contents" inert={hidden} aria-hidden={hidden ? true : undefined}>
         {children}
       </div>
-      {overlay}
+      {overlay === null ? null : <TopLayerOverlay>{overlay}</TopLayerOverlay>}
     </LockContext>
   );
 }
