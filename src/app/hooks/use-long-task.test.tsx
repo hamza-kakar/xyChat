@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { useHoldLongTask, useIsLongTaskRunning } from './use-long-task';
+import { trackLongTask, useHoldLongTask, useIsLongTaskRunning } from './use-long-task';
 
 function Holder({ active }: { readonly active: boolean }) {
   useHoldLongTask(active);
@@ -31,5 +31,26 @@ describe('useHoldLongTask', () => {
     expect(screen.getByText('running')).toBeInTheDocument();
     rerender(<Indicator />);
     expect(screen.getByText('idle')).toBeInTheDocument();
+  });
+});
+
+describe('trackLongTask', () => {
+  it('holds a task until the job settles, failed or not', async () => {
+    render(<Indicator />);
+    let finish: () => void = () => undefined;
+    const done = trackLongTask(
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const failed = expect(trackLongTask(Promise.reject(new Error('worker gone')))).rejects.toThrow(
+      'worker gone',
+    );
+    expect(await screen.findByText('running')).toBeInTheDocument();
+    await failed;
+    expect(screen.getByText('running')).toBeInTheDocument();
+    finish();
+    await done;
+    expect(await screen.findByText('idle')).toBeInTheDocument();
   });
 });
