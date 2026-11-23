@@ -1,7 +1,6 @@
 /**
- * Typed access to the `meta` key/value table (AGENTS.md §10.2, §15.4):
- * app settings live here, not in localStorage. Every read is validated
- * (§18.5); a missing, malformed or invalid value reads as null.
+ * Typed access to the `meta` key/value table:
+ * app settings live here, not in localStorage. Every read is validated; a missing, malformed or invalid value reads as null.
  */
 import * as v from 'valibot';
 import type { SqliteDatabase } from './open';
@@ -58,7 +57,7 @@ export function deleteMeta(db: SqliteDatabase, key: string): void {
 }
 
 /**
- * Reads the schema version written by the migration runner (§10.3).
+ * Reads the schema version written by the migration runner.
  *
  * @param db The open database.
  * @returns The version, or 0 when unset.

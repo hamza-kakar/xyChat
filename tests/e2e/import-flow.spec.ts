@@ -1,5 +1,5 @@
 /**
- * Import e2e flows 2–5 (AGENTS.md §19.5): pick → confirm (self choice,
+ * Import e2e flows 2–5: pick → confirm (self choice,
  * ambiguous date-order toggle, merge preselect) → progress → report, plus
  * duplicate re-import and mid-import cancellation. Chromium runs the full
  * storage path; WebKit skips (no OPFS in Playwright Linux builds, ADR
@@ -39,7 +39,7 @@ test('flow 2: import an iOS group zip — confirm, self choice, report', async (
   await openPicker(page);
   await pickFile(page, await buildIosGroupZip(), 'WhatsApp Chat - Family.zip');
 
-  // Confirm screen (§12.8.4): unambiguous DMY (days 17 > 12) → no toggle.
+  // Confirm screen: unambiguous DMY (days 17 > 12) → no toggle.
   await expect(page.getByText('Confirm import')).toBeVisible();
   await expect(page.getByText('Day / Month')).toHaveCount(0);
   await expect(page.getByLabel('Chat name')).toHaveValue('Family');
@@ -47,17 +47,17 @@ test('flow 2: import an iOS group zip — confirm, self choice, report', async (
   const axe = await new AxeBuilder({ page }).analyze();
   expect(axe.violations).toEqual([]);
 
-  // Self choice + start (§12.8.4).
+  // Self choice + start.
   await page.getByRole('button', { name: 'Sara' }).first().click();
   await page.getByRole('button', { name: 'Start import' }).click();
 
-  // Report (§12.8.6): 6 messages, 2 media rows (1 present + 1 missing).
+  // Report: 6 messages, 2 media rows (1 present + 1 missing).
   await expect(page.getByText('Import complete')).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText('6 messages imported')).toBeVisible();
   await expect(page.getByText('1 media files stored')).toBeVisible();
   await expect(page.getByText('1 media files missing from the archive')).toBeVisible();
 
-  // §12.8.6: Open chat lands in the chat view (§12.5).
+  //  Open chat lands in the chat view.
   await page.getByRole('button', { name: 'Open chat' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Family' })).toBeVisible();
   await expect(page.getByRole('log').getByText('welcome to the family chat')).toBeVisible();
@@ -103,7 +103,7 @@ test('flow 4: re-importing the same file adds 0 and preselects the merge', async
   await expect(page.getByText('0 messages imported')).toBeVisible();
   await expect(page.getByText('6 duplicates skipped')).toBeVisible();
 
-  // §19.5 flow 4, second half: a NEWER SUPERSET (the same 6 messages plus 2
+  //  flow 4, second half: a NEWER SUPERSET (the same 6 messages plus 2
   // newer ones) adds only the new messages, in order.
   await page.getByRole('button', { name: 'Done' }).click();
   await openPicker(page);
@@ -115,7 +115,7 @@ test('flow 4: re-importing the same file adds 0 and preselects the merge', async
   await expect(page.getByText('6 duplicates skipped')).toBeVisible();
 
   // The merged chat reads in file order: the interleaved message sits
-  // between base messages 2 and 3 (§8.10).
+  // between base messages 2 and 3.
   await page.getByRole('button', { name: 'Open chat' }).click();
   const log = page.getByRole('log');
   await expect(log.getByText('newer message at the end')).toBeVisible();
@@ -137,10 +137,10 @@ test('flow 4: re-importing the same file adds 0 and preselects the merge', async
   await expect(page.getByText('8 duplicates skipped')).toBeVisible();
 });
 
-test('flow 5: cancel mid-import — no chat created, no OPFS files left (§9.3)', async ({ page }) => {
+test('flow 5: cancel mid-import — no chat created, no OPFS files left', async ({ page }) => {
   await openPicker(page);
   // Enough media that the cancel lands inside the media phase, after some
-  // files are on disk: rollback must then delete them (§9.3).
+  // files are on disk: rollback must then delete them.
   const zip = await buildMediaCancelZip(800);
   await pickFile(page, zip, 'WhatsApp Chat - Media.zip');
   await expect(page.getByText('Confirm import')).toBeVisible();
@@ -164,7 +164,7 @@ test('flow 5: cancel mid-import — no chat created, no OPFS files left (§9.3)'
   await page.getByRole('button', { name: 'Try another file' }).click();
   await expect(page.getByText('Import a WhatsApp export')).toBeVisible();
 
-  // §9.3: no chat was created. Picking the same export again must not offer
+  //  no chat was created. Picking the same export again must not offer
   // to update an existing "Media" chat; flow 4 shows that option appearing
   // once a chat with the title exists.
   await pickFile(page, zip, 'WhatsApp Chat - Media.zip');
@@ -173,7 +173,7 @@ test('flow 5: cancel mid-import — no chat created, no OPFS files left (§9.3)'
   // as the heading, so its absence here is final.
   await expect(page.getByText('Update existing chat: Media')).toHaveCount(0);
 
-  // §9.3: the OPFS media file count returns to the
+  //  the OPFS media file count returns to the
   // BASELINE (0) — poll until the async rollback deletes everything.
   await expect
     .poll(async () => countOpfsMediaFiles(page), { timeout: 30_000, intervals: [250, 500] })

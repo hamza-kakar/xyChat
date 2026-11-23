@@ -1,4 +1,4 @@
-/** Fixture variant definitions, part 1 (AGENTS.md §19.2 data). */
+/** Fixture variant definitions, part 1 (data). */
 import type { DetectedFormat } from '../src/core/parser';
 import type { ClockFormat, DateOrder, SourcePlatform } from '../src/core/model';
 

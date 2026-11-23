@@ -1,6 +1,6 @@
 import { initialsOf, paletteIndexFor } from './avatar-color';
 
-/** Avatar circle: initials in the title's palette color (§12.4). The
+/** Avatar circle: initials in the title's palette color. The
  * palette is AA on the raised surface in both themes (tokens.test.ts). */
 export function Avatar({ title }: { readonly title: string }) {
   return (

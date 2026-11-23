@@ -1,5 +1,5 @@
 /**
- * Chat row actions (AGENTS.md §12.4): rename, chat info, and delete behind
+ * Chat row actions: rename, chat info, and delete behind
  * a confirmation that states the message count, media count and bytes.
  */
 import { useState } from 'react';

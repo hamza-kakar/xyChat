@@ -19,7 +19,7 @@ function fakeDoc() {
   };
 }
 
-describe('global audio controller (§13.2)', () => {
+describe('global audio controller', () => {
   it('lets one element play at a time', () => {
     const store = new AudioPlaybackStore(null);
     const first = { pause: vi.fn() };

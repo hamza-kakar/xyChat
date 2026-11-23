@@ -1,6 +1,6 @@
 /**
- * Import run phase tests (§9.2 steps 6–7): parsing with progress,
- * §8.10 fingerprints with occurrence counting, cancellation, and warning
+ * Import run phase tests: parsing with progress,
+ *  fingerprints with occurrence counting, cancellation, and warning
  * grouping — against the real parser with an injected hash.
  */
 import { createHash } from 'node:crypto';
@@ -48,8 +48,8 @@ async function quietRun(text: string): Promise<Awaited<ReturnType<typeof runImpo
   });
 }
 
-describe('runImportParse (§9.2 steps 6–7)', () => {
-  it('fingerprints identical texts with distinct occurrences (§8.10)', async () => {
+describe('runImportParse', () => {
+  it('fingerprints identical texts with distinct occurrences', async () => {
     const result = await quietRun(IOS_TEXT);
     expect(result.ok).toBe(true);
     if (!result.ok) {
@@ -64,7 +64,7 @@ describe('runImportParse (§9.2 steps 6–7)', () => {
     expect(result.value.messages[2]?.message.attachment?.fileName).toBe('IMG-0001.jpg');
   });
 
-  it('groups parse warnings by code (§9.2 step 11)', async () => {
+  it('groups parse warnings by code', async () => {
     const result = await quietRun(IOS_TEXT);
     expect(result.ok).toBe(true);
     if (!result.ok) {
@@ -74,8 +74,8 @@ describe('runImportParse (§9.2 steps 6–7)', () => {
     expect(result.value.stats.messages).toBe(4);
   });
 
-  it('reports parsing and fingerprinting progress (§9.1)', async () => {
-    // > 5,000 lines so the §8.2 progress throttle fires.
+  it('reports parsing and fingerprinting progress', async () => {
+    // > 5,000 lines so the progress throttle fires.
     const progress: RunProgress[] = [];
     const result = await runImportParse(bigText(6_000), detectOrThrow(bigText(6_000)), hashBytes, {
       onProgress: (event) => {
@@ -95,7 +95,7 @@ describe('runImportParse (§9.2 steps 6–7)', () => {
     expect(result.value.messages).toHaveLength(6_000);
   });
 
-  it('cancels during parsing with CANCELLED (§18.8)', async () => {
+  it('cancels during parsing with CANCELLED', async () => {
     const text = bigText(20_000);
     let calls = 0;
     const result = await runImportParse(text, detectOrThrow(text), hashBytes, {
@@ -111,7 +111,7 @@ describe('runImportParse (§9.2 steps 6–7)', () => {
     }
   });
 
-  it('counts replacement characters in the decoded text (§9.2 step 3)', async () => {
+  it('counts replacement characters in the decoded text', async () => {
     const result = await quietRun(`${IOS_TEXT}\uFFFD`);
     expect(result.ok).toBe(true);
     if (result.ok) {

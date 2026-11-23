@@ -1,6 +1,6 @@
 /**
  * A virtualized, measured column of rows inside its own scroll container
- * (AGENTS.md §12.6: the gallery is virtualized). Asks for the next page
+ * (the gallery is virtualized). Asks for the next page
  * when the last rows come into view.
  */
 import { useEffect, useRef, type ReactNode } from 'react';

@@ -1,5 +1,5 @@
 /**
- * Install banner (AGENTS.md §12.10): shown on the chat list when running
+ * Install banner: shown on the chat list when running
  * in an iOS Safari tab; dismissible for the session.
  */
 import { useState } from 'react';

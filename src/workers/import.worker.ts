@@ -1,6 +1,6 @@
 /**
- * import.worker (AGENTS.md §3.2, §9.1): CPU- and IO-heavy import work off
- * the main thread. It never touches SQLite directly (§3.2) — commit
+ * import.worker: CPU- and IO-heavy import work off
+ * the main thread. It never touches SQLite directly — commit
  * requests go over the commit MessagePort to db.worker, the ONLY SQLite
  * owner. Thin shell per the ratified ADR 0007 addendum: the pipeline
  * orchestration lives in the gated page module import-begin.ts; only the
@@ -18,8 +18,8 @@ import { deleteMediaFile } from '../storage/media-store';
 import { IMPORT_LIMITS } from '../core/limits';
 import type { OpenedArchive } from './archive-reader';
 
-/** Raw exception text can echo file names or values (§15.4) — the UI
- * carries the error class name only (§18.7). */
+/** Raw exception text can echo file names or values — the UI
+ * carries the error class name only. */
 function toInternalError(error: unknown): ImportError {
   return { code: 'INTERNAL', detail: errorNameOf(error) };
 }
@@ -28,8 +28,7 @@ function errorNameOf(error: unknown): string {
   return error instanceof Error ? error.name : 'unknown error';
 }
 
-/** Production IO over the picked archive and worker-only OPFS handles
- * (§9.2 step 8, §10.4): one opened archive per pipeline run, entries
+/** Production IO over the picked archive and worker-only OPFS handles: one opened archive per pipeline run, entries
  * streamed chunk-by-chunk into sync-handle sinks. Thin adapter — the logic
  * lives in import-media.ts. */
 function mediaDeps(file: Blob, archive: OpenedArchive): MediaPhaseDeps {
@@ -49,11 +48,10 @@ function mediaDeps(file: Blob, archive: OpenedArchive): MediaPhaseDeps {
   };
 }
 
-/** Media types thumbnailed during the import (§12.6). */
+/** Media types thumbnailed during the import. */
 const DEFAULT_THUMBNAIL_TYPES: ReadonlySet<string> = new Set(['image', 'sticker']);
 
-/** Generates a 320px-long-edge JPEG thumbnail via OffscreenCanvas (§9.2
- * step 9). Throws on undecodable input; the caller degrades to null. */
+/** Generates a 320px-long-edge JPEG thumbnail via OffscreenCanvas. Throws on undecodable input; the caller degrades to null. */
 async function makeImageThumbnail(bytes: Uint8Array): Promise<ThumbnailResult | null> {
   const bitmap = await createImageBitmap(new Blob([bytes.buffer as ArrayBuffer]));
   try {
@@ -135,7 +133,7 @@ const api: ImportWorkerApi = {
   },
 };
 
-/** Real SHA-256 for §8.10 fingerprints (workers: crypto.subtle). */
+/** Real SHA-256 for fingerprints (workers: crypto.subtle). */
 const hashViaSubtle = async (bytes: Uint8Array): Promise<Uint8Array> => {
   const digest = await crypto.subtle.digest('SHA-256', bytes.buffer as ArrayBuffer);
   return new Uint8Array(digest);

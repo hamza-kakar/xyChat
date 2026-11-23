@@ -52,7 +52,7 @@ describe('splitLinks', () => {
   });
 });
 
-describe('extractLinks (§12.6 Links tab)', () => {
+describe('extractLinks (Links tab)', () => {
   it('lists allowed links once each, in order', () => {
     expect(
       extractLinks(

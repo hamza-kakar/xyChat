@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 
 /**
  * Installs a listener for `securitypolicyviolation` events before any app
- * script runs (AGENTS.md §15.1). Every e2e flow asserts the collected list
+ * script runs. Every e2e flow asserts the collected list
  * stays empty.
  */
 export async function installCspListener(page: Page): Promise<void> {

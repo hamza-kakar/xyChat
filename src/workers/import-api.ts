@@ -1,15 +1,15 @@
 /**
- * import.worker's Comlink API surface (AGENTS.md §3.2, §9.1): the main
+ * import.worker's Comlink API surface: the main
  * thread's ONLY channel into the import pipeline. Imported TYPE-ONLY by the
- * client (§3.1). Every method answers a discriminated Result shape, never
- * raw exceptions (§18.7).
+ * client. Every method answers a discriminated Result shape, never
+ * raw exceptions.
  */
 import type { DetectedFormat, ParseStats } from '../core/parser';
 import type { ImportCommitResult } from '../storage/sqlite/import-commit';
 import type { DetectReport, ImportError } from './import-detect';
 import type { ImportHooks } from './import-progress';
 
-/** Detection outcome over the wire (§9.2 step 4). */
+/** Detection outcome over the wire. */
 export type DetectAnswer =
   | { readonly ok: true; readonly report: DetectReport }
   | {
@@ -17,7 +17,7 @@ export type DetectAnswer =
       readonly error: ImportError;
     };
 
-/** The user-confirmed choices from §12.8 (format possibly overridden). */
+/** The user-confirmed choices (format possibly overridden). */
 export interface ConfirmedImport {
   readonly format: DetectedFormat;
   /** Editable title from the confirm screen. */
@@ -25,26 +25,25 @@ export interface ConfirmedImport {
   /** Group heuristic from detection. */
   readonly isGroup: boolean;
   /** Pre-minted chat id: an existing chat (merge) or a fresh one — media
-   * paths key on it BEFORE the commit creates the chats row (§9.2 step 8). */
+   * paths key on it BEFORE the commit creates the chats row. */
   readonly chatId: string;
-  /** Fingerprints whose media the stored chat already holds (§9.2 step 8:
-   * the media phase skips rewriting them). */
+  /** Fingerprints whose media the stored chat already holds (the media phase skips rewriting them). */
   readonly alreadyStored: ReadonlySet<string>;
 }
 
-/** Facts for the §9.2-step-11 report beyond the commit counts. */
+/** Facts for the -step-11 report beyond the commit counts. */
 export interface RunReport {
   readonly warningsByCode: Readonly<Record<string, number>>;
   readonly stats: ParseStats;
   readonly replacementChars: number;
   readonly durationMs: number;
-  /** Media attachment rows by status (§9.2 step 11: stored/missing/omitted). */
+  /** Media attachment rows by status (stored/missing/omitted). */
   readonly mediaStored: number;
   readonly mediaMissing: number;
   readonly mediaOmitted: number;
 }
 
-/** Pipeline outcome over the wire (§9.2 steps 6–11). */
+/** Pipeline outcome over the wire. */
 export type BeginAnswer =
   | {
       readonly ok: true;
@@ -58,7 +57,7 @@ export type BeginAnswer =
 
 /** Options for begin() — `hooks` is a separate top-level Comlink.proxy
  * argument (transfer markers are honored at the top level only); the
- * commit port arrives via setCommitPort (§3.2). */
+ * commit port arrives via setCommitPort. */
 export interface BeginOptions {
   readonly file: Blob;
   readonly fileName: string;
@@ -69,7 +68,7 @@ export interface BeginOptions {
 /** The import.worker API exposed over Comlink. */
 export interface ImportWorkerApi {
   /**
-   * Detection phase (§9.2 step 4): reads the archive, detects the format,
+   * Detection phase: reads the archive, detects the format,
    * derives the confirmation-screen metadata. The worker stays stateless —
    * the caller keeps the file and re-sends it to start the pipeline.
    */
@@ -79,11 +78,11 @@ export interface ImportWorkerApi {
     localeHint?: string,
     dateOrderOverride?: 'DMY' | 'MDY',
   ): Promise<DetectAnswer>;
-  /** Takes the import-side end of the commit MessageChannel (§3.2);
+  /** Takes the import-side end of the commit MessageChannel;
    * transferred by the caller. */
   setCommitPort(port: MessagePort): void;
   /**
-   * Runs the confirmed pipeline (§9.2 steps 6–11): parse → fingerprint →
+   * Runs the confirmed pipeline: parse → fingerprint →
    * media writes → commit over the MessagePort. Cancellation via the
    * proxied hooks; the commit request carries the pre-assembled input.
    */

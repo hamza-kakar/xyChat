@@ -1,5 +1,5 @@
 /**
- * Shared fixtures for the repository contract tests (§10.5): database
+ * Shared fixtures for the repository contract tests: database
  * bootstrap and commit-input builders. Not a test file — imported by the
  * *.test.ts modules in this directory.
  */
@@ -15,7 +15,7 @@ import type { ImportCommitInput } from '../../src/storage/sqlite/import-commit';
 import type { ParsedMessage } from '../../src/core/model';
 import type { ImportRunFacts } from '../../src/storage/sqlite/import-report';
 
-/** Run facts for commits made by tests (§9.2 step 11 report). */
+/** Run facts for commits made by tests (report). */
 export const RUN_FACTS: ImportRunFacts = {
   warningsByCode: {},
   mediaStored: 0,
@@ -148,7 +148,7 @@ export function omittedMediaInput(
   };
 }
 
-/** Re-import of the same media message WITH bytes (upgrade path, §8.10). */
+/** Re-import of the same media message WITH bytes (upgrade path). */
 export function presentMediaInput(
   importId: string,
   chatIdToTarget: string | null,

@@ -1,5 +1,5 @@
 /**
- * Migration tests (AGENTS.md §10.3): fresh database setup, version tracking,
+ * Migration tests: fresh database setup, version tracking,
  * and the newer-database refusal.
  */
 import { describe, expect, it } from 'vitest';

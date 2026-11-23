@@ -11,7 +11,7 @@ import { splashLinkTags } from './scripts/splash-screens';
 const projectRoot = dirname(fileURLToPath(import.meta.url));
 
 /**
- * The Content Security Policy required by AGENTS.md §15.1. GitHub Pages cannot
+ * The Content Security Policy required. GitHub Pages cannot
  * set response headers, so the policy is delivered via a meta element. It is
  * injected only at build time: the dev server injects its own inline styles
  * and HMR scripts, which a strict CSP would break.
@@ -39,7 +39,7 @@ function injectBuildMeta(): Plugin {
       const metaTag = `<meta http-equiv="Content-Security-Policy" content="${CSP_DIRECTIVES}">`;
       // The app name lives in one constant (AGENTS.md header); index.html
       // gets it injected at build time so a rename is a one-line change.
-      // The iOS launch images (§14) are generated with the icons.
+      // The iOS launch images are generated with the icons.
       return html
         .replace('</title>', `</title>\n    ${metaTag}`)
         .replace('</head>', `  ${splashLinkTags()}\n  </head>`)
@@ -107,7 +107,7 @@ export default defineConfig(async () => {
       }),
     ],
     worker: {
-      // Module workers (§3.2) keep dynamic imports as separate chunks, so
+      // Module workers keep dynamic imports as separate chunks, so
       // the Opus decoder's optional ML build is never inlined into the
       // audio worker.
       format: 'es' as const,

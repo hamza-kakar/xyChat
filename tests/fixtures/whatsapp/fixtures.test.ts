@@ -1,5 +1,5 @@
 /**
- * Golden fixture runner (AGENTS.md §19.2). For every variant under
+ * Golden fixture runner. For every variant under
  * `whatsapp/`, parses `chat.txt` through the public API and requires the
  * result to deep-equal the committed `expected.json`. `expected.json` files
  * are reviewed outputs — regenerate only via `pnpm fixtures:update`.

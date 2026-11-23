@@ -1,5 +1,5 @@
 /**
- * The restore preview (AGENTS.md §10.6): the backup's chats, each with
+ * The restore preview: the backup's chats, each with
  * its choice. A chat that matches one on this device can merge (the
  * default: nothing is lost), replace it, or be skipped; any other chat is
  * restored or skipped.

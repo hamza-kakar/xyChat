@@ -2,7 +2,7 @@
  * Hosts the lock screen or privacy cover in a modal `<dialog>`. Sheets and
  * the media viewer are modal dialogs too, and the browser paints those in
  * the top layer above any z-index; a later `showModal()` stacks above them
- * and makes them inert, so the cover always wins (AGENTS.md §15.3).
+ * and makes them inert, so the cover always wins.
  */
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 

@@ -1,8 +1,8 @@
 /**
- * Full-screen media viewer (AGENTS.md §12.6): image, video, audio or
+ * Full-screen media viewer: image, video, audio or
  * document, with previous/next (buttons, arrow keys and swipes on images),
  * close (button, Escape, swipe down) and "Show in chat". A modal
- * `<dialog>` traps focus and returns it to the opener on close (§16).
+ * `<dialog>` traps focus and returns it to the opener on close.
  */
 import { useCallback, useEffect, useId, useRef, useState, type RefObject } from 'react';
 import { Link } from 'react-router';

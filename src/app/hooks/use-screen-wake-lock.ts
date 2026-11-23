@@ -1,6 +1,5 @@
 /**
- * Keeps the screen awake while a long job runs (AGENTS.md §12.8 step 5,
- * §10.6) when `navigator.wakeLock` exists. Released when the job ends or
+ * Keeps the screen awake while a long job runs when `navigator.wakeLock` exists. Released when the job ends or
  * the component unmounts, and taken again when the page becomes visible.
  */
 import { useEffect } from 'react';

@@ -1,5 +1,5 @@
 /**
- * English phrase table (AGENTS.md §8.7). iOS exports prefix several markers
+ * English phrase table. iOS exports prefix several markers
  * with U+200E (LRM), so the marker regexes accept an optional LRM directly
  * before the marker text; the matched marker is stripped from stored bodies.
  */
@@ -14,7 +14,7 @@ export const en: LocalePatterns = {
   },
 
   system: [
-    // §8.6.1: the actor part must not cross an author separator (": "),
+    //  the actor part must not cross an author separator (": "),
     // otherwise ordinary messages like "Sara: I added sugar" become system
     // events and lose their author. Actor names never contain ": ".
     /^Messages and calls are end-to-end encrypted\..*$/u,
@@ -52,8 +52,8 @@ export const en: LocalePatterns = {
     { re: /^\u200E?Contact card omitted$/iu, mediaType: 'contact-card' },
   ],
 
-  // Anchored per §8.7 (all locale regexes are anchored) — also keeps the
-  // no-close adversarial case linear (§8.7: no catastrophic backtracking).
+  // Anchored (all locale regexes are anchored) — also keeps the
+  // no-close adversarial case linear (no catastrophic backtracking).
   attachedIos: /^\u200E?<attached: ([^>]+)>/u,
   attachedAndroid: /^(.+) \(file attached\)$/u,
 

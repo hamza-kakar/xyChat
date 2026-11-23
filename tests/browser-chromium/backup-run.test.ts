@@ -1,5 +1,5 @@
 /**
- * Backup and restore runs end to end (§10.6): real sqlite-wasm and zip.js,
+ * Backup and restore runs end to end: real sqlite-wasm and zip.js,
  * with an in-memory stand-in for OPFS (sync access handles exist only in
  * workers, ADR 0007).
  */

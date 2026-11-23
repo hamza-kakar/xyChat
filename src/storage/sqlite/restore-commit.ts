@@ -1,7 +1,7 @@
 /**
- * Restore commit (AGENTS.md §10.6): every chosen backup chat lands in ONE
- * transaction. A chat restores through the import commit (§9.2 step 10),
- * so a merge follows the §8.10 fingerprint rules and the full-text index
+ * Restore commit: every chosen backup chat lands in ONE
+ * transaction. A chat restores through the import commit,
+ * so a merge follows the fingerprint rules and the full-text index
  * fills as rows insert. "Replace" deletes the local chat in the same
  * transaction first; the caller deletes its old files after the commit.
  */
@@ -78,7 +78,7 @@ function restoreBookmarks(
 
 /**
  * Commits a restore in ONE transaction: a failure leaves the database as
- * it was (the caller then removes the files it wrote, §9.3).
+ * it was (the caller then removes the files it wrote).
  *
  * @param db The app database.
  * @param plans The chats to restore, in order.

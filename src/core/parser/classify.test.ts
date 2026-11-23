@@ -26,7 +26,7 @@ describe('system messages', () => {
     expect(r.author).toBeNull();
   });
 
-  it('classifies the iOS group-author system form (§8.6.2)', () => {
+  it('classifies the iOS group-author system form', () => {
     const r = ios('Family Group: \u200EMessages and calls are end-to-end encrypted.');
     expect(r.author).toBeNull();
     expect(r.kind).toBe('system');
@@ -39,7 +39,7 @@ describe('system messages', () => {
     expect(android('Sara left').kind).toBe('system');
   });
 
-  it('treats an unknown no-colon body as system (§8.6.3)', () => {
+  it('treats an unknown no-colon body as system', () => {
     const r = android('some unclassifiable event');
     expect(r.kind).toBe('system');
     expect(r.author).toBeNull();

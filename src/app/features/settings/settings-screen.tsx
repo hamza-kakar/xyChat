@@ -1,5 +1,5 @@
 /**
- * Settings (AGENTS.md §12.3 `#/settings`, §12.9): appearance, app lock,
+ * Settings (`#/settings`): appearance, app lock,
  * storage, backup and restore, diagnostics and about.
  */
 import { en } from '../../i18n/en';

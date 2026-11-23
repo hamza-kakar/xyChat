@@ -1,5 +1,5 @@
 /**
- * A titled section of a settings-style page (AGENTS.md §16: a landmark
+ * A titled section of a settings-style page (a landmark
  * named by its heading).
  */
 import { useId, type ReactNode } from 'react';

@@ -24,7 +24,6 @@ export const en = {
     syncAccessHandle: 'Fast file writes (OPFS sync access handles)',
     cryptoSubtle: 'Secure hashing (crypto.subtle)',
     navigatorLocks: 'Single-instance locking (navigator.locks)',
-    // Reserved for the M2 FTS5 probe (ADR 0008).
     fts5: 'Full-text search engine (SQLite FTS5)',
   },
   errorBoundary: {

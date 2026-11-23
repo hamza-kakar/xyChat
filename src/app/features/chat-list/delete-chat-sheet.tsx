@@ -1,5 +1,5 @@
 /**
- * Delete-chat confirmation (AGENTS.md §12.4, §12.7): states the message
+ * Delete-chat confirmation: states the message
  * count, media count and bytes before deleting the chat and its media.
  */
 import { en } from '../../i18n/en';

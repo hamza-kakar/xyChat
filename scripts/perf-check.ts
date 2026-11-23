@@ -1,5 +1,5 @@
 /**
- * Parser performance gate (AGENTS.md §17): parsing a 100k-message synthetic
+ * Parser performance gate: parsing a 100k-message synthetic
  * export must complete in under 2 seconds. Run via `tsx` (bare runtime —
  * no vitest module-transform overhead). Exits non-zero over budget.
  */
@@ -58,7 +58,7 @@ if (parsed.value.messages.length !== MESSAGE_COUNT) {
 }
 console.log(`parse ${MESSAGE_COUNT}: ${elapsed.toFixed(0)}ms (budget ${BUDGET_MS}ms)`);
 
-// §17: fingerprint + merge 100k ≤ 2 s.
+//  fingerprint + merge 100k ≤ 2 s.
 const FP_BUDGET_MS = 2_000;
 const fpStart = performance.now();
 const entries = [];

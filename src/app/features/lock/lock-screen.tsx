@@ -1,5 +1,5 @@
 /**
- * The lock screen (AGENTS.md §15.3): PIN entry, the backoff countdown
+ * The lock screen: PIN entry, the backoff countdown
  * after repeated failures, and the no-recovery notice.
  */
 import { useEffect, useRef, useState } from 'react';

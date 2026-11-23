@@ -1,5 +1,5 @@
 /**
- * Confirm-step tests (§12.8.4): the ambiguous-order toggle re-runs
+ * Confirm-step tests: the ambiguous-order toggle re-runs
  * detection with the chosen order; the title edit and start button carry
  * the confirmed choices.
  */
@@ -9,7 +9,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ImportConfirmStep } from './import-confirm-step';
 import type { DetectReport } from '../../../workers/import-detect';
 
-/** A detect report for an ambiguous iOS group export (§12.8.4). */
+/** A detect report for an ambiguous iOS group export. */
 function reportWith(orderSource: 'unambiguous' | 'locale-hint' | 'user'): DetectReport {
   return {
     format: {
@@ -50,7 +50,7 @@ function reportWith(orderSource: 'unambiguous' | 'locale-hint' | 'user'): Detect
 
 const file = new File(['x'], 'WhatsApp Chat - Family.zip');
 
-describe('ImportConfirmStep (§12.8.4)', () => {
+describe('ImportConfirmStep', () => {
   it('shows the DMY/MDY toggle when the order is ambiguous and calls onDateOrder', async () => {
     const user = userEvent.setup();
     const onDateOrder = vi.fn();

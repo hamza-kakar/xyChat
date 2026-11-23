@@ -1,5 +1,5 @@
 /**
- * Accessibility sweep (AGENTS.md §16, §19.5 flow 16): every route is
+ * Accessibility sweep: every route is
  * axe-clean in the light and dark themes, raises no CSP violation, and
  * keeps its layout at double text size (Dynamic Type) without sideways
  * scrolling. One chat with media is imported first so the chat routes
@@ -60,7 +60,7 @@ async function openRoute(page: Page, route: RouteCheck, chatPath: string): Promi
   });
 }
 
-test('every route is axe-clean in light and dark (§16)', async ({ page }) => {
+test('every route is axe-clean in light and dark', async ({ page }) => {
   const chatPath = await importMediaChat(page);
   for (const colorScheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme });
@@ -78,7 +78,7 @@ test('every route is axe-clean in light and dark (§16)', async ({ page }) => {
   }
 });
 
-test('every route keeps its layout at double text size (§16)', async ({ page }) => {
+test('every route keeps its layout at double text size', async ({ page }) => {
   const chatPath = await importMediaChat(page);
   for (const route of ROUTES) {
     await openRoute(page, route, chatPath);

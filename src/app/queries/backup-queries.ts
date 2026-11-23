@@ -1,5 +1,5 @@
 /**
- * Backup and restore queries and mutations (AGENTS.md §10.6, §18.4). The
+ * Backup and restore queries and mutations. The
  * progress and cancel hooks travel with the mutation variables and run on
  * the main thread through a Comlink proxy.
  */
@@ -38,7 +38,7 @@ export function useCreateBackup() {
       readonly callbacks: TransferCallbacks;
     }) =>
       // Tracked until the worker answers, even if Settings closes: the
-      // update prompt waits for it (§12.12).
+      // update prompt waits for it.
       trackLongTask(
         dbClient.createBackup(
           {

@@ -1,6 +1,6 @@
 /**
- * Collects the licenses of the bundled runtime dependencies (AGENTS.md
- * §12.9 About): every package reachable through `dependencies` from the
+ * Collects the licenses of the bundled runtime dependencies (shown in
+ * Settings → About): every package reachable through `dependencies` from the
  * app's package.json, with its version, SPDX license and license text.
  * Resolution follows Node's lookup (node_modules folders walking up from
  * the depending package's real path), which works with pnpm's layout.

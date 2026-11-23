@@ -1,5 +1,5 @@
 /**
- * Export anonymizer library (AGENTS.md §19.3). Turns a real export into a
+ * Export anonymizer library. Turns a real export into a
  * safe fixture by rebuilding it from the PARSED representation: author names
  * map consistently to `Person A/B/…` (including mentions inside system
  * messages), free-text words become deterministic same-length pseudo-words

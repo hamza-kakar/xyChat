@@ -17,7 +17,7 @@ describe('UnsupportedScreen', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Private file storage (OPFS)')).toBeInTheDocument();
     expect(screen.getByText('Single-instance locking (navigator.locks)')).toBeInTheDocument();
-    // Raw engine error text is diagnostics, never UI copy (§12.1).
+    // Raw engine error text is diagnostics, never UI copy.
     expect(screen.queryByText(/SecurityError/)).not.toBeInTheDocument();
   });
 });

@@ -1,5 +1,5 @@
 /**
- * Gallery layout (AGENTS.md §12.6): items grouped under month headers and
+ * Gallery layout: items grouped under month headers and
  * cut into rows of N columns for the virtualized grid. Pure, so the
  * grouping is unit-tested without a DOM.
  */
@@ -66,7 +66,7 @@ export function buildGalleryRows<T>(
   return rows;
 }
 
-/** Grid columns for a container width (§12.6: 3 on phones, 5+ wide). */
+/** Grid columns for a container width (3 on phones, 5+ wide). */
 export function columnsForWidth(width: number): number {
   const PHONE_COLUMNS = 3;
   const WIDE_COLUMNS = 5;

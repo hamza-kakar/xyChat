@@ -1,8 +1,8 @@
 /**
- * Restore media phase (AGENTS.md §10.6, §9.2 step 8): copies one backup
+ * Restore media phase: copies one backup
  * chat's media and thumbnails out of the archive into OPFS under fresh
  * attachment ids, streaming each entry. Every path is recorded before it
- * is written, so a cancel, a failure or a crash removes it (§9.3).
+ * is written, so a cancel, a failure or a crash removes it.
  */
 import { err, ok, type Result } from '../core/result';
 import { asChatId, newAttachmentId } from '../core/ids';
@@ -15,7 +15,7 @@ import type { BackupArchive } from './backup-archive';
 import type { RestoreError } from './transfer-types';
 import type { TransferHooks } from './transfer-hooks';
 
-/** OPFS access for the media phase (§18.4 test seam). */
+/** OPFS access for the media phase (test seam). */
 export interface RestoreMediaDeps {
   readonly openSink: (path: string) => Promise<Result<MediaWriteSink, MediaWriteError>>;
 }
@@ -30,7 +30,7 @@ export interface RestoreMediaRun {
   done: number;
   /** Every path written so far, for rollback. */
   readonly written: string[];
-  /** Persists the written paths of one import row (§9.3). */
+  /** Persists the written paths of one import row. */
   readonly flushWritten: (importId: string, paths: readonly string[]) => void;
 }
 

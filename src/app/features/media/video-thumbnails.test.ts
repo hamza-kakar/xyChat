@@ -14,7 +14,7 @@ function deferred<T>() {
   return { promise, resolve };
 }
 
-describe('VideoThumbnailStore (§13.3)', () => {
+describe('VideoThumbnailStore', () => {
   it('runs at most the configured number at once and reports made paths', async () => {
     const captures: { resolve: (frame: VideoFrame) => void }[] = [];
     const store = new VideoThumbnailStore({

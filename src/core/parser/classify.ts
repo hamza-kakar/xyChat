@@ -1,5 +1,5 @@
 /**
- * Message classification (AGENTS.md §8.6). Splits a header's REST into
+ * Message classification. Splits a header's REST into
  * author/body and assigns the message kind. The system check runs on the
  * whole REST before any `": "` split, because system texts can contain
  * `": "`.
@@ -95,7 +95,7 @@ function tryClassifySystem(
   continuation: readonly string[],
   locale: LocalePatterns,
 ): ClassifiedBody | null {
-  // The union matcher decides in one test (§8.7 table-driven).
+  // The union matcher decides in one test (table-driven).
   if (matchersFor(locale).system.test(firstLine)) {
     return systemBody({
       author: null,
@@ -130,7 +130,7 @@ function tryStripEdited(
   lines: readonly string[],
   locale: LocalePatterns,
 ): { readonly lines: readonly string[]; readonly isEdited: boolean } {
-  // The union matcher decides in one test (§8.7 table-driven).
+  // The union matcher decides in one test (table-driven).
   /* v8 ignore next -- lines always has at least the first body line */
   if (matchersFor(locale).edited.test(lines.at(-1) ?? '')) {
     return { lines: stripEditedMarker(lines, locale), isEdited: true };
@@ -184,7 +184,7 @@ function tryReferencedAttachment(
 /** Tries the omitted-media placeholders. */
 function tryOmittedMedia(core: BodyCore, locale: LocalePatterns): ClassifiedBody | null {
   const first = core.firstLine;
-  // The union matcher decides in one test (§8.7 table-driven); the loop
+  // The union matcher decides in one test (table-driven); the loop
   // resolves which media type the matched pattern implies.
   if (matchersFor(locale).omitted.test(first)) {
     for (const { re, mediaType } of locale.omitted) {
@@ -222,7 +222,7 @@ function tryLocation(core: BodyCore, locale: LocalePatterns): ClassifiedBody | n
   return makeBody(core, 'text', { body: joinBody(core.lines) });
 }
 
-/** Extracts a poll payload from the lines following `POLL:` (§8.6: the next
+/** Extracts a poll payload from the lines following `POLL:` (the next
  * line is the question). `lines` may be empty for a bare `POLL:` body. */
 function parsePoll(lines: readonly string[], locale: LocalePatterns): ParsedPoll | null {
   const question = lines[0] ?? '';
@@ -257,8 +257,8 @@ function tryPoll(core: BodyCore, locale: LocalePatterns): ClassifiedBody | null 
 
 /** Tries the exact call bodies from the locale table. */
 function tryCall(core: BodyCore, locale: LocalePatterns): ClassifiedBody | null {
-  // The union matcher decides in one test (§8.7 table-driven).
-  // Continuation lines after the call marker are kept (§8.1: no silent loss).
+  // The union matcher decides in one test (table-driven).
+  // Continuation lines after the call marker are kept (no silent loss).
   if (matchersFor(locale).calls.test(core.firstLine)) {
     return makeBody(core, 'call', {
       body: joinBody([stripMarksBeforeMarker(core.firstLine), ...core.lines.slice(1)]),
@@ -267,14 +267,14 @@ function tryCall(core: BodyCore, locale: LocalePatterns): ClassifiedBody | null 
   return null;
 }
 
-/** Assigns the message kind for an authored body (§8.6.4, in order). */
+/** Assigns the message kind for an authored body (in order). */
 function classifyKind(
   core: BodyCore,
   locale: LocalePatterns,
   platform: SourcePlatform,
 ): ClassifiedBody {
-  // The union matcher decides in one test (§8.7 table-driven).
-  // Continuation lines after the marker are kept (§8.1: no silent loss).
+  // The union matcher decides in one test (table-driven).
+  // Continuation lines after the marker are kept (no silent loss).
   if (matchersFor(locale).deleted.test(core.firstLine)) {
     return makeBody(core, 'deleted', {
       body: joinBody([stripMarksBeforeMarker(core.firstLine), ...core.lines.slice(1)]),
@@ -315,13 +315,13 @@ export function classifyBody(
 ): ClassifiedBody {
   const firstLine = cleanBodyLine(rest);
 
-  // 1. System check on the whole REST, before any author split (§8.6.1).
+  // 1. System check on the whole REST, before any author split.
   const wholeRestSystem = tryClassifySystem(firstLine, continuationLines, locale);
   if (wholeRestSystem !== null) {
     return wholeRestSystem;
   }
 
-  // 2. Split at the first ": " (§8.6.2), or 3. unknown system event (§8.6.3).
+  // 2. Split at the first ": ", or 3. unknown system event.
   const split = splitAuthor(rest);
   if (split === null) {
     return {
@@ -335,7 +335,7 @@ export function classifyBody(
     };
   }
 
-  // §8.6.2 iOS special case, restricted to the iOS form: the group/contact
+  //  iOS special case, restricted to the iOS form: the group/contact
   // name is followed by a LRM-prefixed system text. Without the LRM shape
   // and platform check, ordinary Android/iOS messages whose bodies happen to
   // contain system keywords would lose their author. rawAfterColon keeps the
@@ -355,7 +355,7 @@ export function classifyBody(
 
   const authoredLines = [split.bodyFirst, ...continuationLines.map(cleanBodyLine)];
 
-  // 4. Body-kind classification; edited marker first (§8.6.4).
+  // 4. Body-kind classification; edited marker first.
   const edited = tryStripEdited(authoredLines, locale);
   const core: BodyCore = {
     author: split.author,

@@ -1,5 +1,5 @@
 /**
- * In-chat search (AGENTS.md §11): a result counter ("12 of 87") with
+ * In-chat search: a result counter ("12 of 87") with
  * previous/next. It starts at the newest match; "previous" walks back in
  * time. Every move asks the list to scroll to the match and highlight it.
  */
@@ -20,7 +20,7 @@ export interface InChatSearchProps {
   readonly chatId: ChatId;
   readonly initialQuery: string;
   /** True when the user opened the bar; a `?q=` link keeps focus on the
-   * page heading (§16). */
+   * page heading. */
   readonly focusOnOpen: boolean;
   readonly onJump: (seq: number) => void;
   readonly onClose: () => void;

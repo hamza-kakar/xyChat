@@ -1,5 +1,5 @@
 /**
- * Import scale gate (AGENTS.md §22 M3 acceptance): a synthetic zip with
+ * Import scale gate: a synthetic zip with
  * 100k messages and 2k media files imports in CI without memory errors —
  * the real readArchive → runImportParse → writeImportMedia phases run
  * against the real parser, fingerprinter and zip.js reads. Only the OPFS
@@ -33,7 +33,7 @@ async function buildScaleZip(
     const stamp = `‎[17/11/2026, ${minute}:${String(i % 60).padStart(2, '0')}:00 PM] Author${i % 9}:`;
     if (i < MEDIA_COUNT) {
       // The first 2k messages reference the media entries (present in the
-      // zip, §9.2 step 8).
+      // zip).
       lines.push(
         `${stamp} ‎<attached: 0000${String(i).padStart(5, '0')}-PHOTO-2026-11-17-21-20-30.jpg>`,
       );
@@ -59,19 +59,19 @@ async function runScaleImport(): Promise<string[]> {
   const file = blob as Blob & { readonly name: string };
   Object.defineProperty(file, 'name', { value: 'scale.zip' });
 
-  // §9.2 steps 1–3: read + decode (real zip.js path).
+  //  read + decode (real zip.js path).
   const archive = await readArchive(file, 'scale.zip');
   if (!archive.ok) {
     return [`archive read failed: ${archive.error.code}`];
   }
 
-  // §9.2 step 4: detect (the confirmed format equals it in this run).
+  //  detect (the confirmed format equals it in this run).
   const detected = detectFormat(archive.value.text);
   if (!detected.ok) {
     return [`detect failed: ${detected.error.code}`];
   }
 
-  // §9.2 steps 6–7: parse + fingerprint (real SHA-256 via subtle).
+  //  parse + fingerprint (real SHA-256 via subtle).
   const hashViaSubtle = async (bytes: Uint8Array): Promise<Uint8Array> => {
     const digest = await crypto.subtle.digest('SHA-256', bytes.buffer as ArrayBuffer);
     return new Uint8Array(digest);
@@ -87,7 +87,7 @@ async function runScaleImport(): Promise<string[]> {
     failures.push(`expected ${MESSAGE_COUNT} messages, got ${run.value.messages.length}`);
   }
 
-  // §9.2 steps 8–9: media classification + streamed writes (injected OPFS
+  //  media classification + streamed writes (injected OPFS
   // sink; the opened archive is the ONE reader).
   return runMediaPhase(file, run.value.messages);
 }
@@ -139,7 +139,7 @@ async function runMediaPhase(
     return failures;
   }
 
-  // 2k media present + written; nothing rolled back (§9.3 invariant).
+  // 2k media present + written; nothing rolled back (invariant).
   const present = media.value.attachments.filter((row) => row.status === 'present');
   if (present.length !== MEDIA_COUNT) {
     failures.push(`expected ${MEDIA_COUNT} present attachments, got ${present.length}`);
@@ -231,7 +231,7 @@ async function runLinearProbe(
   return { elapsed, mediaOk: media.ok };
 }
 
-describe('import scale (§22 M3 acceptance, ADR 0007 addendum)', () => {
+describe('import scale', () => {
   // Building the zip + full pipeline at 100k scale: generous but bounded
   // (the acceptance is completion without memory errors, not speed).
   it(

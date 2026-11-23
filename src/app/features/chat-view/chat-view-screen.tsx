@@ -1,7 +1,7 @@
 /**
- * The chat view (AGENTS.md §12.5): header, in-chat search, the self-choice
+ * The chat view: header, in-chat search, the self-choice
  * banner, the virtualized message log and jump to date. Route parameters
- * are validated (§12.3): an invalid chat id shows "Not found"; an invalid
+ * are validated: an invalid chat id shows "Not found"; an invalid
  * `?seq` or `?q` is ignored.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -33,9 +33,9 @@ import type { RowContext } from './row-model';
 
 /** Chat ids are generated UUIDs; anything else is not a chat. */
 const ChatIdParam = v.pipe(v.string(), v.regex(/^[0-9a-f-]{8,64}$/iu));
-/** `?seq=N` opens the chat at a message (§12.3). */
+/** `?seq=N` opens the chat at a message. */
 const SeqParam = v.pipe(v.string(), v.regex(/^\d{1,9}$/u), v.transform(Number));
-/** `?q=` opens in-chat search with a query (§12.3). */
+/** `?q=` opens in-chat search with a query. */
 const QueryParam = v.pipe(v.string(), v.minLength(1), v.maxLength(500));
 
 /** A validated optional search param, or null. */
@@ -102,7 +102,7 @@ function ChatViewLoader({
 
 /** Saves the chat's position to `meta` on leave and when the app is hidden
  * (iOS may end a hidden app without further events). Revokes media URLs on
- * leave (§10.4). */
+ * leave. */
 function usePersistPosition(chatId: ChatId): void {
   const save = useSaveChatPosition();
   const { mutate } = save;
@@ -127,7 +127,7 @@ function usePersistPosition(chatId: ChatId): void {
   }, [chatId, mutate]);
 }
 
-/** Jump requests and the brief highlight they leave (§11, §12.5). */
+/** Jump requests and the brief highlight they leave. */
 function useJumps(linkedSeq: number | null) {
   const token = useRef(0);
   const [jump, setJump] = useState<JumpRequest | null>(null);

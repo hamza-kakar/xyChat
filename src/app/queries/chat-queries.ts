@@ -1,5 +1,5 @@
 /**
- * Chat queries and mutations (AGENTS.md §18.4): the only way screens read
+ * Chat queries and mutations: the only way screens read
  * or change chats. Mutations invalidate exact keys.
  */
 import { useCallback } from 'react';
@@ -8,7 +8,7 @@ import { dbClient } from '../../client/db-client';
 import type { ChatId, ParticipantId } from '../../core/ids';
 import { queryKeys } from './keys';
 
-/** §12.4 chat-list rows, newest activity first (sorted in SQL). */
+/**  chat-list rows, newest activity first (sorted in SQL). */
 export function useChats() {
   return useQuery({ queryKey: queryKeys.chats(), queryFn: () => dbClient.listChats() });
 }
@@ -35,7 +35,7 @@ export function useImports(chatId: ChatId, enabled: boolean) {
   });
 }
 
-/** Chat-info statistics (§12.7). */
+/** Chat-info statistics. */
 export function useChatStats(chatId: ChatId) {
   return useQuery({
     queryKey: queryKeys.chatStats(chatId),
@@ -115,7 +115,7 @@ export function useInvalidateImportedChat(): (chatId: ChatId) => Promise<void> {
   );
 }
 
-/** Sets (or clears) which participant is "me" (§12.5). */
+/** Sets (or clears) which participant is "me". */
 export function useSetSelf() {
   const client = useQueryClient();
   return useMutation({
@@ -129,7 +129,7 @@ export function useSetSelf() {
   });
 }
 
-/** The last opened chat and its top-visible seq (§12.5). */
+/** The last opened chat and its top-visible seq. */
 export function useLastChatPosition() {
   return useQuery({
     queryKey: queryKeys.lastChatPosition(),

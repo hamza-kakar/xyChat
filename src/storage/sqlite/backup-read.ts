@@ -1,5 +1,5 @@
 /**
- * Reading a backup's `db.sqlite3` (AGENTS.md §10.6, §18.5). The database
+ * Reading a backup's `db.sqlite3`. The database
  * comes from a user-picked file, so it is untrusted: it opens as an
  * in-memory scratch copy, must pass `quick_check`, may not be newer than
  * the app, is migrated forward when older, and every row is validated
@@ -29,7 +29,7 @@ import {
 
 export type { BackupReadError, BackupReadErrorCode } from './backup-rows';
 
-/** One chat of a backup, for the restore preview (§10.6). */
+/** One chat of a backup, for the restore preview. */
 export interface BackupChatPreview {
   readonly id: string;
   readonly title: string;

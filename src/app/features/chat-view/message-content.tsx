@@ -1,5 +1,5 @@
 /**
- * The inside of a bubble, by message kind (AGENTS.md §12.5). System rows
+ * The inside of a bubble, by message kind. System rows
  * and calls render as pills elsewhere; this covers bubble kinds.
  */
 import { isJumboEmoji } from '../../../core/text-format/emoji';

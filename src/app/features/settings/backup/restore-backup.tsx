@@ -1,5 +1,5 @@
 /**
- * Settings → Restore from a backup (AGENTS.md §10.6): pick a backup, see
+ * Settings → Restore from a backup: pick a backup, see
  * its chats, choose per chat (restore / merge / replace / skip), then
  * progress with Cancel and a report with links to the restored chats.
  */

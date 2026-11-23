@@ -1,5 +1,5 @@
 /**
- * Global search (AGENTS.md §11, §12.3 `#/search?q=`): search text kept in
+ * Global search (`#/search?q=`): search text kept in
  * the URL, filters for chat, sender, kinds and dates, and paged results
  * that open the chat at the message.
  */

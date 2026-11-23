@@ -1,5 +1,5 @@
 /**
- * SQLite-backed ChatRepository (AGENTS.md §10.5): the ONLY place SQL lives.
+ * SQLite-backed ChatRepository: the ONLY place SQL lives.
  * Parameterized statements exclusively; every row passes through rows.ts
  * validation. Runs inside db.worker — never on the main thread.
  */
@@ -59,7 +59,7 @@ import type {
 
 /** Reads the attachments of a chat's messages with seq in `lo..hi`, in ONE
  * statement (idx_attachments_message): per-message queries cost a VFS
- * round trip each, which dominated window reads on OPFS (§17). */
+ * round trip each, which dominated window reads on OPFS. */
 function attachmentsForSeqRange(
   db: SqliteDatabase,
   chatId: ChatId,
@@ -96,7 +96,7 @@ export class SqliteChatRepository {
     return this.db;
   }
 
-  /** Chat-list rows sorted by recency (§12.4). The last message (by seq,
+  /** Chat-list rows sorted by recency. The last message (by seq,
    * via the UNIQUE(chat_id, seq) index) supplies the preview's sender and
    * media-type label; no aggregate is computed here. */
   listChats(): readonly ChatSummary[] {
@@ -131,7 +131,7 @@ export class SqliteChatRepository {
       .map(participantFromRow);
   }
 
-  /** A window of messages around an anchor seq (§12.5), read in one
+  /** A window of messages around an anchor seq, read in one
    * transaction so the VFS lock is taken once. */
   getMessageWindow(q: {
     chatId: ChatId;
@@ -167,7 +167,7 @@ export class SqliteChatRepository {
     });
   }
 
-  /** First seq at/after the given date (§10.5, §12.5 jump-to-date). */
+  /** First seq at/after the given date (jump-to-date). */
   findSeqByDate(chatId: ChatId, date: LocalDateTime): number | null {
     const tsKey = tsLocalToKey(date);
     const rows = this.db.selectObjects(
@@ -178,27 +178,27 @@ export class SqliteChatRepository {
     return typeof first?.['seq'] === 'number' ? first['seq'] : null;
   }
 
-  /** Full-text or LIKE search with filters and keyset paging (§11). */
+  /** Full-text or LIKE search with filters and keyset paging. */
   search(q: SearchQuery): SearchPage {
     return searchMessages(this.db, q);
   }
 
-  /** Every matching seq of an in-chat search (§11 navigation). */
+  /** Every matching seq of an in-chat search (navigation). */
   listMatchingSeqs(q: InChatSearchQuery): MatchingSeqs {
     return listMatchingSeqs(this.db, q);
   }
 
-  /** Calendar days with messages (§12.5 jump to date). */
+  /** Calendar days with messages (jump to date). */
   listMessageDays(chatId: ChatId): readonly number[] {
     return listMessageDays(this.db, chatId);
   }
 
-  /** Links page: text messages carrying a link, newest first (§12.6). */
+  /** Links page: text messages carrying a link, newest first. */
   listLinks(q: { chatId: ChatId; cursor: number | null; limit: number }): LinkPage {
     return listLinkMessages(this.db, q);
   }
 
-  /** Gallery page: stored media of the given types, newest first (§12.6). */
+  /** Gallery page: stored media of the given types, newest first. */
   listAttachments(q: {
     chatId: ChatId;
     types: readonly string[];
@@ -208,17 +208,17 @@ export class SqliteChatRepository {
     return listGalleryItems(this.db, q);
   }
 
-  /** One attachment by id, or null (§13). */
+  /** One attachment by id, or null. */
   getAttachment(attachmentId: AttachmentId): Attachment | null {
     return getAttachment(this.db, attachmentId);
   }
 
-  /** Stores a duration measured on first play (§13.2). */
+  /** Stores a duration measured on first play. */
   setAttachmentDuration(attachmentId: AttachmentId, durationMs: number): void {
     setAttachmentDuration(this.db, attachmentId, durationMs);
   }
 
-  /** Records a lazily generated video thumbnail (§13.3). */
+  /** Records a lazily generated video thumbnail. */
   setVideoThumbnail(input: {
     readonly attachmentId: AttachmentId;
     readonly thumbPath: string;
@@ -228,7 +228,7 @@ export class SqliteChatRepository {
     return setVideoThumbnail(this.db, input);
   }
 
-  /** Chat-info statistics (§12.7); media counts cover stored files. */
+  /** Chat-info statistics; media counts cover stored files. */
   getChatStats(chatId: ChatId): ChatStats {
     const kindRows = this.db.selectObjects(
       'SELECT kind, COUNT(*) AS n FROM messages WHERE chat_id = ? GROUP BY kind',
@@ -266,7 +266,7 @@ export class SqliteChatRepository {
     };
   }
 
-  /** Sets (or clears) the "me" participant (§12.5). */
+  /** Sets (or clears) the "me" participant. */
   setSelf(chatId: ChatId, participantId: ParticipantId | null): void {
     this.db.run('UPDATE chats SET self_participant_id = ?, updated_at = ? WHERE id = ?', [
       participantId,
@@ -275,7 +275,7 @@ export class SqliteChatRepository {
     ]);
   }
 
-  /** Renames a chat (§12.4). */
+  /** Renames a chat. */
   renameChat(chatId: ChatId, title: string): void {
     this.db.run('UPDATE chats SET title = ?, updated_at = ? WHERE id = ?', [
       title,
@@ -284,7 +284,7 @@ export class SqliteChatRepository {
     ]);
   }
 
-  /** Deletes a chat; OPFS media deletion is the caller's follow-up (§10.4). */
+  /** Deletes a chat; OPFS media deletion is the caller's follow-up. */
   deleteChat(chatId: ChatId): void {
     this.db.transaction(() => {
       deleteChatRows(this.db, chatId);
@@ -319,7 +319,7 @@ export class SqliteChatRepository {
       .map(importFromRow);
   }
 
-  /** Storage usage totals (§12.9): media bytes per chat. */
+  /** Storage usage totals: media bytes per chat. */
   storageUsage(): StorageUsage {
     const rows = this.db.selectObjects(
       'SELECT chat_id, COALESCE(SUM(COALESCE(byte_size, 0)), 0) AS bytes FROM attachments GROUP BY chat_id',
@@ -331,14 +331,14 @@ export class SqliteChatRepository {
     return { totalBytes: perChat.reduce((sum, c) => sum + c.bytes, 0), perChat };
   }
 
-  /** Finds an existing chat id by exact title (import target §12.8). */
+  /** Finds an existing chat id by exact title (import target ). */
   findChatIdByTitle(title: string): ChatId | null {
     const rows = this.db.selectObjects('SELECT id FROM chats WHERE title = ? LIMIT 1', [title]);
     const first = rows[0];
     return first === undefined ? null : (first['id'] as ChatId);
   }
 
-  /** Marks all in_progress imports rolled_back at boot (§9.3). */
+  /** Marks all in_progress imports rolled_back at boot. */
   rollbackInProgressImports(): readonly string[] {
     const rows = this.db.selectObjects(
       "SELECT id, written_paths_json FROM imports WHERE status = 'in_progress'",
@@ -355,42 +355,40 @@ export class SqliteChatRepository {
     return paths;
   }
 
-  /** Marks one import cancelled — applies only from in_progress (§9.3). */
+  /** Marks one import cancelled — applies only from in_progress. */
   markImportCancelled(importId: string): void {
     markImportCancelled(this.db, importId);
   }
 
-  /** Marks one import failed — applies only from in_progress (§9.3). */
+  /** Marks one import failed — applies only from in_progress. */
   markImportFailed(importId: string): void {
     markImportFailed(this.db, importId);
   }
 
-  /** Replaces the recorded written-path list for one import (§9.3
-   * bookkeeping; the list is cumulative, §9.2 step 8). */
+  /** Replaces the recorded written-path list for one import (bookkeeping; the list is cumulative). */
   recordWrittenPaths(importId: string, paths: readonly string[]): void {
     recordWrittenPaths(this.db, importId, paths);
   }
 
-  /** Fingerprints whose media the stored chat already holds (§9.2 step 8:
-   * the media phase skips rewriting them). */
+  /** Fingerprints whose media the stored chat already holds (the media phase skips rewriting them). */
   listStoredFingerprints(chatId: ChatId): readonly string[] {
     return listStoredFingerprints(this.db, chatId);
   }
 
-  /** §9.3 orphan sweep, list half: OPFS media/thumbnail paths that no
+  /**  orphan sweep, list half: OPFS media/thumbnail paths that no
    * attachment row references. The caller deletes after confirmation. */
   listOrphanMedia(fsPaths: readonly string[]): readonly string[] {
     const knownAudio = new Set(listKnownAudioCachePaths(this.db));
     return listOrphanMedia(this.db, fsPaths).filter((path) => !knownAudio.has(path));
   }
 
-  /** Raw attachment rows for one message (media viewer, §12.5). */
+  /** Raw attachment rows for one message (media viewer). */
   getAttachmentsForMessage(messageId: number): readonly Attachment[] {
     return getAttachmentsForMessage(this.db, messageId);
   }
 
   /** Every stored file path of one chat (media, thumbnails and decoded
-   * audio), for removal after deleteChat (§10.4). */
+   * audio), for removal after deleteChat. */
   listChatMediaPaths(chatId: ChatId): readonly string[] {
     return [...listChatMediaPaths(this.db, chatId), ...listChatAudioCachePaths(this.db, chatId)];
   }

@@ -1,8 +1,8 @@
 /**
- * Media bubbles (AGENTS.md §12.5, §13). Images show their stored
+ * Media bubbles. Images show their stored
  * thumbnail with space reserved from the original size, so rows never
  * jump; stickers show without bubble chrome. Videos show a lazily made
- * thumbnail (§13.3), voice notes and audio play in place (§13.2), and
+ * thumbnail, voice notes and audio play in place, and
  * photos, videos and documents open the full-screen viewer.
  */
 import { useContext, type ReactNode } from 'react';
@@ -14,7 +14,7 @@ import type { AttachmentView, WindowMessage } from '../../../client/db-client';
 import { AudioPlayer, useVideoThumbnail } from '../media';
 import { OpenMediaContext } from './open-media-context';
 
-/** Largest sticker edge (§13.1). */
+/** Largest sticker edge. */
 const STICKER_MAX_PX = 160;
 
 /** `aspect-ratio` from the stored size, when known. */

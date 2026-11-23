@@ -1,5 +1,5 @@
 /**
- * Contact-card reads (AGENTS.md §12.5): finds a message's stored `.vcf`
+ * Contact-card reads: finds a message's stored `.vcf`
  * and extracts its display name. Runs in db.worker; the file read is
  * injected so the selection and size rules are testable without OPFS.
  */

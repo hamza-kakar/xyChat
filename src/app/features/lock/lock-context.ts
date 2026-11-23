@@ -1,5 +1,5 @@
 /**
- * Lets Settings lock the app on demand ("Lock now", §15.3).
+ * Lets Settings lock the app on demand ("Lock now").
  */
 import { createContext, useContext } from 'react';
 

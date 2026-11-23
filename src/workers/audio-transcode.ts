@@ -1,8 +1,7 @@
 /**
- * Ogg Opus → WAV transcoding for engines that can't play voice notes
- * (AGENTS.md §13.2). The source streams through the decoder chunk by
+ * Ogg Opus → WAV transcoding for engines that can't play voice notes. The source streams through the decoder chunk by
  * chunk and the PCM goes straight to the cache file, so memory holds one
- * chunk's samples at a time (§9.4); the WAV header is written last, once
+ * chunk's samples at a time; the WAV header is written last, once
  * the sizes are known. Decoder, source and sink are injected for tests.
  */
 import { err, ok, type Result } from '../core/result';

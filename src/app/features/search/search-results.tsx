@@ -1,5 +1,5 @@
 /**
- * Search result list (AGENTS.md §11): each hit names its chat, sender and
+ * Search result list: each hit names its chat, sender and
  * time and shows the ±40-character snippet with the matches marked; it
  * opens the chat at that message. Paging is keyset-based ("Show more").
  */

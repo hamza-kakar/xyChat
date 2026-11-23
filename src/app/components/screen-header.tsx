@@ -1,5 +1,5 @@
 /**
- * A sub-screen header (AGENTS.md §12.1, §16): a back link and the page
+ * A sub-screen header: a back link and the page
  * heading, which takes focus when the screen opens.
  */
 import { Link } from 'react-router';

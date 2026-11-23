@@ -1,5 +1,5 @@
 /**
- * Contact-card name extraction (AGENTS.md §12.5): reads the `FN:` line of
+ * Contact-card name extraction: reads the `FN:` line of
  * a `.vcf` file. Only the display name is taken; nothing else in the card
  * is interpreted. Callers cap the input size (IMPORT_LIMITS.maxVcfBytes)
  * before decoding.

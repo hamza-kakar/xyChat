@@ -92,7 +92,7 @@ beforeEach(() => {
   db.deleteChat.mockResolvedValue([]);
 });
 
-describe('ChatInfoScreen (§12.7)', () => {
+describe('ChatInfoScreen', () => {
   it('shows the overview, totals, media and participants', async () => {
     renderInfo();
     expect(await screen.findByRole('heading', { level: 1, name: 'Chat info' })).toHaveFocus();

@@ -9,7 +9,7 @@ export interface InstallGateProps {
   readonly onProceed: () => void;
 }
 
-/** Blocking install gate (§12.8.1): imports in a Safari tab live in
+/** Blocking install gate: imports in a Safari tab live in
  * separate, evictable storage — the user installs first, or explicitly
  * accepts the risk. (The parent renders this component only when the gate
  * applies.) */

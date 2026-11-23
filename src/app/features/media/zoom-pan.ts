@@ -1,5 +1,5 @@
 /**
- * Zoom and pan math for the image viewer (AGENTS.md §12.6): pure functions
+ * Zoom and pan math for the image viewer: pure functions
  * over a transform, so pinch, double-tap and pan are unit-tested without
  * pointer events. Coordinates are relative to the viewport centre; the
  * image is fitted inside the viewport at scale 1.

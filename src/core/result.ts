@@ -1,5 +1,5 @@
 /**
- * A discriminated result type for expected failures (AGENTS.md §6.1).
+ * A discriminated result type for expected failures.
  * Expected failures — bad input, unsupported format, quota exceeded, user
  * cancel — are returned as `Err` with a typed error code; exceptions are
  * reserved for bugs and unexpected states.

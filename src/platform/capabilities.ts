@@ -1,8 +1,8 @@
 /**
- * Browser capability detection (AGENTS.md §12.11). Every check must pass
+ * Browser capability detection. Every check must pass
  * before the app renders; a failure produces a full-screen explanation,
- * never a blank page. The FTS5-trigram check joins in M2, where the single
- * SQLite connection lives (ADR 0008).
+ * never a blank page. The FTS5-trigram check runs in db.worker, where the
+ * single SQLite connection lives (ADR 0008).
  */
 
 export type CapabilityId =

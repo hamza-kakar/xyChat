@@ -1,10 +1,10 @@
 /**
- * Row insertion for import commits (AGENTS.md §9.2 step 10): incoming-only
+ * Row insertion for import commits: incoming-only
  * messages land at their FINAL seq once displaced stored rows have vacated
  * (see import-commit-apply.ts), together with their participant and
  * attachment records.
  *
- * Statement strategy (§17 budgets): ONE prepared single-row INSERT is
+ * Statement strategy (budgets): ONE prepared single-row INSERT is
  * stepped once per message (runEach — the statement parses once, the wasm
  * bridge does the rest); participants upsert once per distinct author and
  * their counters adjust in one statement each; attachment rows resolve
@@ -18,7 +18,7 @@ import type { SqliteDatabase } from './open';
 import type { MergedMessage } from '../../core/merge';
 import type { InsertableAttachment, InsertableMessage } from './import-commit';
 
-/** Context shared by the plan-application helpers (§8.10 walk state). */
+/** Context shared by the plan-application helpers (walk state). */
 export interface ApplyContext {
   readonly db: SqliteDatabase;
   readonly chatId: string;
@@ -118,7 +118,7 @@ function prepareMessageRow(
   };
 }
 
-/** Serializes the poll/location payload of a message (§7 extra_json). */
+/** Serializes the poll/location payload of a message (extra_json). */
 function extraJsonFor(message: ParsedMessage): string | null {
   if (message.poll !== null) {
     return JSON.stringify(message.poll);
@@ -126,7 +126,7 @@ function extraJsonFor(message: ParsedMessage): string | null {
   return message.location !== null ? JSON.stringify(message.location) : null;
 }
 
-/** Runs the prepared single-row INSERT once per message row (§17: exec()
+/** Runs the prepared single-row INSERT once per message row (exec()
  * re-parses the SQL text per call — the prepared handle parses once). */
 function insertMessageBatches(db: SqliteDatabase, rows: readonly PreparedRow[]): void {
   db.runEach(

@@ -1,5 +1,5 @@
 /**
- * Progress step tests (§12.8.5): the §9.1 phase list, the determinate bar
+ * Progress step tests: the phase list, the determinate bar
  * driven by progress events, and the cancel button.
  */
 import { act, render, screen, waitFor } from '@testing-library/react';
@@ -8,8 +8,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { emitImportProgress, onImportProgress } from '../../../client/import-client';
 import { ImportProgressStep } from './import-progress-step';
 
-describe('ImportProgressStep (§12.8.5)', () => {
-  it('lists the §9.1 phases and advances on progress events', () => {
+describe('ImportProgressStep', () => {
+  it('lists the phases and advances on progress events', () => {
     const unsubscribe = onImportProgress(() => undefined);
     render(<ImportProgressStep onCancel={() => undefined} />);
     expect(screen.getByText('Reading archive')).toBeInTheDocument();
@@ -25,7 +25,7 @@ describe('ImportProgressStep (§12.8.5)', () => {
     unsubscribe();
   });
 
-  it('cancels via the button (§9.3)', async () => {
+  it('cancels via the button', async () => {
     const user = userEvent.setup();
     const onCancel = vi.fn();
     render(<ImportProgressStep onCancel={onCancel} />);
@@ -63,7 +63,7 @@ function installDeferredWakeLock(): {
   };
 }
 
-describe('ImportProgressStep wake lock (§12.8.5)', () => {
+describe('ImportProgressStep wake lock', () => {
   afterEach(() => {
     Reflect.deleteProperty(navigator, 'wakeLock');
   });

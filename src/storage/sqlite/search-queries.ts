@@ -1,5 +1,5 @@
 /**
- * Search queries (AGENTS.md §11). The only SQL touching messages_fts
+ * Search queries. The only SQL touching messages_fts
  * lives here; user input is always escaped into an FTS phrase or a LIKE
  * with ESCAPE.
  */
@@ -7,23 +7,23 @@ import { messageFromRow } from './rows';
 import type { SqliteDatabase } from './open';
 import type { InChatSearchQuery, MatchingSeqs, SearchPage, SearchQuery } from '../repository';
 
-/** §11: LIKE fallback result cap (in-chat, 1–2 char queries). */
+/**  LIKE fallback result cap (in-chat, 1–2 char queries). */
 const LIKE_RESULT_CAP = 500;
-/** In-chat navigation keeps at most this many FTS matches (§11 "12 of
+/** In-chat navigation keeps at most this many FTS matches ("12 of
  * 87"); a chat with more shows the capped count with a "+". */
 export const IN_CHAT_MATCH_CAP = 10_000;
 
-/** Escapes a LIKE query per §11 (1–2 char fallback path). */
+/** Escapes a LIKE query (1–2 char fallback path). */
 function escapeLike(raw: string): string {
   return raw.replace(/[\\%_]/gu, (c) => `\\${c}`);
 }
 
-/** Wraps a search phrase for FTS MATCH (double internal quotes, §11). */
+/** Wraps a search phrase for FTS MATCH (double internal quotes). */
 function ftsPhrase(raw: string): string {
   return `"${raw.replaceAll('"', '""')}"`;
 }
 
-/** Builds a snippet ±40 chars around the first match (§11). */
+/** Builds a snippet ±40 chars around the first match. */
 function buildSnippet(body: string, query: string): string {
   const index = body.toLowerCase().indexOf(query.toLowerCase());
   if (index < 0) {
@@ -41,7 +41,7 @@ export function unpackIntegers(packed: unknown): number[] {
   return typeof packed === 'string' && packed !== '' ? packed.split(',').map(Number) : [];
 }
 
-/** WHERE fragments + parameters for one search (§11 filters, keyset, mode). */
+/** WHERE fragments + parameters for one search (filters, keyset, mode). */
 interface SearchConditions {
   readonly conditions: readonly string[];
   readonly params: readonly (string | number | null)[];
@@ -78,7 +78,7 @@ function searchConditions(q: SearchQuery): SearchConditions {
     params.push(q.dateToTsKey);
   }
   if (q.cursor !== null) {
-    // §11 keyset: the cursor matches the ordering — in-chat pages forward by
+    //  keyset: the cursor matches the ordering — in-chat pages forward by
     // seq, global pages backward by ts_key (rowid breaks ties in both).
     if (inChat) {
       conditions.push('(m.seq > ? OR (m.seq = ? AND m.id > ?))');
@@ -94,7 +94,7 @@ function searchConditions(q: SearchQuery): SearchConditions {
     conditions.push('messages_fts MATCH ?');
     params.push(ftsPhrase(q.query));
   } else {
-    // §11: 1–2 char queries skip FTS and use LIKE, in-chat only.
+    //  1–2 char queries skip FTS and use LIKE, in-chat only.
     if (!inChat) {
       conditions.push('1 = 0');
     } else {
@@ -103,7 +103,7 @@ function searchConditions(q: SearchQuery): SearchConditions {
     }
   }
 
-  // §11: the LIKE fallback is limited to 500 results — cap the limit rather
+  //  the LIKE fallback is limited to 500 results — cap the limit rather
   // than refusing the query.
   const effectiveLimit =
     inChat && q.query.length < 3 ? Math.min(q.limit, LIKE_RESULT_CAP) : q.limit;
@@ -111,14 +111,14 @@ function searchConditions(q: SearchQuery): SearchConditions {
 }
 
 /**
- * Runs a search: FTS MATCH for 3+ char queries, LIKE fallback below (§11).
+ * Runs a search: FTS MATCH for 3+ char queries, LIKE fallback below.
  * Global results sort newest-first; in-chat results sort by seq — each with
  * its own keyset pagination.
  */
 export function searchMessages(db: SqliteDatabase, q: SearchQuery): SearchPage {
   const { conditions, params, joins, effectiveLimit } = searchConditions(q);
   const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-  // §11: global search sorts newest-first; in-chat search sorts by seq.
+  //  global search sorts newest-first; in-chat search sorts by seq.
   const orderBy = q.chatId !== null ? 'm.seq ASC, m.id ASC' : 'm.ts_key DESC, m.id DESC';
   const rows = db.selectObjects(
     `SELECT m.*, p.display_name AS author_name
@@ -149,7 +149,7 @@ export function searchMessages(db: SqliteDatabase, q: SearchQuery): SearchPage {
 }
 
 /**
- * Every matching seq of an in-chat search, ascending (§11 in-chat
+ * Every matching seq of an in-chat search, ascending (in-chat
  * navigation: the counter and next/previous need the full ordered list,
  * not a page of snippets). FTS matches stop at IN_CHAT_MATCH_CAP, the 1–2
  * char LIKE fallback at its 500-result cap.
@@ -158,7 +158,7 @@ export function listMatchingSeqs(db: SqliteDatabase, q: InChatSearchQuery): Matc
   const cap = q.query.length < 3 ? LIKE_RESULT_CAP : IN_CHAT_MATCH_CAP;
   const { conditions, params, joins } = searchConditions({ ...q, limit: cap, cursor: null });
   // One packed row: per-row results cost a wasm-bridge crossing each,
-  // which dominated large match lists (§17).
+  // which dominated large match lists.
   const rows = db.selectArrays(
     `SELECT group_concat(seq, ',' ORDER BY seq) FROM (
        SELECT m.seq FROM messages m ${joins}

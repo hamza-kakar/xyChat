@@ -1,5 +1,5 @@
 /**
- * Merge planning for re-imports (AGENTS.md §8.10). Two ordered message
+ * Merge planning for re-imports. Two ordered message
  * lists — the stored chat and a newly parsed export — are walked like a
  * merge join on fingerprints: duplicates collapse, both inputs keep their
  * relative order, nothing is lost. The plan is pure and idempotent:
@@ -15,14 +15,13 @@ export interface MergedMessage {
   /** True when this entry came from the incoming export. */
   readonly fromIncoming: boolean;
   /**
-   * When a stored entry merged with an identical incoming twin (§8.10
-   * rule 1), this is the twin's fingerprint — the caller uses it to apply
+   * When a stored entry merged with an identical incoming twin, this is the twin's fingerprint — the caller uses it to apply
    * upgrades (e.g. media bytes the export newly provides). Null otherwise.
    */
   readonly fingerprintOfIncomingTwin: string | null;
 }
 
-/** Aggregate counts reported to the import report (§9.2 step 11). */
+/** Aggregate counts reported to the import report. */
 export interface MergeCounts {
   readonly added: number;
   readonly duplicates: number;
@@ -44,7 +43,7 @@ export interface MergeEntry {
   /**
    * True when the entry carries its media bytes: for a stored entry, the
    * bytes are already in OPFS; for an incoming entry, the file is present
-   * in the export (§8.6 status 'referenced' that will be written).
+   * in the export (that will be written).
    */
   readonly attachmentStored: boolean;
 }
@@ -89,8 +88,7 @@ function emitNewIncoming(plan: MergePlanBuilder, entry: MergeEntry): void {
 }
 
 /**
- * Decides whether the existing head comes before the incoming head (§8.10
- * rule 2, in the spec's order): an incoming head that exists anywhere in the
+ * Decides whether the existing head comes before the incoming head (in the spec's order): an incoming head that exists anywhere in the
  * stored list emits the stored head first; an existing head that exists
  * anywhere in the export emits the incoming head first. Unknown heads
  * interleave by timestamp, ties stored-first (rule 3).
@@ -114,7 +112,7 @@ function existingHeadFirst(
 }
 
 /**
- * Walks both lists and emits the final order (§8.10 rules 1–3).
+ * Walks both lists and emits the final order.
  *
  * @param existing Stored messages, in stored (seq) order.
  * @param incoming Newly parsed messages, in file order.
@@ -161,7 +159,7 @@ export function planMerge(
 
     if (existingEntry.fingerprint === incomingEntry.fingerprint) {
       // Rule 1: emit once from the stored side, advance BOTH. Media counts
-      // as upgraded only when the export NEWLY provides bytes (§8.10): the
+      // as upgraded only when the export NEWLY provides bytes: the
       // stored entry has none and the incoming twin has them. An omitted
       // twin never turns a placeholder into present media.
       plan.duplicates += 1;

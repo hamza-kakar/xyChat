@@ -1,5 +1,5 @@
 /**
- * Wall-clock-as-UTC seconds (AGENTS.md §10.2 ts_key): ordering and range
+ * Wall-clock-as-UTC seconds (ts_key): ordering and range
  * filters only — never for display.
  */
 

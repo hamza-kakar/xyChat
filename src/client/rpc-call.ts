@@ -1,15 +1,15 @@
 /**
- * Injectable RPC caller (AGENTS.md §18.8): every worker call
+ * Injectable RPC caller: every worker call
  * carries its METHOD NAME (for timeout exemption and diagnostics), runs
  * under a timeout whose timer never outlives the settlement (no dangling
  * rejection), and reports failures to a sink so the app layer can log them
- * with the diagnostic id (§18.7 — client has no logger imports, §3.1).
+ * with the diagnostic id (client has no logger imports).
  */
 
 /** Failure classes reported to the sink. */
 export type RpcErrorCode = 'TIMEOUT' | 'INTERNAL' | 'DB_UNAVAILABLE';
 
-/** One failed RPC, keyed by diagnostic id the user can quote (§18.7). */
+/** One failed RPC, keyed by diagnostic id the user can quote. */
 export interface RpcErrorEvent {
   readonly code: RpcErrorCode;
   readonly method: string;
@@ -20,11 +20,11 @@ export interface RpcErrorEvent {
 /** Sink for failed RPCs; the app registers a logger-backed implementation. */
 export type RpcErrorSink = (event: RpcErrorEvent) => void;
 
-/** Dependencies injected for testability (§18.4). */
+/** Dependencies injected for testability. */
 export interface RpcCallerDeps {
   /** Boots the worker once; false means the database is unavailable. */
   readonly ensureReady: () => Promise<boolean>;
-  /** Timeout for non-exempt calls (§18.8). */
+  /** Timeout for non-exempt calls. */
   readonly timeoutMs: number;
   /** Method names exempt from the timeout (long-running imports). */
   readonly exempt: ReadonlySet<string>;

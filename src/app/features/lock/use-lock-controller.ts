@@ -1,5 +1,5 @@
 /**
- * Lock state machine (AGENTS.md §15.3): locked at launch when a PIN is set;
+ * Lock state machine: locked at launch when a PIN is set;
  * a privacy cover the moment the app is hidden (so the app-switcher
  * snapshot shows no chats); then locking per the auto-lock setting, on
  * hide or after inactivity.

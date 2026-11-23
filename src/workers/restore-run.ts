@@ -1,8 +1,8 @@
 /**
- * Restore, second step (AGENTS.md §10.6): for each backup chat the user
+ * Restore, second step: for each backup chat the user
  * chose to restore, copy its media into OPFS, then commit every chat in
- * one transaction (merge by §8.10 fingerprints, replace, or add as new).
- * The rollback rules of §9.3 apply: each chat has an in_progress import
+ * one transaction (merge fingerprints, replace, or add as new).
+ * The rollback rules of apply: each chat has an in_progress import
  * row listing its written files, so a cancel, a failure or a crash leaves
  * nothing behind.
  */
@@ -34,7 +34,7 @@ import {
 } from './restore-media';
 import type { TransferHooks } from './transfer-hooks';
 
-/** Everything a restore run touches (§18.4 test seam). */
+/** Everything a restore run touches (test seam). */
 export interface RestoreRunDeps extends RestoreMediaDeps {
   readonly repo: SqliteChatRepository;
   readonly scratch: ScratchDatabases;
@@ -90,7 +90,7 @@ function draftChats(
   return drafts.length === 0 ? err({ code: 'NOTHING_TO_RESTORE' }) : ok(drafts);
 }
 
-/** Quota check: free space for 1.1× the media to copy (§9.2 step 1). */
+/** Quota check: free space for 1.1× the media to copy. */
 async function hasRoom(
   deps: RestoreRunDeps,
   opened: OpenedBackup,
@@ -223,7 +223,7 @@ async function restoreDrafts(
     await rollBack(deps, run, drafts, 'failed');
     throw error;
   }
-  // §10.4: a replaced chat's old files go after the commit; a failure
+  //  a replaced chat's old files go after the commit; a failure
   // here leaves orphans for the sweeper, never rows without files.
   await Promise.all(replacedPaths.map((path) => deps.deleteFile(path)));
   return ok(

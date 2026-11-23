@@ -1,5 +1,5 @@
 /**
- * Restore choices (AGENTS.md §10.6): the defaults for a preview and the
+ * Restore choices: the defaults for a preview and the
  * decisions sent to the worker.
  */
 import type { RestoreDecisionInput, RestorePreviewChatView } from '../../../../client/db-client';

@@ -51,7 +51,7 @@ async function* chunks(count: number): AsyncGenerator<Uint8Array> {
   }
 }
 
-describe('opus → WAV transcoding (§13.2)', () => {
+describe('opus → WAV transcoding', () => {
   it('streams PCM after the header and writes the header last', async () => {
     const sink = memorySink();
     const { decoder, state } = fakeDecoder([block(480, 1), block(0, 1), block(480, 1)]);

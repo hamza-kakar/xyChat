@@ -29,7 +29,7 @@ export function formatCount(
   });
 }
 
-/** Binary byte formatting for §12.8 summaries (1 decimal on MB/GB). */
+/** Binary byte formatting for summaries (1 decimal on MB/GB). */
 export function formatBytes(bytes: number): string {
   const gib = bytes / 1024 ** 3;
   if (gib >= 1) {

@@ -1,7 +1,7 @@
 /**
- * Sharing a file through the system share sheet (AGENTS.md §10.6: a backup
+ * Sharing a file through the system share sheet (a backup
  * is offered via `navigator.share({ files })` when available). Thin
- * wrapper over the Web Share API (platform → core only, §3.1).
+ * wrapper over the Web Share API (platform → core only).
  */
 
 /** True when this browser can share the file through the share sheet. */

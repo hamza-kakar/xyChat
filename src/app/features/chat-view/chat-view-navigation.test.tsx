@@ -73,7 +73,7 @@ function highlighted(): HTMLElement | null {
   return screen.getByRole('log').querySelector('[aria-current="true"]');
 }
 
-describe('in-chat search (§11)', () => {
+describe('in-chat search', () => {
   it('counts matches, starts at the newest and steps with previous/next', async () => {
     const user = userEvent.setup();
     renderChat();
@@ -120,7 +120,7 @@ describe('in-chat search (§11)', () => {
   });
 });
 
-describe('linked messages and jump to date (§12.5)', () => {
+describe('linked messages and jump to date', () => {
   it('highlights the message linked by ?seq=', async () => {
     renderChat('?seq=1');
     await screen.findByText('hello again');
@@ -199,7 +199,7 @@ describe('linked messages and jump to date (§12.5)', () => {
   });
 });
 
-describe('bookmarks from the message actions (§12.5)', () => {
+describe('bookmarks from the message actions', () => {
   it('bookmarks a message', async () => {
     const user = userEvent.setup();
     renderChat();

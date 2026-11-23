@@ -1,5 +1,5 @@
 /**
- * Restore, first step (AGENTS.md §10.6): open a picked backup, validate
+ * Restore, first step: open a picked backup, validate
  * its manifest and database, and preview the chats it holds next to the
  * local chats they match. The worker keeps no state between the preview
  * and the restore; the caller sends the file again.

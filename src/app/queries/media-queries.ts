@@ -1,5 +1,5 @@
 /**
- * Media queries (AGENTS.md §12.6, §13, §18.4): gallery and link pages with
+ * Media queries: gallery and link pages with
  * keyset paging, durations measured on first play, and lazily made video
  * thumbnails.
  */
@@ -35,7 +35,7 @@ export function useLinkMessages(chatId: ChatId, enabled: boolean) {
   });
 }
 
-/** Stores a duration measured on first play (§13.2). Fire and forget:
+/** Stores a duration measured on first play. Fire and forget:
  * the player already shows the measured value. */
 export function saveAudioDuration(attachmentId: string, durationMs: number): void {
   // A failed write only means the next play measures again; the RPC
@@ -43,7 +43,7 @@ export function saveAudioDuration(attachmentId: string, durationMs: number): voi
   void dbClient.setAttachmentDuration({ attachmentId, durationMs }).catch(() => undefined);
 }
 
-/** Saves a lazily made video thumbnail (§13.3); resolves to its stored
+/** Saves a lazily made video thumbnail; resolves to its stored
  * path, or null. Tiles pick the path up from the session thumbnail store,
  * so no gallery page refetches. */
 export function saveVideoThumbnail(input: {
@@ -55,7 +55,7 @@ export function saveVideoThumbnail(input: {
   return dbClient.saveVideoThumbnail(input);
 }
 
-/** The cached WAV of a voice note the engine can't play (§13.2),
+/** The cached WAV of a voice note the engine can't play,
  * decoding it in the audio worker on first use. */
 export function decodeVoiceNote(input: {
   readonly attachmentId: string;

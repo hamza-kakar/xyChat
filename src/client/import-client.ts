@@ -1,8 +1,8 @@
 /**
- * Typed import.worker client (AGENTS.md §3.1): spawns the worker, wraps it
- * in Comlink, and runs calls through the shared RPC caller (§18.8). The
+ * Typed import.worker client: spawns the worker, wraps it
+ * in Comlink, and runs calls through the shared RPC caller. The
  * detection outcome is enriched on the main thread with the merge-target
- * suggestion (§9.2 step 4: title match against existing chats) so the UI
+ * suggestion (title match against existing chats) so the UI
  * needs exactly one call.
  */
 import * as Comlink from 'comlink';
@@ -25,8 +25,7 @@ import type { ChatId } from '../core/ids';
 /** Detection outcome including the merge-target suggestion. */
 export interface DetectOutcome {
   readonly report: DetectReport;
-  /** Existing chat whose title matches, for the "update existing" preselect
-   * (§12.8.4). Null when the database is unavailable or nothing matches. */
+  /** Existing chat whose title matches, for the "update existing" preselect. Null when the database is unavailable or nothing matches. */
   readonly suggestedTargetChatId: ChatId | null;
 }
 
@@ -49,15 +48,15 @@ const caller = createRpcCaller({
   ensureReady: () => Promise.resolve(true),
   timeoutMs: 10_000,
   // begin() runs the whole pipeline (minutes on large exports) — exempt
-  // from the RPC timeout like commitImport (§18.8).
+  // from the RPC timeout like commitImport.
   exempt: new Set<string>(['begin']),
 });
 
 /** The cancel flag the UI flips; the worker polls it via the proxied hook
- * (§9.3: user cancel during any phase). */
+ * (user cancel during any phase). */
 let cancelled = false;
 
-/** Subscriptions to §9.1 progress events. */
+/** Subscriptions to progress events. */
 type ProgressListener = (event: {
   readonly phase: string;
   readonly current: number;
@@ -70,12 +69,12 @@ export function setImportErrorSink(sink: RpcErrorSink | null): void {
   caller.setSink(sink);
 }
 
-/** Sets the cancel flag checked by the running pipeline (§9.3). */
+/** Sets the cancel flag checked by the running pipeline. */
 export function cancelImport(): void {
   cancelled = true;
 }
 
-/** Subscribes to §9.1 progress events; returns the unsubscribe function. */
+/** Subscribes to progress events; returns the unsubscribe function. */
 export function onImportProgress(listener: ProgressListener): () => void {
   progressListeners.add(listener);
   return () => {
@@ -84,7 +83,7 @@ export function onImportProgress(listener: ProgressListener): () => void {
 }
 
 /** Test seam: emits one progress event to the current subscribers (the
- * worker path emits through the proxied hook, §9.1). */
+ * worker path emits through the proxied hook). */
 export function emitImportProgress(event: {
   readonly phase: string;
   readonly current: number;
@@ -98,7 +97,7 @@ export function emitImportProgress(event: {
 /** The main-thread-facing import client. */
 export const importClient = {
   /**
-   * Detection phase (§9.2 step 4): runs in the worker, then enriches with
+   * Detection phase: runs in the worker, then enriches with
    * the title-match merge suggestion from the db client.
    */
   detect: async (
@@ -121,9 +120,8 @@ export const importClient = {
   },
 
   /**
-   * Runs the confirmed pipeline (§9.2 steps 5–11): mints the import row
-   * (§9.3: in_progress BEFORE media writes), wires the commit MessagePort
-   * (§3.2), and drives the worker through parse → fingerprint → media →
+   * Runs the confirmed pipeline: mints the import row
+   * (in_progress BEFORE media writes), wires the commit MessagePort, and drives the worker through parse → fingerprint → media →
    * commit with proxied progress/cancel hooks. Marks the import cancelled
    * or failed when the pipeline answers with an error.
    */
@@ -137,7 +135,7 @@ export const importClient = {
       fileBytes: request.file.size,
       parserVersion: PARSER_VERSION,
     });
-    // §9.2 step 8: fingerprints whose media is already
+    //  fingerprints whose media is already
     // stored — the media phase skips rewriting those files.
     const alreadyStored =
       request.targetChatId !== null
@@ -167,7 +165,7 @@ export const importClient = {
       importId,
     };
     // Comlink honors transfer markers at the TOP level only — the port and
-    // the proxied hooks are separate arguments (§3.2).
+    // the proxied hooks are separate arguments.
     await caller.call(
       () => remote().setCommitPort(Comlink.transfer(channel.port2, [channel.port2])),
       'setCommitPort',
@@ -188,7 +186,7 @@ export const importClient = {
   },
 };
 
-/** Best-effort title match against existing chats (§12.8.4); null when the
+/** Best-effort title match against existing chats; null when the
  * database is unavailable or nothing matches — the UI offers "new chat". */
 async function suggestTarget(title: string): Promise<ChatId | null> {
   try {
@@ -199,7 +197,7 @@ async function suggestTarget(title: string): Promise<ChatId | null> {
   }
 }
 
-/** Everything the report screen (§12.8.6) needs after a successful run. */
+/** Everything the report screen needs after a successful run. */
 export interface BeginOutcome {
   readonly commit: ImportCommitResult;
   readonly report: RunReport;
@@ -213,6 +211,6 @@ export interface BeginRequest {
   readonly format: DetectedFormat;
   readonly title: string;
   readonly isGroup: boolean;
-  /** Existing chat to merge into, or null for a new chat (§12.8.4). */
+  /** Existing chat to merge into, or null for a new chat. */
   readonly targetChatId: ChatId | null;
 }

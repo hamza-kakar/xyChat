@@ -1,5 +1,5 @@
 /**
- * Message queries (AGENTS.md §12.5, §18.4). The chat view addresses
+ * Message queries. The chat view addresses
  * messages by seq and loads them in fixed blocks of MESSAGE_BLOCK_SIZE, so
  * any scroll position needs at most a few cached blocks and prepending
  * never shifts the list.
@@ -9,7 +9,7 @@ import { dbClient, type WindowMessage } from '../../client/db-client';
 import type { ChatId } from '../../core/ids';
 import { queryKeys } from './keys';
 
-/** Messages per block (§12.5: windows of 300). */
+/** Messages per block (windows of 300). */
 export const MESSAGE_BLOCK_SIZE = 300;
 
 /** Block numbers covering seqs `from..to` (inclusive, clamped at 0). */
@@ -63,7 +63,7 @@ function combineBlocks(
   return { bySeq, isError: results.some((result) => result.isError) };
 }
 
-/** The name on a message's contact card (§12.5), read in the worker. */
+/** The name on a message's contact card, read in the worker. */
 export function useContactName(messageRowId: number, enabled: boolean) {
   return useQuery({
     queryKey: queryKeys.contactName(messageRowId),

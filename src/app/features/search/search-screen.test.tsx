@@ -36,7 +36,7 @@ beforeEach(() => {
   db.search.mockResolvedValue({ hits: [searchHit()], nextCursor: null });
 });
 
-describe('SearchScreen (§11)', () => {
+describe('SearchScreen', () => {
   it('focuses the heading and runs the query from the URL', async () => {
     renderSearch('/search?q=trip');
     expect(await screen.findByRole('heading', { level: 1, name: 'Search' })).toHaveFocus();

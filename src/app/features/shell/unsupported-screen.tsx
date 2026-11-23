@@ -9,7 +9,7 @@ interface UnsupportedScreenProps {
   readonly failures: readonly CapabilityFailure[];
 }
 
-/** Full-screen capability failure page (AGENTS.md §12.11). */
+/** Full-screen capability failure page. */
 export function UnsupportedScreen({ failures }: UnsupportedScreenProps) {
   useEffect(() => {
     // Engine error text is diagnostics, not UI copy: log it structured.

@@ -1,5 +1,5 @@
 /**
- * Offers a finished backup (AGENTS.md §10.6): the share sheet when the
+ * Offers a finished backup: the share sheet when the
  * browser can share files, and a download otherwise (or as well).
  */
 import { useState } from 'react';

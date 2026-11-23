@@ -1,5 +1,5 @@
 /**
- * Anonymizer tests (AGENTS.md §19.3): consistent author mapping, structure
+ * Anonymizer tests: consistent author mapping, structure
  * preservation, determinism, and a full round-trip through the parser.
  */
 import { describe, expect, it } from 'vitest';

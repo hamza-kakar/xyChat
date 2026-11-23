@@ -1,5 +1,5 @@
 /**
- * Row → domain validation (AGENTS.md §18.5, §10.5): every row read from
+ * Row → domain validation: every row read from
  * SQLite is parsed through a Valibot schema and mapped to its camelCase
  * domain object. Invalid rows throw a descriptive error — they are writer
  * bugs, not undefined behavior.
@@ -327,9 +327,9 @@ const ImportRow = v.object({
 type ImportParsed = v.InferOutput<typeof ImportRow>;
 
 /**
- * Reads a stored written-path list (§9.3 bookkeeping). Invalid JSON or an
+ * Reads a stored written-path list (bookkeeping). Invalid JSON or an
  * invalid list reads as empty: rollback then deletes nothing rather than
- * guessing (§18.5).
+ * guessing.
  *
  * @param text The `written_paths_json` column value.
  * @returns The validated path list, or an empty list.

@@ -1,14 +1,14 @@
 /**
- * The audio decode worker's Comlink API (AGENTS.md §13.2), imported
- * TYPE-ONLY by the client (§3.1). The worker turns a stored Ogg Opus voice
+ * The audio decode worker's Comlink API, imported
+ * TYPE-ONLY by the client. The worker turns a stored Ogg Opus voice
  * note into a cached WAV for engines that can't play Opus.
  */
 import type { Result } from '../core/result';
 
-/** Why a transcode failed (§18.7: codes only). */
+/** Why a transcode failed (codes only). */
 export type TranscodeErrorCode = 'DECODE_FAILED' | 'WRITE_FAILED' | 'EMPTY_AUDIO';
 
-/** Why a decode failed (§18.7: codes only, never content). */
+/** Why a decode failed (codes only, never content). */
 export type AudioDecodeErrorCode = TranscodeErrorCode | 'READ_FAILED' | 'INVALID_INPUT';
 
 /** A playable decoded file. */

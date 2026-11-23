@@ -1,5 +1,5 @@
 /**
- * Global audio controller (AGENTS.md §13.2): only one voice note or audio
+ * Global audio controller: only one voice note or audio
  * file plays at a time, and playback pauses when the app is hidden. A
  * small, clearly named store; players register their element on play.
  */

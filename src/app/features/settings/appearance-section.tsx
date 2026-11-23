@@ -1,5 +1,5 @@
 /**
- * Settings → Appearance (AGENTS.md §12.1, §12.9): System, Light or Dark.
+ * Settings → Appearance: System, Light or Dark.
  */
 import { en } from '../../i18n/en';
 import { SettingsSection } from '../../components/settings-section';

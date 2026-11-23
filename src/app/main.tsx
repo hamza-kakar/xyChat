@@ -8,14 +8,14 @@ import { applyThemePreference, readThemePreference } from './hooks/use-theme-pre
 import './styles/tailwind.css';
 import './styles/tokens.css';
 
-// The theme applies before the first paint (§12.1, §15.4).
+// The theme applies before the first paint.
 applyThemePreference(readThemePreference());
 
-// Failed worker RPCs log through the app logger with diagnostic ids (§18.7).
+// Failed worker RPCs log through the app logger with diagnostic ids.
 installRpcErrorSink();
 
 // Register the service worker for offline use. registerType is 'prompt', so a
-// waiting worker is activated only from the update prompt (AGENTS.md §12.12).
+// waiting worker is activated only from the update prompt.
 registerServiceWorker(registerSW);
 
 const rootElement = document.getElementById('root');

@@ -1,5 +1,5 @@
 /**
- * Parsed message domain types (AGENTS.md §7). These describe what the parser
+ * Parsed message domain types. These describe what the parser
  * produces from an export file, before any persistence.
  */
 import type { LocalDateTime } from './source';

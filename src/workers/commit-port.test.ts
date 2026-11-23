@@ -1,7 +1,7 @@
 /**
- * Commit-port dispatch tests (§3.2, §18.5): malformed or unknown messages
+ * Commit-port dispatch tests: malformed or unknown messages
  * run no commit, invalid commit inputs are rejected before any SQL, and
- * answers carry only the error class name (§15.4).
+ * answers carry only the error class name.
  */
 import { describe, expect, it, vi } from 'vitest';
 import { handleCommitMessage, type CommitPortDeps } from './commit-port';
@@ -52,7 +52,7 @@ function depsReturning(commit: CommitPortDeps['commit']): CommitPortDeps & {
   return { commit: vi.fn(commit) };
 }
 
-describe('handleCommitMessage (§3.2)', () => {
+describe('handleCommitMessage', () => {
   it.each([
     ['a non-object', 'commit'],
     ['an unknown type', { type: 'written-paths', requestId: 1, importId: 'imp-1', paths: [] }],

@@ -1,9 +1,9 @@
 /**
- * Typed db.worker client (AGENTS.md §3.1): spawns the worker, wraps it in
- * Comlink, and forwards calls through the injectable RPC caller (§18.8).
+ * Typed db.worker client: spawns the worker, wraps it in
+ * Comlink, and forwards calls through the injectable RPC caller.
  * Components never touch this directly — they go through TanStack Query
  * hooks. Every call names its method so timeouts, exemptions and diagnostic
- * ids are traceable (§18.7).
+ * ids are traceable.
  */
 import * as Comlink from 'comlink';
 import { createRpcCaller, type RpcErrorSink } from './rpc-call';
@@ -33,17 +33,17 @@ function remote(): Comlink.Remote<DbApi> {
 export async function ensureDbReady(): Promise<boolean> {
   readyPromise ??= (async (): Promise<boolean> => {
     const result = await remote().ready();
-    // §9.3 boot rollback (incl. file deletion) completed in the worker.
+    //  boot rollback (incl. file deletion) completed in the worker.
     return result.ok;
   })();
   return readyPromise;
 }
 
 const RPC_TIMEOUT_MS = 10_000;
-/** Long-running import commits are exempt from the RPC timeout (§18.8). */
+/** Long-running import commits are exempt from the RPC timeout. */
 const RPC_TIMEOUT_EXEMPT: ReadonlySet<string> = new Set([
   'commitImport',
-  // Backups and restores stream whole archives (§10.6).
+  // Backups and restores stream whole archives.
   'createBackup',
   'inspectBackup',
   'restoreBackup',
@@ -55,12 +55,12 @@ const caller = createRpcCaller({
   exempt: RPC_TIMEOUT_EXEMPT,
 });
 
-/** Registers the failure sink (logger-backed, from the app layer §3.1). */
+/** Registers the failure sink (logger-backed, from the app layer ). */
 export function setRpcErrorSink(sink: RpcErrorSink | null): void {
   caller.setSink(sink);
 }
 
-/** The main-thread-facing db client. Every RPC names its method (§18.8). */
+/** The main-thread-facing db client. Every RPC names its method. */
 export const dbClient = {
   listChats: () => caller.call(() => remote().listChats(), 'listChats'),
   getChat: (id: Parameters<DbApi['getChat']>[0]) =>
@@ -121,7 +121,7 @@ export const dbClient = {
     caller.call(() => remote().readContactName(messageId), 'readContactName'),
   setAttachmentDuration: (input: Parameters<DbApi['setAttachmentDuration']>[0]) =>
     caller.call(() => remote().setAttachmentDuration(input), 'setAttachmentDuration'),
-  /** Saves a video thumbnail; the JPEG buffer is transferred (§9.4). */
+  /** Saves a video thumbnail; the JPEG buffer is transferred. */
   saveVideoThumbnail: (input: Parameters<DbApi['saveVideoThumbnail']>[0]) =>
     caller.call(
       () => remote().saveVideoThumbnail(Comlink.transfer(input, [input.jpeg.buffer])),
@@ -147,7 +147,7 @@ export const dbClient = {
     caller.call(() => remote().savePersistedLogs(entries), 'savePersistedLogs'),
   estimateBackup: (selection: Parameters<DbApi['estimateBackup']>[0]) =>
     caller.call(() => remote().estimateBackup(selection), 'estimateBackup'),
-  /** Makes a backup; the hooks run on the main thread via a proxy (§10.6). */
+  /** Makes a backup; the hooks run on the main thread via a proxy. */
   createBackup: (request: Parameters<DbApi['createBackup']>[0], hooks: TransferHooks) =>
     caller.call(
       (): Promise<BackupOutcome> => remote().createBackup(request, Comlink.proxy(hooks)),
@@ -161,7 +161,7 @@ export const dbClient = {
       (): Promise<RestoreOutcome> => remote().restoreBackup(request, Comlink.proxy(hooks)),
       'restoreBackup',
     ),
-  /** Takes the db-side end of the commit MessageChannel (§3.2, transferred). */
+  /** Takes the db-side end of the commit MessageChannel (transferred). */
   connectCommitPort: (port: MessagePort) =>
     caller.call(
       () => remote().connectCommitPort(Comlink.transfer(port, [port])),
@@ -169,49 +169,49 @@ export const dbClient = {
     ),
 };
 
-/** Chat-list row (§12.4), as served by the worker. */
+/** Chat-list row, as served by the worker. */
 export type ChatSummaryView = Awaited<ReturnType<DbApi['listChats']>>[number];
 /** One full chat. */
 export type ChatView = NonNullable<Awaited<ReturnType<DbApi['getChat']>>>;
 /** A chat participant with its palette index. */
 export type ParticipantView = Awaited<ReturnType<DbApi['getParticipants']>>[number];
-/** A message window around an anchor seq (§12.5). */
+/** A message window around an anchor seq. */
 export type MessageWindowView = Awaited<ReturnType<DbApi['getMessageWindow']>>;
 /** One message with its attachments. */
 export type WindowMessage = MessageWindowView['messages'][number];
 /** One attachment row. */
 export type AttachmentView = WindowMessage['attachments'][number];
-/** One global search hit (§11). */
+/** One global search hit. */
 export type SearchHitView = Awaited<ReturnType<DbApi['search']>>['hits'][number];
 /** A search query as the worker takes it. */
 export type SearchQueryInput = Parameters<DbApi['search']>[0];
-/** An in-chat navigation query (§11). */
+/** An in-chat navigation query. */
 export type InChatSearchInput = Parameters<DbApi['listMatchingSeqs']>[0];
 /** One bookmark joined with its message. */
 export type BookmarkViewItem = Awaited<ReturnType<DbApi['listBookmarks']>>[number];
-/** One stored media file with its message context (§12.6). */
+/** One stored media file with its message context. */
 export type GalleryItemView = Awaited<ReturnType<DbApi['listAttachments']>>['items'][number];
 /** A gallery page. */
 export type GalleryPageView = Awaited<ReturnType<DbApi['listAttachments']>>;
-/** One link-bearing message (§12.6 Links tab). */
+/** One link-bearing message (Links tab). */
 export type LinkMessageView = Awaited<ReturnType<DbApi['listLinks']>>['messages'][number];
 /** A links page. */
 export type LinkPageView = Awaited<ReturnType<DbApi['listLinks']>>;
 /** One import run (chat info, message info). */
 export type ImportRecordView = Awaited<ReturnType<DbApi['listImports']>>[number];
 
-/** App-lock state (§15.3). */
+/** App-lock state. */
 export type LockStateView = Awaited<ReturnType<DbApi['getLockState']>>;
 /** The outcome of a PIN check. */
 export type PinCheckView = Awaited<ReturnType<DbApi['verifyPin']>>;
-/** One persisted log entry (§18.7). */
+/** One persisted log entry. */
 export type PersistedLogEntryView = Awaited<ReturnType<DbApi['listPersistedLogs']>>[number];
-/** Per-chat statistics (§12.7). */
+/** Per-chat statistics. */
 export type ChatStatsView = Awaited<ReturnType<DbApi['getChatStats']>>;
-/** Media bytes per chat (§12.9). */
+/** Media bytes per chat. */
 export type StorageUsageView = Awaited<ReturnType<DbApi['storageUsage']>>;
 
-/** Backup and restore progress (§10.6). */
+/** Backup and restore progress. */
 export type TransferProgress = TransferProgressEvent;
 /** A finished backup or why it failed. */
 export type BackupOutcome = Awaited<ReturnType<DbApi['createBackup']>>;

@@ -1,21 +1,21 @@
 /**
- * Import media phase (AGENTS.md §9.2 steps 8–9, §9.3): for every media
+ * Import media phase: for every media
  * message referenced by the confirmed export, STREAMS the entry bytes from
  * the opened archive into OPFS through the sync-handle sink (one opened
  * zip, chunked writes, nothing buffered whole), generates
  * JPEG thumbnails for images, and produces the attachment rows for the
  * commit. Fingerprints already `present` in the stored chat are SKIPPED —
- * re-importing a 1 GB export writes nothing (§9.2 step 8).
+ * re-importing a 1 GB export writes nothing.
  * Missing files become `missing` rows; parser-omitted media becomes
- * `omitted` rows (§8.6).
+ * `omitted` rows.
  *
- * All IO is dependency-injected (§18.4): the worker passes the production
+ * All IO is dependency-injected: the worker passes the production
  * adapters (import.worker.ts), Node tests pass fakes. Every path is
  * recorded in memory before its file is created, and the CUMULATIVE list
  * is flushed to the imports row every WRITTEN_PATHS_FLUSH_EVERY paths and
- * once more when the phase ends or fails (§9.2 step 8). After a crash,
+ * once more when the phase ends or fails. After a crash,
  * boot rollback deletes the flushed paths; the at most 99 unflushed ones
- * are left for the orphan sweeper (§9.3).
+ * are left for the orphan sweeper.
  */
 import { err, ok, type Result } from '../core/result';
 import { IMPORT_LIMITS } from '../core/limits';
@@ -34,7 +34,7 @@ export type { MediaPhaseDeps, MediaPhaseResult, ThumbnailResult } from './import
 /** Alias used by tests and the worker shell. */
 export type ImportMediaHooks = ImportHooks;
 
-/** Per-phase progress counters (§9.1: one determinate bar per phase). */
+/** Per-phase progress counters (one determinate bar per phase). */
 interface PhaseProgress {
   /** One media item (referenced or omitted) is finished. */
   readonly mediaItemDone: () => void;
@@ -42,7 +42,7 @@ interface PhaseProgress {
   readonly thumbnailDone: () => void;
 }
 
-/** Mutable phase context threaded through the helpers (§18.2 max-params). */
+/** Mutable phase context threaded through the helpers (max-params). */
 interface MediaContext {
   readonly chatId: string;
   readonly deps: MediaPhaseDeps;
@@ -57,7 +57,7 @@ interface MediaContext {
   readonly flushed: { count: number };
 }
 
-/** Everything writeImportMedia needs, as one options object (§18.2). */
+/** Everything writeImportMedia needs, as one options object. */
 export interface MediaPhaseOptions {
   readonly chatId: string;
   readonly messages: readonly InsertableMessage[];
@@ -66,12 +66,12 @@ export interface MediaPhaseOptions {
   readonly deps: MediaPhaseDeps;
   readonly hooks: ImportHooks;
   /** Caller-owned list the phase appends every touched path to. Passing it
-   * lets the caller roll back even if the phase throws unexpectedly (§9.3).
+   * lets the caller roll back even if the phase throws unexpectedly.
    * A fresh list is used when omitted. */
   readonly writtenPaths?: string[];
 }
 
-/** Paths per written-path flush (§9.2 step 8: every 100 files). */
+/** Paths per written-path flush (every 100 files). */
 export const WRITTEN_PATHS_FLUSH_EVERY = 100;
 
 const CANCELLED: ImportError = { code: 'CANCELLED', detail: 'cancelled during media writes' };
@@ -80,12 +80,12 @@ const CANCELLED: ImportError = { code: 'CANCELLED', detail: 'cancelled during me
  * Writes media for the confirmed import and builds attachment rows.
  *
  * @param options The chat id, fingerprinted messages, already-stored
- *   fingerprints (their files are not rewritten, §9.2 step 8), injectable IO
- *   (§18.4), hooks (progress, cancellation, written-path flushes) and an
+ *   fingerprints (their files are not rewritten), injectable IO,
+ *   hooks (progress, cancellation, written-path flushes) and an
  *   optional shared written-path list.
  * @returns Attachment rows + written paths, or a structured failure. On
  *   cancellation or write failure every path touched so far is deleted
- *   (§9.3) before the error is returned. The phase never throws for IO
+ *   before the error is returned. The phase never throws for IO
  *   failures; they become typed errors.
  */
 export async function writeImportMedia(
@@ -152,7 +152,7 @@ function createProgress(
 }
 
 /** Writes every referenced attachment in order, honoring cancellation
- * before and after each item (§9.3). */
+ * before and after each item. */
 async function writeAllReferenced(
   ctx: MediaContext,
   referenced: readonly InsertableMessage[],
@@ -175,7 +175,7 @@ async function writeAllReferenced(
 }
 
 /** Writes one referenced attachment: STREAMS the entry from the opened
- * archive into OPFS, plus a thumbnail for images (§9.2 steps 8–9). */
+ * archive into OPFS, plus a thumbnail for images. */
 async function writeReferenced(
   ctx: MediaContext,
   item: InsertableMessage,
@@ -196,7 +196,7 @@ async function writeReferenced(
 
   const size = fileName === null ? undefined : ctx.zipSizes.get(fileName);
   if (fileName === null || size === undefined || size > IMPORT_LIMITS.maxMediaEntryBytes) {
-    // §8.6: referenced but the file is absent or over the §15.2 cap.
+    //  referenced but the file is absent or over the cap.
     return ok({ ...base, status: 'missing' as const });
   }
 
@@ -225,7 +225,7 @@ async function writeReferenced(
 /** Streams one archive entry into OPFS through the sink: chunked writes,
  * nothing buffered whole. The path is recorded before the sink opens,
  * because opening creates the file; a tab kill mid-entry then still leaves
- * it listed for boot rollback (§9.3). */
+ * it listed for boot rollback. */
 async function streamEntryToOpfs(
   ctx: MediaContext,
   fileName: string,
@@ -262,7 +262,7 @@ async function streamEntryToOpfs(
 }
 
 /** Records a path before its file is created, flushing every
- * WRITTEN_PATHS_FLUSH_EVERY paths (§9.2 step 8). */
+ * WRITTEN_PATHS_FLUSH_EVERY paths. */
 async function recordPath(ctx: MediaContext, path: string): Promise<void> {
   ctx.writtenPaths.push(path);
   if (ctx.writtenPaths.length - ctx.flushed.count >= WRITTEN_PATHS_FLUSH_EVERY) {
@@ -271,7 +271,7 @@ async function recordPath(ctx: MediaContext, path: string): Promise<void> {
 }
 
 /** Flushes the CUMULATIVE list when it holds unflushed paths, so each flush
- * replaces the imports row with a superset (§9.3). */
+ * replaces the imports row with a superset. */
 async function flushPaths(ctx: MediaContext): Promise<void> {
   const onWrittenPaths = ctx.hooks.onWrittenPaths;
   if (onWrittenPaths === undefined || ctx.writtenPaths.length === ctx.flushed.count) {
@@ -282,7 +282,7 @@ async function flushPaths(ctx: MediaContext): Promise<void> {
 }
 
 /** Builds the `omitted` attachment row for a parser-omitted media message
- * (§8.6: no file name — the export was made without media). */
+ * (no file name — the export was made without media). */
 function omittedRow(item: InsertableMessage): InsertableAttachment {
   const mediaType = item.message.attachment?.mediaType ?? 'other';
   return {
@@ -301,7 +301,7 @@ function omittedRow(item: InsertableMessage): InsertableAttachment {
   };
 }
 
-/** Rollback on cancel/failure (§9.3): best-effort delete of every written
+/** Rollback on cancel/failure: best-effort delete of every written
  * path, then the structured error. Attachment rows are never persisted —
  * the commit never ran. */
 async function fail(
@@ -322,7 +322,7 @@ function fromArchiveError(error: ArchiveError): ImportError {
 }
 
 /** Maps a thrown write failure (e.g. a quota error from the sync handle)
- * onto import error codes. Only the error name is kept (§18.7). */
+ * onto import error codes. Only the error name is kept. */
 function fromWriteFailure(error: unknown): ImportError {
   const name = error instanceof Error ? error.name : 'unknown error';
   return { code: name === 'QuotaExceededError' ? 'QUOTA_EXCEEDED' : 'INTERNAL', detail: name };

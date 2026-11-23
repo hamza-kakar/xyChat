@@ -39,7 +39,7 @@ function renderList(route = '/') {
   );
 }
 
-describe('ChatListPane (§12.4)', () => {
+describe('ChatListPane', () => {
   it('lists chats in the order served, with previews and links', async () => {
     renderList();
     const links = await screen.findAllByRole('link', { name: /Family|Work/u });

@@ -1,5 +1,5 @@
 /**
- * RPC input validation (AGENTS.md §18.5): every db.worker
+ * RPC input validation: every db.worker
  * method validates its inputs with Valibot at the worker boundary before
  * touching the repository. Invalid data → typed RpcValidationError (the
  * worker answers INVALID_INPUT), never undefined behavior.
@@ -31,7 +31,7 @@ import type { ImportRecordInput } from '../storage/sqlite/import-record';
 import type { ImportCommitInput } from '../storage/sqlite/import-commit';
 import { ImportRunFactsSchema } from '../storage/sqlite/import-report';
 
-/** Validation failure for one RPC call (§18.5). */
+/** Validation failure for one RPC call. */
 export class RpcValidationError extends Error {}
 
 /** Integer in [0, 2^53): rowids, seqs, timestamps as seconds. */
@@ -39,7 +39,7 @@ const NON_NEGATIVE_INT = pipe(number(), integer(), minValue(0), maxValue(Number.
 /** Identifier strings (UUIDs, fingerprints keys, import ids). */
 const ID_STRING = pipe(string(), minLength(1), maxLength(64));
 /** Renders the dotted path of a Valibot issue ('' for root issues). Root
- * issues may carry no path, so the parameter stays tolerant (§18.5). */
+ * issues may carry no path, so the parameter stays tolerant. */
 function issuePath(path: readonly { readonly key: unknown }[] | undefined): string {
   return (path ?? []).map((item) => String(item.key)).join('.');
 }
@@ -106,7 +106,7 @@ const MEDIA_TYPE = picklist([
 
 const MESSAGE_KINDS = pipe(array(MESSAGE_KIND), maxLength(8));
 
-/** §8.10 fingerprint: 32 lowercase hex chars. */
+/**  fingerprint: 32 lowercase hex chars. */
 const FINGERPRINT = pipe(string(), regex(/^[0-9a-f]{32}$/u, 'fingerprint must be 32 hex chars'));
 
 const PARSED_MESSAGE = object({
@@ -240,8 +240,7 @@ const COMMIT_IMPORT_INPUT = object({
 });
 
 /** OPFS paths are worker-generated; traversal and absolute forms are
- * rejected defensively — rollback deletion must never escape the media root
- * (§15.2). */
+ * rejected defensively — rollback deletion must never escape the media root. */
 const WRITTEN_PATH = pipe(
   string(),
   minLength(1),
@@ -347,8 +346,8 @@ export const rpcInput = {
     return withSchema(method, COMMIT_IMPORT_INPUT, input);
   },
 
-  /** Non-throwing variant for the §3.2 commit-port dispatcher: null when
-   * invalid (§18.5). */
+  /** Non-throwing variant for the commit-port dispatcher: null when
+   * invalid. */
   tryCommitImport(input: unknown): ImportCommitInput | null {
     const result = safeParse(COMMIT_IMPORT_INPUT, input);
     return result.success ? result.output : null;

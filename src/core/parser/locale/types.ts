@@ -1,9 +1,8 @@
 /**
- * Locale pattern tables (AGENTS.md §8.7). Every user-visible phrase the
+ * Locale pattern tables. Every user-visible phrase the
  * parser must recognize lives in one of these tables; adding a language is a
  * new table file plus fixtures, with no logic changes. All regexes are
- * anchored, use the `u` flag, and are linear-time (property-tested under
- * §19.2's timing budget).
+ * anchored, use the `u` flag, and are linear-time (property-tested's timing budget).
  */
 import type { MediaType } from '../../model';
 

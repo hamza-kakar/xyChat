@@ -1,5 +1,5 @@
 /**
- * Install gate tests (§12.8.1): the gate blocks when not standalone and
+ * Install gate tests: the gate blocks when not standalone and
  * offers the explicit bypass; standalone skips it entirely.
  */
 import { render, screen } from '@testing-library/react';
@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { InstallGate } from './install-gate';
 import { installGateDone } from './install-gate-state';
 
-describe('InstallGate (§12.8.1)', () => {
+describe('InstallGate', () => {
   it('renders the gate with iOS instructions when not standalone', () => {
     // happy-dom: matchMedia('(display-mode: standalone)').matches === false.
     render(<InstallGate onProceed={() => undefined} />);

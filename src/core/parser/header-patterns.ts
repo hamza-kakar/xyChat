@@ -1,5 +1,5 @@
 /**
- * Header grammars (AGENTS.md §8.4). A header line starts a new message; the
+ * Header grammars. A header line starts a new message; the
  * table lists the known shapes in detection-priority order. All matchers are
  * anchored and linear-time. Every grammar exposes the same capture layout:
  * groups 1–4 are the date (`d1 sep d2 d3`), 5–7 the time (hour, minute,

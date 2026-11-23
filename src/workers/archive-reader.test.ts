@@ -1,8 +1,8 @@
 /**
- * Archive reader tests (§9.2 steps 1–3, §15.2): real zip archives built
+ * Archive reader tests: real zip archives built
  * with zip.js, read through the same entry point the import worker uses.
- * Storage estimation is injected so the §9.2-step-1 quota check runs in
- * Node (§18.4).
+ * Storage estimation is injected so the -step-1 quota check runs in
+ * Node.
  */
 import { describe, expect, it } from 'vitest';
 import * as zipJs from '@zip.js/zip.js';
@@ -51,7 +51,7 @@ function depsWithFree(free: number): ArchiveReaderDeps {
   return { estimateFreeBytes: () => Promise.resolve(free) };
 }
 
-describe('archive reader: type and size gates (§9.2 step 1)', () => {
+describe('archive reader: type and size gates', () => {
   it('rejects non-archive extensions', async () => {
     const result = await readArchive(textFile(CHAT_TEXT, 'export.pdf'), 'export.pdf', generousDeps);
     expect(result.ok).toBe(false);
@@ -70,7 +70,7 @@ describe('archive reader: type and size gates (§9.2 step 1)', () => {
   });
 });
 
-describe('archive reader: large zip exports (§9.2 step 1, §17)', () => {
+describe('archive reader: large zip exports', () => {
   it('does not apply the text cap to a zip file as a whole', async () => {
     const zip = await buildZip({ '_chat.txt': CHAT_TEXT });
     // A zip with media is routinely far larger than the 200 MB text cap.
@@ -82,7 +82,7 @@ describe('archive reader: large zip exports (§9.2 step 1, §17)', () => {
   });
 });
 
-describe('archive reader: text files (§9.2 steps 2–3)', () => {
+describe('archive reader: text files', () => {
   it('decodes a plain .txt export', async () => {
     const result = await readArchive(textFile(CHAT_TEXT), 'export.txt', generousDeps);
     expect(result.ok).toBe(true);
@@ -113,7 +113,7 @@ describe('archive reader: text files (§9.2 steps 2–3)', () => {
   });
 });
 
-describe('archive reader: zip archives (§9.2 step 2, §15.2)', () => {
+describe('archive reader: zip archives', () => {
   it('locates _chat.txt among several text entries', async () => {
     const file = await buildZip({
       'other.txt': 'decoy content',
@@ -142,7 +142,7 @@ describe('archive reader: zip archives (§9.2 step 2, §15.2)', () => {
     }
   });
 
-  it('rejects every traversal-shaped name in the safety table (§15.2)', () => {
+  it('rejects every traversal-shaped name in the safety table', () => {
     const unsafe = [
       '../escape.txt',
       'a/../escape.txt',
@@ -160,7 +160,7 @@ describe('archive reader: zip archives (§9.2 step 2, §15.2)', () => {
     }
   });
 
-  it('rejects entries beyond the compression-ratio cap (§15.2)', async () => {
+  it('rejects entries beyond the compression-ratio cap', async () => {
     // 20 MB of NUL bytes deflate to ~20 KB: > 1000:1.
     const bombBody = '\u0000'.repeat(20 * 1024 * 1024);
     const file = await buildZip({ '_chat.txt': CHAT_TEXT, 'bomb.txt': bombBody });
@@ -220,7 +220,7 @@ async function mediaZip(): Promise<Blob & { readonly name: string }> {
   });
 }
 
-describe('archive reader: entry bytes and media listing (§9.2 step 8)', () => {
+describe('archive reader: entry bytes and media listing', () => {
   it('reads named entry bytes through the opened handle', async () => {
     const opened = await openArchive(await mediaZip());
     expect(opened.ok).toBe(true);

@@ -1,5 +1,5 @@
 /**
- * Route table test (§12.3): home renders the chat list, an invalid chat id
+ * Route table test: home renders the chat list, an invalid chat id
  * shows "Not found", unknown routes redirect home.
  */
 import { screen } from '@testing-library/react';
@@ -16,7 +16,7 @@ vi.mock('../client/db-client', () => ({
   },
 }));
 
-describe('AppRoutes (§12.3)', () => {
+describe('AppRoutes', () => {
   it('renders the chat list on /', async () => {
     renderWithProviders(<AppRoutes />, { route: '/' });
     expect(screen.getByRole('heading', { level: 1, name: APP_NAME })).toBeInTheDocument();
@@ -43,7 +43,7 @@ describe('AppRoutes (§12.3)', () => {
   });
 });
 
-describe('AppRoutes: settings and chat info (§12.3)', () => {
+describe('AppRoutes: settings and chat info', () => {
   it('renders Settings', async () => {
     vi.stubGlobal('fetch', () => Promise.resolve(new Response('[]')));
     renderWithProviders(<AppRoutes />, { route: '/settings' });

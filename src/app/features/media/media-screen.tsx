@@ -1,6 +1,5 @@
 /**
- * Media gallery screen (AGENTS.md §12.3 `#/chat/:chatId/media?tab=`,
- * §12.6): tabs for photos, videos, audio, documents and links. The chat
+ * Media gallery screen (`#/chat/:chatId/media?tab=`): tabs for photos, videos, audio, documents and links. The chat
  * id and tab are validated; an invalid id shows "Not found" and an unknown
  * tab opens Photos.
  */

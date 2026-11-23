@@ -11,8 +11,7 @@ import { createAppQueryClient } from './queries/query-client';
 
 const queryClient = createAppQueryClient();
 
-/** Keeps warn/error log entries across reloads once the database is up
- * (§18.7). */
+/** Keeps warn/error log entries across reloads once the database is up. */
 function LogPersistence() {
   useEffect(() => installLogPersistence(), []);
   return null;

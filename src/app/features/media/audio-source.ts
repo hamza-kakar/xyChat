@@ -1,5 +1,5 @@
 /**
- * Playable audio for a stored attachment (AGENTS.md §13.2): the stored
+ * Playable audio for a stored attachment: the stored
  * file itself, or — for Ogg Opus on an engine that can't play it — the
  * WAV decoded by the audio worker and cached in OPFS.
  */

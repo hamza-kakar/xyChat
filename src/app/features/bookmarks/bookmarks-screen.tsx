@@ -1,5 +1,5 @@
 /**
- * Bookmarks screen (AGENTS.md §12.3 `#/bookmarks`, §12.5): every bookmark,
+ * Bookmarks screen (`#/bookmarks`): every bookmark,
  * newest first, with its chat, sender, time, text and note, and actions to
  * show it in its chat, edit the note or remove it.
  */

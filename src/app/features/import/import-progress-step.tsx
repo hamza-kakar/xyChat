@@ -10,7 +10,7 @@ export interface ImportProgressStepProps {
   readonly isCancelling?: boolean;
 }
 
-/** Progress phases in §9.1 order with their i18n labels. */
+/** Progress phases order with their i18n labels. */
 const PHASES: readonly { readonly id: string; readonly label: string }[] = [
   { id: 'reading-archive', label: en.import.phaseReadingArchive },
   { id: 'parsing', label: en.import.phaseParsing },
@@ -20,8 +20,8 @@ const PHASES: readonly { readonly id: string; readonly label: string }[] = [
   { id: 'done', label: en.import.phaseDone },
 ];
 
-/** Progress step (§12.8.5): per-phase step indicator plus a determinate
- * bar for the active phase, and the Cancel button (§9.3). */
+/** Progress step: per-phase step indicator plus a determinate
+ * bar for the active phase, and the Cancel button. */
 export function ImportProgressStep({ onCancel, isCancelling = false }: ImportProgressStepProps) {
   const [current, setCurrent] = useState<{ phase: string; current: number; total: number }>({
     phase: 'reading-archive',
@@ -36,7 +36,7 @@ export function ImportProgressStep({ onCancel, isCancelling = false }: ImportPro
     return unsubscribe;
   }, []);
 
-  // §12.8.5: keep the screen awake while the import runs.
+  //  keep the screen awake while the import runs.
   useScreenWakeLock(true);
 
   const phaseIndex = PHASES.findIndex((phase) => phase.id === current.phase);

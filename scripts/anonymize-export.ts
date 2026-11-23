@@ -1,5 +1,5 @@
 /**
- * Anonymizer CLI (AGENTS.md §19.3): `pnpm anonymize <input.txt|zip> <out-dir>`.
+ * Anonymizer CLI: `pnpm anonymize <input.txt|zip> <out-dir>`.
  * Text exports are parsed and rebuilt with anonymized free text; zip exports
  * additionally get their media entries replaced with tiny placeholder files
  * of the same name and type. Output goes to `<out-dir>/` as an anonymized

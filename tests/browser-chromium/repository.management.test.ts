@@ -1,6 +1,6 @@
 /**
  * Repository contract: chat management — self, rename, bookmarks, imports,
- * rollback, delete cascade (§10.5, §9.3). Chromium against real sqlite-wasm
+ * rollback, delete cascade. Chromium against real sqlite-wasm
  * per ADR 0007.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -78,7 +78,7 @@ describe('repository contract: chat management', () => {
     expect(repo.storageUsage().totalBytes).toBe(0);
   });
 
-  it('rolls back in_progress imports (§9.3)', () => {
+  it('rolls back in_progress imports', () => {
     createImportRecord(db, recordInput('imp-rb'));
     const paths = repo.rollbackInProgressImports();
     expect(paths).toEqual([]);

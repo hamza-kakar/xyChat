@@ -1,7 +1,7 @@
 /**
- * Backup and restore progress contract (AGENTS.md §10.6, §18.8): phases,
+ * Backup and restore progress contract: phases,
  * the event shape, and the proxied hooks the main thread passes in for
- * progress and cancellation (same pattern as the import hooks, §9.1).
+ * progress and cancellation (same pattern as the import hooks).
  */
 
 /** Phases of making a backup. */

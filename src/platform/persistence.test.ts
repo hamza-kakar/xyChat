@@ -1,10 +1,10 @@
 /**
- * Persistent-storage wrapper tests (§12.9, §22 M3).
+ * Persistent-storage wrapper tests.
  */
 import { describe, expect, it, vi } from 'vitest';
 import { estimateStorage, isStoragePersisted, requestPersistentStorage } from './persistence';
 
-describe('persistent storage (§12.9)', () => {
+describe('persistent storage', () => {
   it('requests persistence and reports the grant', async () => {
     const persist = vi.fn(() => Promise.resolve(true));
     vi.stubGlobal('navigator', { storage: { persist, persisted: () => Promise.resolve(true) } });
@@ -22,7 +22,7 @@ describe('persistent storage (§12.9)', () => {
     vi.unstubAllGlobals();
   });
 
-  it('returns false when the API throws (§0.6)', async () => {
+  it('returns false when the API throws', async () => {
     vi.stubGlobal('navigator', {
       storage: {
         persist: () => Promise.reject(new Error('no')),
@@ -35,7 +35,7 @@ describe('persistent storage (§12.9)', () => {
   });
 });
 
-describe('storage estimate (§12.9)', () => {
+describe('storage estimate', () => {
   it('reports usage and quota, with zero for missing fields', async () => {
     vi.stubGlobal('navigator', {
       storage: { estimate: () => Promise.resolve({ usage: 10 }) },

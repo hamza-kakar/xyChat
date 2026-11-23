@@ -1,7 +1,7 @@
 /**
- * The #/import screen (AGENTS.md §12.8): install gate → pick → detect →
+ * The #/import screen: install gate → pick → detect →
  * confirm → progress → report. The state machine and client calls live in
- * hooks/use-import-flow.ts (§18.4); this component renders only.
+ * hooks/use-import-flow.ts; this component renders only.
  */
 import { useNavigate } from 'react-router';
 import { en } from '../../i18n/en';
@@ -25,7 +25,7 @@ interface RenderDeps {
   readonly navigate: (path: string) => void;
 }
 
-/** Renders the current §12.8 step (pure: deps injected, §18.4). */
+/** Renders the current step (pure: deps injected). */
 function renderStep(deps: RenderDeps) {
   const { state, dispatch, runDetect, startImport, cancel, navigate } = deps;
   switch (state.step.name) {
@@ -104,7 +104,7 @@ export function ImportScreen() {
   const { state, dispatch, runDetect, startImport, cancel } = useImportFlow();
   const navigate = useNavigate();
   // Detecting and confirming are steps of the import, so the update
-  // prompt waits (§12.12); from Start, the worker call itself is tracked
+  // prompt waits; from Start, the worker call itself is tracked
   // until it answers (useImportFlow).
   const step = state.step.name;
   useHoldLongTask(step === 'detecting' || step === 'confirm');

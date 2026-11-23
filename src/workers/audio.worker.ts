@@ -1,8 +1,8 @@
 /**
- * Audio decode worker (AGENTS.md §13.2): spawned on the first voice note
+ * Audio decode worker: spawned on the first voice note
  * an engine can't play, so the opus decoder never weighs on the initial
  * bundle. Decodes stay serialized; the cached WAV is reused across
- * sessions and goes with its chat (§10.4).
+ * sessions and goes with its chat.
  */
 import * as Comlink from 'comlink';
 import { OggOpusDecoder } from 'ogg-opus-decoder';

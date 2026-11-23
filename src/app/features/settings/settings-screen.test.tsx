@@ -91,7 +91,7 @@ afterEach(() => {
   applyThemePreference('system');
 });
 
-describe('SettingsScreen (§12.9)', () => {
+describe('SettingsScreen', () => {
   it('switches the theme', async () => {
     const user = userEvent.setup();
     renderSettings();

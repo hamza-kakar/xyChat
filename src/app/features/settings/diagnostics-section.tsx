@@ -1,5 +1,5 @@
 /**
- * Settings → Diagnostics (AGENTS.md §12.9, §18.7): versions, the browser
+ * Settings → Diagnostics: versions, the browser
  * capability report and the local log viewer with Copy and Clear. Logs
  * hold codes, counts and ids only — never content, names or file names.
  */

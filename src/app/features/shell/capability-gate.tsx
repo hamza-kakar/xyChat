@@ -19,7 +19,7 @@ type GateState =
   | { readonly phase: 'unsupported'; readonly failures: readonly GateFailure[] };
 
 /**
- * Boot gate (§12.11): first the browser capability probes, then the
+ * Boot gate: first the browser capability probes, then the
  * db.worker boot (migrations + the ratified FTS5-trigram probe, ADR 0008).
  * Any failure renders the unsupported screen; never a blank page.
  */

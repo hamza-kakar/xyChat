@@ -1,7 +1,7 @@
 /**
- * Migration 0001 — initial schema (AGENTS.md §10.2). STRICT tables, FTS5
+ * Migration 0001 — initial schema. STRICT tables, FTS5
  * trigram external-content index over message bodies, sync triggers, and the
- * §11 search indexes.
+ *  search indexes.
  */
 
 import { FTS_TRIGGER_DDL } from '../fts-triggers';

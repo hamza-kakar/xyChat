@@ -1,6 +1,5 @@
 /**
- * Calendar arithmetic for jump to date and search date filters (AGENTS.md
- * §11, §12.5). Days are numbered on the export's wall clock (days since
+ * Calendar arithmetic for jump to date and search date filters. Days are numbered on the export's wall clock (days since
  * 1970-01-01 treating local time as UTC, the same basis as `ts_key`), so
  * no timezone can move a day.
  */

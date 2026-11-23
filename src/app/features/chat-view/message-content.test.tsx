@@ -17,7 +17,7 @@ vi.mock('../../../platform/media-url', () => ({
   readStoredFile: () => Promise.resolve(null),
 }));
 
-describe('MessageContent (§12.5)', () => {
+describe('MessageContent', () => {
   it('shows the deleted placeholder from the UI strings', () => {
     renderWithProviders(
       <MessageContent message={message({ kind: 'deleted', body: 'This message was deleted.' })} />,
@@ -83,7 +83,7 @@ describe('MessageContent (§12.5)', () => {
   });
 });
 
-describe('MessageContent media (§12.5, §13.1)', () => {
+describe('MessageContent media', () => {
   it('shows placeholders for omitted and missing media', () => {
     renderWithProviders(
       <MessageContent
@@ -137,7 +137,7 @@ describe('MessageContent media (§12.5, §13.1)', () => {
     expect(image.parentElement).toHaveClass('w-40', 'max-w-full');
   });
 
-  it('plays voice notes in place with the player controls (§13.2)', () => {
+  it('plays voice notes in place with the player controls', () => {
     renderWithProviders(
       <MessageContent
         message={message({

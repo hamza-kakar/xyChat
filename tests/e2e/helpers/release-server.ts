@@ -1,7 +1,7 @@
 /**
  * A static server for the production build whose service worker script
  * can be swapped mid-test, so a spec can publish "the next release" and
- * watch the update prompt (AGENTS.md §12.12, e2e flow 15). It serves
+ * watch the update prompt (e2e flow 15). It serves
  * `dist/` under the same base path as `vite preview`, on its own port and
  * therefore its own origin and storage.
  */

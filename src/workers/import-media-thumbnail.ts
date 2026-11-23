@@ -1,5 +1,5 @@
 /**
- * Thumbnail step of the import media phase (AGENTS.md §9.2 step 9): decides
+ * Thumbnail step of the import media phase: decides
  * which images qualify, decodes them through the injected generator and
  * stores the JPEG. Every failure degrades to no thumbnail; the gallery then
  * shows a type icon.
@@ -26,15 +26,15 @@ export interface ThumbnailJob {
   readonly fileName: string;
   /** Where the JPEG goes (thumbs/<chatId>/<attachmentId>.jpg). */
   readonly thumbPath: string;
-  /** Records a path for §9.3 rollback before its file is created. */
+  /** Records a path for rollback before its file is created. */
   readonly recordPath: (path: string) => Promise<void>;
-  /** Called once per qualifying image, whatever the outcome (§9.1). */
+  /** Called once per qualifying image, whatever the outcome. */
   readonly onAttemptDone: () => void;
 }
 
 /**
  * Whether an entry gets a thumbnail: a generator exists, the type
- * qualifies, and the entry is small enough to decode in memory (§9.4).
+ * qualifies, and the entry is small enough to decode in memory.
  *
  * @param deps The phase IO (generator and qualifying types).
  * @param zipSizes Declared entry sizes from the archive.

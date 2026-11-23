@@ -1,5 +1,5 @@
 /**
- * Search queries (AGENTS.md §11, §18.4): global/filtered result pages with
+ * Search queries: global/filtered result pages with
  * keyset paging, the in-chat match list, and calendar days for jump to
  * date.
  */
@@ -14,7 +14,7 @@ import { queryKeys } from './keys';
 export type SearchFilters = Omit<SearchQueryInput, 'limit' | 'cursor'>;
 
 /** True when the query can run: full-text needs 3+ characters, and the
- * 1–2 character fallback only works inside one chat (§11). */
+ * 1–2 character fallback only works inside one chat. */
 export function canSearch(filters: Pick<SearchFilters, 'query' | 'chatId'>): boolean {
   const length = filters.query.length;
   return length >= SEARCH.MIN_FULL_TEXT_LENGTH || (length > 0 && filters.chatId !== null);
@@ -38,7 +38,7 @@ export function useSearchResults(filters: SearchFilters) {
   });
 }
 
-/** Every matching seq of an in-chat search, ascending (§11 "12 of 87"). */
+/** Every matching seq of an in-chat search, ascending ("12 of 87"). */
 export function useInChatMatches(chatId: ChatId, query: string) {
   return useQuery({
     queryKey: queryKeys.matches(chatId, query),
@@ -55,7 +55,7 @@ export function useInChatMatches(chatId: ChatId, query: string) {
   });
 }
 
-/** Day numbers that have messages (§12.5 jump to date). */
+/** Day numbers that have messages (jump to date). */
 export function useMessageDays(chatId: ChatId, enabled: boolean) {
   return useQuery({
     queryKey: queryKeys.messageDays(chatId),
@@ -64,7 +64,7 @@ export function useMessageDays(chatId: ChatId, enabled: boolean) {
   });
 }
 
-/** Resolves a date to the first seq at or after it (§12.5). */
+/** Resolves a date to the first seq at or after it. */
 export function useFindSeqByDate(chatId: ChatId) {
   return useMutation({
     mutationFn: (date: LocalDateTime) => dbClient.findSeqByDate(chatId, date),

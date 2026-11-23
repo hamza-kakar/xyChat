@@ -1,5 +1,5 @@
 /**
- * RPC failure sink tests (§18.7): the app registers a logger-backed sink so
+ * RPC failure sink tests: the app registers a logger-backed sink so
  * every failed worker RPC lands in the ring buffer with its code, method and
  * diagnostic id — and never with message content.
  */
@@ -30,7 +30,7 @@ vi.mock('../../client/audio-client', () => ({
 
 import { installRpcErrorSink, rpcErrorSink } from './rpc-sink';
 
-describe('logger-backed RPC failure sink (§18.7)', () => {
+describe('logger-backed RPC failure sink', () => {
   beforeEach(() => {
     setRpcErrorSinkMock.mockClear();
     setImportErrorSinkMock.mockClear();

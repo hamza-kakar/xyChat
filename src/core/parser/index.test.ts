@@ -49,7 +49,7 @@ describe('parseChat (public API)', () => {
     expect(parsed.value.messages).toHaveLength(3);
   });
 
-  it('honors a user-overridden date order (§12.8)', () => {
+  it('honors a user-overridden date order', () => {
     const ambiguous = ['[03/04/2026, 9:19 AM] A: a', '[03/05/2026, 9:20 AM] B: b'].join('\n');
     const detected = detectFormat(ambiguous);
     if (!detected.ok) {

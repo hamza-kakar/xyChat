@@ -1,8 +1,8 @@
 /**
- * Logger-backed sink for failed worker RPCs (AGENTS.md §18.7): the client
- * layer cannot import the logger (§3.1), so the app registers this sink at
+ * Logger-backed sink for failed worker RPCs: the client
+ * layer cannot import the logger, so the app registers this sink at
  * boot and every failed call is logged with its code, method and diagnostic
- * id — never with message content or file names (§15.4).
+ * id — never with message content or file names.
  */
 import { setRpcErrorSink } from '../../client/db-client';
 import { setImportErrorSink } from '../../client/import-client';
@@ -10,7 +10,7 @@ import { setAudioRpcErrorSink } from '../../client/audio-client';
 import type { RpcErrorEvent } from '../../client/rpc-call';
 import { logger } from './logger';
 
-/** Forwards one failed RPC to the logger (§18.7 structured payloads). */
+/** Forwards one failed RPC to the logger (structured payloads). */
 export function rpcErrorSink(event: RpcErrorEvent): void {
   logger.warn('rpc.failed', {
     code: event.code,

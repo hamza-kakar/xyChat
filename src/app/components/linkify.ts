@@ -1,5 +1,5 @@
 /**
- * Link detection for message text (AGENTS.md §12.5): linkify-it tokenizes,
+ * Link detection for message text: linkify-it tokenizes,
  * and only http, https, mailto and explicit tel links become links.
  * Everything else stays text. Phone numbers and bare domains are never
  * guessed.
@@ -63,7 +63,7 @@ export function splitLinks(text: string): readonly LinkSegment[] {
 }
 
 /**
- * Every allowed link in a text, in order, without duplicates (§12.6 Links
+ * Every allowed link in a text, in order, without duplicates (Links
  * tab).
  *
  * @param text A message body.

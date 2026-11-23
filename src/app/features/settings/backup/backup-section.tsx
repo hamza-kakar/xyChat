@@ -1,5 +1,5 @@
 /**
- * Settings → Backup and restore (AGENTS.md §10.6, §12.9). Also points to
+ * Settings → Backup and restore. Also points to
  * re-importing the original exports, the user's primary safety net.
  */
 import { Link } from 'react-router';

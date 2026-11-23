@@ -1,5 +1,5 @@
 /**
- * Migration 0002 — index attachments by message (AGENTS.md §10.3, §17).
+ * Migration 0002 — index attachments by message.
  * The chat view reads a window's attachments in one join on
  * `message_id`; without this index that join scans every attachment of
  * every chat.

@@ -1,5 +1,5 @@
 /**
- * Chat-list preview text (AGENTS.md §12.4): sender prefix in groups and a
+ * Chat-list preview text: sender prefix in groups and a
  * media-type label for media; other kinds get a short label.
  */
 import { en } from '../../i18n/en';

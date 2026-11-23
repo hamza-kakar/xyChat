@@ -1,8 +1,8 @@
 /**
- * SQLite opening (AGENTS.md §10.1): sqlite-wasm with the opfs-sahpool VFS
+ * SQLite opening: sqlite-wasm with the opfs-sahpool VFS
  * inside db.worker, behind a small typed wrapper so the repository code
  * never touches the raw C-style API. Only db.worker may call this (layer
- * rules §3.1). The lifetime single-instance lock lives in opener.ts; this
+ * rules ). The lifetime single-instance lock lives in opener.ts; this
  * module is the production wiring plus the façade re-exports.
  */
 import initSqlite3 from '@sqlite.org/sqlite-wasm';
@@ -15,7 +15,7 @@ import { wrapDatabase, type SqliteDatabase } from './db-wrapper';
 const DB_FILENAME = '/chatkeep.sqlite3';
 /** sahpool metadata directory (fixed; changing it orphans databases). */
 const SAHPOOL_DIRECTORY = 'chatkeep-db';
-/** VFS name registered by installOpfsSAHPoolVfs (§10.1). */
+/** VFS name registered by installOpfsSAHPoolVfs. */
 export const SAHPOOL_VFS_NAME = 'opfs-sahpool';
 
 export { wrapDatabase, verifyFts5Trigram } from './db-wrapper';
@@ -35,7 +35,7 @@ async function openSahpool(sqlite3: Sqlite3Static): Promise<SqliteDatabase> {
   // The VFS's own constructor: (filename) — create-if-missing is implied.
   const db = new pool.OpfsSAHPoolDb(DB_FILENAME);
   const wrapped = wrapDatabase(db);
-  // §10.1 pragmas: WAL is unsupported by this VFS.
+  //  pragmas: WAL is unsupported by this VFS.
   wrapped.exec(`
     PRAGMA journal_mode=DELETE;
     PRAGMA foreign_keys=ON;
@@ -48,7 +48,7 @@ async function openSahpool(sqlite3: Sqlite3Static): Promise<SqliteDatabase> {
 
 /**
  * Loads the sqlite-wasm module once per worker; the database and the
- * backup scratch databases (§10.6) share it.
+ * backup scratch databases share it.
  *
  * @returns The initialized module.
  */
@@ -57,7 +57,7 @@ export function loadSqlite(): Promise<Sqlite3Static> {
 }
 
 /**
- * Opens the database: single-instance lock first (§10.1), then the sahpool
+ * Opens the database: single-instance lock first, then the sahpool
  * VFS, pragmas, migrations, and the FTS5 probe.
  *
  * @param sqlite3 The module from {@link loadSqlite}.

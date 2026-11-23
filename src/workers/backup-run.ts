@@ -1,5 +1,5 @@
 /**
- * Making a backup (AGENTS.md §10.6), run inside db.worker: snapshot the
+ * Making a backup, run inside db.worker: snapshot the
  * chosen chats, then stream the archive into `backup-tmp/`. The main
  * thread reads the finished file from OPFS to share or download it.
  */
@@ -13,7 +13,7 @@ import { writeBackupZip, type BackupWriterDeps } from './backup-writer';
 import type { TransferHooks } from './transfer-hooks';
 import type { BackupError, BackupRequest, BackupResult } from './transfer-types';
 
-/** Everything a backup run touches (§18.4 test seam). */
+/** Everything a backup run touches (test seam). */
 export interface BackupRunDeps extends BackupWriterDeps {
   readonly db: SqliteDatabase;
   readonly scratch: ScratchDatabases;

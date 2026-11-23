@@ -1,5 +1,5 @@
 /**
- * E2E flow 15 (AGENTS.md §12.12, §19.5): a new service worker shows the
+ * E2E flow 15: a new service worker shows the
  * "Update available" toast, which waits while an import runs and reloads
  * only on tap. The build is served by a local release server that can
  * publish a byte-different sw.js. Needs a booted app (OPFS): Chromium runs

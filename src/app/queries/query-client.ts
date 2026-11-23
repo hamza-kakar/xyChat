@@ -6,7 +6,7 @@ const STALE_FOREVER = Number.POSITIVE_INFINITY;
 /** Unused message blocks are dropped after a minute to bound memory. */
 const GC_MS = 60_000;
 
-/** Builds the app's query client (§18.4). */
+/** Builds the app's query client. */
 export function createAppQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {

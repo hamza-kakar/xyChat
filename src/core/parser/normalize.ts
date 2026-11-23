@@ -1,5 +1,5 @@
 /**
- * Input normalization (AGENTS.md §8.3). Applied before anything else touches
+ * Input normalization. Applied before anything else touches
  * the export text: BOM and newline normalization first, then character
  * hygiene that differs between header matching and body preservation.
  */
@@ -27,7 +27,7 @@ const NARROW_NO_BREAK_SPACE = '\u202F';
 /** No-break space, seen in some Android exports. */
 const NO_BREAK_SPACE = '\u00A0';
 
-/** Bidirectional control characters removed from header lines (§8.3). */
+/** Bidirectional control characters removed from header lines. */
 const HEADER_BIDI_CHARS = '\u200E\u200F\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069';
 
 /** Precompiled leading-bidi stripper (hot path: once per input line). */

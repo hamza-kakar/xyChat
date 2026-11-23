@@ -1,5 +1,5 @@
 /**
- * Progress of a running backup or restore (AGENTS.md §10.6): the phase in
+ * Progress of a running backup or restore: the phase in
  * words, a progress bar and Cancel. The screen stays awake meanwhile.
  */
 import { APP_NAME } from '../../../config';

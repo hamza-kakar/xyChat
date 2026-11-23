@@ -1,5 +1,5 @@
 /**
- * Audio and voice-note player (AGENTS.md §13.2): play/pause, a seek bar,
+ * Audio and voice-note player: play/pause, a seek bar,
  * elapsed/total time and playback speed. The file loads on first play
  * (decoded first where the engine can't play Opus); one item plays at a
  * time and playback pauses when the app is hidden. The duration measured

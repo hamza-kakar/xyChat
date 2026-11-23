@@ -1,5 +1,5 @@
 /**
- * Chats layout (AGENTS.md §12.1): one pane on phones, and on screens of
+ * Chats layout: one pane on phones, and on screens of
  * 768 px and wider the chat list beside the open chat.
  */
 import { Outlet, useMatch } from 'react-router';

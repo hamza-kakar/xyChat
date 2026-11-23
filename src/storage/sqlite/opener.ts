@@ -1,5 +1,5 @@
 /**
- * Single-instance database opener (AGENTS.md §10.1): the
+ * Single-instance database opener: the
  * Web Locks lifetime lock with dependency-injected collaborators, so the
  * locking semantics are unit-tested against a fake lock manager
  * (opener.test.ts, node project). The sahpool-backed production wiring stays
@@ -9,7 +9,7 @@ import { err, ok, type Result } from '../../core/result';
 import { migrate } from './migrate';
 import { verifyFts5Trigram, type SqliteDatabase } from './db-wrapper';
 
-/** The single navigator.locks key guarding database ownership (§10.1). */
+/** The single navigator.locks key guarding database ownership. */
 // Kept from the app's earlier name: copies of the old and new builds on
 // one origin share this database, so they must keep sharing the lock.
 export const INSTANCE_LOCK_NAME = 'wachatback-db';
@@ -27,7 +27,7 @@ export interface OpenError {
 
 /** Minimal structural lock-manager surface: the lib `LockManager` shape is
  * `any`-typed in strict code, so the opener depends on exactly what it uses
- * (§18.4 test seam). */
+ * (test seam). */
 export interface InstanceLockManager {
   request<T>(
     name: string,
@@ -36,7 +36,7 @@ export interface InstanceLockManager {
   ): Promise<T>;
 }
 
-/** Injectable opener dependencies (§18.4 test seam): production passes
+/** Injectable opener dependencies (test seam): production passes
  * `navigator.locks` and the sahpool opener; tests inject fakes. */
 export interface DatabaseOpenerDeps {
   readonly locks: InstanceLockManager;
@@ -44,7 +44,7 @@ export interface DatabaseOpenerDeps {
 }
 
 /** Wraps the database so closing it releases the single-instance lock —
- * the lock is held for the CONNECTION lifetime (§10.1). */
+ * the lock is held for the CONNECTION lifetime. */
 function withReleaseOnClose(db: SqliteDatabase, onClosed: () => void): SqliteDatabase {
   return {
     ...db,
@@ -57,7 +57,7 @@ function withReleaseOnClose(db: SqliteDatabase, onClosed: () => void): SqliteDat
 
 /**
  * Creates the database opener: the single-instance lock is held for the
- * CONNECTION lifetime (§10.1). The lock callback stays pending until the
+ * CONNECTION lifetime. The lock callback stays pending until the
  * caller closes the returned database, so a second tab's open fails fast
  * with LOCK_UNAVAILABLE.
  *

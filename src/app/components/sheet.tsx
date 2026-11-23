@@ -1,5 +1,5 @@
 /**
- * Bottom sheet on the native `<dialog>` (AGENTS.md §16): `showModal()`
+ * Bottom sheet on the native `<dialog>`: `showModal()`
  * traps focus and handles Escape; focus returns to the element that opened
  * the sheet when it closes. The close button is always present.
  */

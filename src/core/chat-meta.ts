@@ -1,7 +1,7 @@
 /**
- * Chat metadata derived from an export file (AGENTS.md §8.9): the title from
+ * Chat metadata derived from an export file: the title from
  * the archive or .txt file name, and the group heuristic. Self ("me") is
- * never guessed — the user chooses it in the import flow (§12.8).
+ * never guessed — the user chooses it in the import flow.
  */
 
 /** File-name patterns seen in real exports (iOS drops "with"). */
@@ -53,7 +53,7 @@ const GROUP_EVENT_PATTERNS: readonly RegExp[] = [
 ];
 
 /**
- * Decides the group heuristic (§8.9): more than two distinct authors, or any
+ * Decides the group heuristic: more than two distinct authors, or any
  * group-only system event, means a group chat.
  *
  * @param authors Distinct author names from the parse.

@@ -1,5 +1,5 @@
 /**
- * WhatsApp text-format tokenizer (AGENTS.md §12.5): `*bold*`, `_italic_`,
+ * WhatsApp text-format tokenizer: `*bold*`, `_italic_`,
  * `~strike~`, `` `mono` ``, ```` ```monospace``` ````, `> quote` lines,
  * bullet and numbered lists. The output is an AST of plain-text leaves;
  * rendering (React, never HTML strings) happens in the app layer.
@@ -125,7 +125,7 @@ const BULLET_PREFIX = /^[-*•] /u;
 const NUMBER_PREFIX = /^(\d{1,3})\. /u;
 
 /**
- * Tokenizes a message body into an AST (AGENTS.md §12.5).
+ * Tokenizes a message body into an AST.
  *
  * Line constructs (`>`, `- `, `1. `) are recognized per line; the
  * triple-backtick fence wraps everything until the closing fence verbatim.

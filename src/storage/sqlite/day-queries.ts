@@ -1,5 +1,5 @@
 /**
- * Calendar-day reads for jump to date (AGENTS.md §12.5: "days with
+ * Calendar-day reads for jump to date ("days with
  * messages are marked").
  */
 import type { ChatId } from '../../core/ids';
@@ -23,6 +23,6 @@ export function listMessageDays(db: SqliteDatabase, chatId: ChatId): readonly nu
      )`,
     [SECONDS_PER_DAY, chatId],
   );
-  // One packed row instead of one bridge crossing per day (§17).
+  // One packed row instead of one bridge crossing per day.
   return unpackIntegers(rows[0]?.[0]);
 }

@@ -1,6 +1,5 @@
 /**
- * Repository contract: read queries — windows, dates, search (§10.5, §11,
- * §12.6). Chromium against real sqlite-wasm per ADR 0007.
+ * Repository contract: read queries — windows, dates, search. Chromium against real sqlite-wasm per ADR 0007.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { commitImport } from '../../src/storage/sqlite/import-commit';
@@ -72,7 +71,7 @@ describe('repository contract: queries', () => {
   });
 });
 
-describe('repository contract: search paging (§11)', () => {
+describe('repository contract: search paging', () => {
   it('paginates in-chat search forward by seq', () => {
     // Seed 5 like-named messages; page size 2 must walk them in seq order
     // with no overlap between pages.
@@ -128,7 +127,7 @@ describe('repository contract: search paging (§11)', () => {
     });
     expect(page.hits).toHaveLength(500);
     expect(page.nextCursor).not.toBeNull();
-    // Global (chatId null) with a 1–2 char query stays empty (§11: in-chat only).
+    // Global (chatId null) with a 1–2 char query stays empty (in-chat only).
     const global = repo.search({
       chatId: null,
       query: 'ab',

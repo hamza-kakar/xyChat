@@ -1,5 +1,5 @@
 /**
- * Property-based parser tests (AGENTS.md §19.2). fast-check runs each
+ * Property-based parser tests. fast-check runs each
  * property 1,000 times (300 for the heavier merge walk).
  */
 import { createHash } from 'node:crypto';
@@ -10,9 +10,9 @@ import { detectFormat, parseChat, PARSER_VERSION, type DetectedFormat } from './
 
 const RUNS = { numRuns: 1000 };
 
-/** Arbitrary single-line body: whitespace-stable (§8.3.5 trims trailing),
+/** Arbitrary single-line body: whitespace-stable (trims trailing),
  * without author-splitting `: `, and not header-shaped (lines starting with
- * a digit or bracket-digit are header-like per §8.4 step 2, so generated
+ * a digit or bracket-digit are header-like, so generated
  * continuations avoid them — tiny files full of header-like junk are
  * conservatively UNRECOGNIZED per spec). */
 const arbitraryBodyLine = fc
@@ -20,7 +20,7 @@ const arbitraryBodyLine = fc
   .filter((s) => !s.includes(': ') && s.trim() === s && s.trim().length > 0 && !/^[0-9[]/u.test(s));
 
 /**
- * Bodies that COLLIDE with the §8.6 marker vocabulary (system keywords,
+ * Bodies that COLLIDE with the marker vocabulary (system keywords,
  * deleted, calls). Round-trip and line-accounting generators include these
  * on purpose: authored messages containing marker text must stay authored
  * text (regression coverage for the actor-pattern tightening).
@@ -52,13 +52,13 @@ interface HeaderFields {
   readonly body: string;
 }
 
-/** Renders one iOS-style header line (12h with seconds, §24). */
+/** Renders one iOS-style header line (12h with seconds). */
 function renderIosHeader(f: HeaderFields): string {
   const h12 = f.hour % 12 === 0 ? 12 : f.hour % 12;
   return `[${f.day}/11/2026, ${h12}:${String(f.minute).padStart(2, '0')}:00 ${f.meridiem}] ${f.author}: ${f.body}`;
 }
 
-/** Renders one Android-style header line (24h, dash separator, §24). */
+/** Renders one Android-style header line (24h, dash separator). */
 function renderAndroidHeader(f: HeaderFields): string {
   return `${f.day}/11/2026, ${String(f.hour).padStart(2, '0')}:${String(f.minute).padStart(2, '0')} - ${f.author}: ${f.body}`;
 }
@@ -73,7 +73,7 @@ interface GeneratedMessage {
 }
 
 /** Canonical marker bodies the generator may emit, with the kind the
- * classifier must recover (§19.2.3 asserts kinds on generated data). */
+ * classifier must recover (asserts kinds on generated data). */
 function expectedKind(body: string): 'text' | 'deleted' | 'call' {
   if (body === 'This message was deleted.' || body === 'You deleted this message') {
     return 'deleted';
@@ -101,7 +101,7 @@ const arbitraryMessages: fc.Arbitrary<GeneratedMessage[]> = fc.array(
 );
 
 /** A generated export: one platform per FILE (mixed headers would parse as
- * one dominant grammar with continuations, §8.5). */
+ * one dominant grammar with continuations). */
 interface GeneratedExport {
   readonly platform: 'ios' | 'android';
   readonly messages: readonly GeneratedMessage[];
@@ -137,7 +137,7 @@ function detectOrThrow(text: string): DetectedFormat {
   return detected.value;
 }
 
-describe('property: parseChat never throws (§19.2.1)', () => {
+describe('property: parseChat never throws', () => {
   it('survives arbitrary strings', () => {
     const prop = fc.property(fc.string({ maxLength: 2000 }), (input) => {
       const detected = detectFormat(input);
@@ -151,7 +151,7 @@ describe('property: parseChat never throws (§19.2.1)', () => {
   });
 });
 
-describe('property: line accounting (§19.2.2)', () => {
+describe('property: line accounting', () => {
   it('accounts every non-empty line in a body, header or warning', () => {
     const prop = fc.property(
       fc.array(
@@ -191,7 +191,7 @@ describe('property: line accounting (§19.2.2)', () => {
         if (!parsed.ok) {
           throw new Error('generation must parse');
         }
-        // §8.5: non-header lines are continuations, so every non-empty
+        //  non-header lines are continuations, so every non-empty
         // non-header input line must appear in some message body. Header
         // lines are consumed by the grammar (their REST is a body line).
         const bodyLines = parsed.value.messages.map((m) => m.body.split('\n')).flat();
@@ -206,7 +206,7 @@ describe('property: line accounting (§19.2.2)', () => {
   });
 });
 
-describe('property: generated exports round-trip (§19.2.3)', () => {
+describe('property: generated exports round-trip', () => {
   it('recovers authors, kinds, times and bodies exactly on both platforms', () => {
     const prop = fc.property(arbitraryExports, (exported) => {
       const text = renderAll(exported);
@@ -240,7 +240,7 @@ describe('property: generated exports round-trip (§19.2.3)', () => {
   });
 });
 
-describe('property: fingerprints deterministic and distinct (§19.2.4)', () => {
+describe('property: fingerprints deterministic and distinct', () => {
   it('holds on generated tuples', async () => {
     const prop = fc.asyncProperty(
       fc.record({

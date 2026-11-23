@@ -1,5 +1,5 @@
 /**
- * When the app locks by itself (AGENTS.md §15.3): with a PIN set,
+ * When the app locks by itself: with a PIN set,
  * "Immediately" locks whenever the app is hidden; a delay in minutes locks
  * after that long without interaction, counting time spent hidden.
  */

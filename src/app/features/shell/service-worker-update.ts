@@ -1,6 +1,5 @@
 /**
- * Service worker registration and the "update available" state (AGENTS.md
- * §12.12, §14). registerType is 'prompt': a new worker waits until the
+ * Service worker registration and the "update available" state. registerType is 'prompt': a new worker waits until the
  * user taps Reload, and nothing here reloads on its own.
  */
 import { useSyncExternalStore } from 'react';

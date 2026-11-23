@@ -1,8 +1,8 @@
 /**
- * Import flow hook (AGENTS.md §18.4): owns the §12.8 state
+ * Import flow hook: owns the state
  * machine and the client calls — components render state, they never call
  * RPC clients directly. setSelf failures are tolerated: the commit already
- * succeeded, so the flow still reaches the report (§12.8.6) and the failure
+ * succeeded, so the flow still reaches the report and the failure
  * is only logged.
  */
 import { useCallback, useReducer } from 'react';
@@ -17,7 +17,7 @@ import type { ConfirmChoices } from '../import-confirm-step';
 import { useInvalidateImportedChat } from '../../../queries/chat-queries';
 import { trackLongTask } from '../../../hooks/use-long-task';
 
-/** The §12.8 flow states. */
+/** The flow states. */
 type ImportStep =
   | { readonly name: 'gate' }
   | { readonly name: 'pick' }
@@ -45,7 +45,7 @@ type ImportStep =
     }
   | { readonly name: 'error'; readonly error: ImportError };
 
-/** Detection state for the §12.8.4 order-toggle re-run. */
+/** Detection state for the order-toggle re-run. */
 type DetectState =
   | { readonly status: 'idle' }
   | { readonly status: 'running' }
@@ -88,7 +88,7 @@ function reducer(state: ImportState, action: ImportAction): ImportState {
     case 'detect-failed':
       return { ...state, step: { name: 'error', error: action.error } };
     case 'detect-done':
-      // Both the initial detection and the §12.8.4 toggle re-run end here:
+      // Both the initial detection and the toggle re-run end here:
       // the reorder flag clears with the new report.
       return {
         ...state,
@@ -188,7 +188,7 @@ export function useImportFlow() {
       });
       const unsubscribe = onImportProgress(() => undefined);
       // Tracked until begin() answers, even if the user leaves the screen:
-      // the update prompt must not offer a reload mid-import (§12.12).
+      // the update prompt must not offer a reload mid-import.
       void trackLongTask(
         importClient.begin({
           file,
@@ -205,11 +205,11 @@ export function useImportFlow() {
             dispatch({ type: 'begin-failed', error: outcome });
             return;
           }
-          // §12.9: ask for persistent storage after a successful import,
+          //  ask for persistent storage after a successful import,
           // once, and only while the origin doesn't already have it.
           void requestPersistenceIfNeeded();
 
-          // §12.8.4: persist the self choice; a failure here must not fail
+          //  persist the self choice; a failure here must not fail
           // the import — the commit already succeeded.
           if (choices.selfName !== null) {
             try {
@@ -243,7 +243,7 @@ export function useImportFlow() {
   // Cancel signals the worker and marks the step as cancelling; the screen
   // moves when begin() answers. The worker checks the flag between media
   // entries and ignores it once committing has started, so the answer may
-  // be CANCELLED (after the §9.3 rollback) or a finished import.
+  // be CANCELLED (after the rollback) or a finished import.
   const cancel = useCallback((): void => {
     dispatch({ type: 'cancel-requested' });
     cancelImport();
@@ -259,7 +259,7 @@ async function requestPersistenceIfNeeded(): Promise<void> {
   }
 }
 
-/** Diagnostics keep only the error class name, never its text (§15.4). */
+/** Diagnostics keep only the error class name, never its text. */
 function errorNameOf(error: unknown): string {
   return error instanceof Error ? error.name : 'unknown error';
 }

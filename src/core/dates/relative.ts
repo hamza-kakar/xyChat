@@ -1,6 +1,5 @@
 /**
- * Day-relative labels for the chat list and day separators (AGENTS.md
- * §12.4, §12.5). Wall-clock values only, through the UTC-trick, so no
+ * Day-relative labels for the chat list and day separators. Wall-clock values only, through the UTC-trick, so no
  * timezone can shift a day boundary. The words "Today"/"Yesterday" come
  * from the caller's i18n table: core holds no UI strings.
  */
@@ -53,7 +52,7 @@ export interface RelativeDayLabels {
 }
 
 /**
- * The day-separator label (§12.5): today, yesterday, a weekday within the
+ * The day-separator label: today, yesterday, a weekday within the
  * last week, otherwise a locale date.
  *
  * @param date The message's wall-clock time.
@@ -77,7 +76,7 @@ export function formatDaySeparator(
 }
 
 /**
- * The chat-list date (§12.4): today → time; this week → weekday; else a
+ * The chat-list date: today → time; this week → weekday; else a
  * short date.
  *
  * @param date The last message's wall-clock time.

@@ -1,5 +1,5 @@
 /**
- * Pipeline orchestration tests (§9.2 steps 5–11, §9.3):
+ * Pipeline orchestration tests:
  * commit over a fake port, rollback of written paths on commit
  * failure and cancellation, final cancellation check, and name-free
  * diagnostics.
@@ -108,8 +108,8 @@ function mediaDeps(): { readonly deps: MediaPhaseDeps; readonly deleted: string[
 }
 
 // eslint-disable-next-line max-lines-per-function -- one orchestration suite
-describe('runPipeline orchestration (§9.2 steps 5–11)', () => {
-  it('commits over the port and reports the §9.2-step-11 facts', async () => {
+describe('runPipeline orchestration', () => {
+  it('commits over the port and reports the -step-11 facts', async () => {
     const { port, sent } = fakePort({ type: 'commit-result', result: commitOk });
     const { deps } = mediaDeps();
     const result = await runPipeline({
@@ -139,12 +139,12 @@ describe('runPipeline orchestration (§9.2 steps 5–11)', () => {
     expect(result.commit.messagesInserted).toBe(5);
     expect(result.report.mediaStored).toBe(0);
     expect(result.report.durationMs).toBeGreaterThanOrEqual(0);
-    // One commit request reached the port (§3.2).
+    // One commit request reached the port.
     expect(sent).toHaveLength(1);
     expect((sent[0] as { type: string }).type).toBe('commit');
   });
 
-  it('rolls back written paths when the commit fails (§9.3)', async () => {
+  it('rolls back written paths when the commit fails', async () => {
     const { port } = fakePort({ type: 'commit-error', detail: 'SQLite3Error' });
     const { deps, deleted } = mediaDeps();
     // The empty text read fails before media; force the commit path by
@@ -173,14 +173,14 @@ describe('runPipeline orchestration (§9.2 steps 5–11)', () => {
     if (!result.ok) {
       expect(result.error.code).toBe('COMMIT_FAILED');
     }
-    // Commit-error detail carries the error CLASS, never raw text (§15.4):
+    // Commit-error detail carries the error CLASS, never raw text:
     // the answer detail is the error class name, and nothing user-content
-    // bearing reached the diagnostics (§15.4).
+    // bearing reached the diagnostics.
     expect(result).toBeDefined();
     expect(deleted).toEqual([]);
   });
 
-  it('rolls back written paths on post-media cancellation (§9.3)', async () => {
+  it('rolls back written paths on post-media cancellation', async () => {
     let cancelled = false;
     const { port } = fakePort({ type: 'commit-result', result: commitOk });
     const { deps } = mediaDeps();
@@ -217,7 +217,7 @@ describe('runPipeline orchestration (§9.2 steps 5–11)', () => {
   });
 
   it(
-    'fails with a name-free INTERNAL detail on unexpected exceptions (§15.4)',
+    'fails with a name-free INTERNAL detail on unexpected exceptions',
     { timeout: 15_000 },
     async () => {
       const { port } = fakePort(null);
@@ -245,7 +245,7 @@ describe('runPipeline orchestration (§9.2 steps 5–11)', () => {
       });
       expect(result.ok).toBe(false);
       if (!result.ok) {
-        // The raw exception text (SECRET-VALUE) must never surface (§15.4).
+        // The raw exception text (SECRET-VALUE) must never surface.
         expect(result.error.detail).not.toContain('SECRET-VALUE');
       }
     },

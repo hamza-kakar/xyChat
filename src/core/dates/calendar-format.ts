@@ -1,5 +1,5 @@
 /**
- * Calendar labels for jump to date (AGENTS.md §12.1, §12.5), with the same
+ * Calendar labels for jump to date, with the same
  * UTC-trick as every other date in the app: values are built with
  * `Date.UTC` and formatted with `timeZone: 'UTC'`, so no timezone shifts
  * a day.

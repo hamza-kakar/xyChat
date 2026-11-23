@@ -13,7 +13,7 @@ import {
 const viewport = { width: 400, height: 800 };
 const fitted = { width: 400, height: 300 };
 
-describe('image viewer zoom and pan (§12.6)', () => {
+describe('image viewer zoom and pan', () => {
   it('fits an image inside the viewport', () => {
     expect(fitInside({ width: 1600, height: 1200 }, viewport)).toEqual(fitted);
     expect(fitInside({ width: 100, height: 400 }, viewport)).toEqual({ width: 200, height: 800 });

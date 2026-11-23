@@ -1,7 +1,7 @@
 /**
- * Canonical OPFS media paths (AGENTS.md §10.4: stored by attachment id,
+ * Canonical OPFS media paths (stored by attachment id,
  * never the original name). Pure module, importable from workers and the
- * main thread alike (§3.1); media-store.ts re-exports for main-thread
+ * main thread alike; media-store.ts re-exports for main-thread
  * callers.
  */
 import type { ChatId } from '../core/ids';

@@ -1,7 +1,6 @@
 /**
- * Synthetic WhatsApp export fixtures for the import e2e flows (§19.5
- * flows 2–5). Built at test time with zip.js in Node — real zips, real
- * parser input, no committed chat data (§0 rule 9).
+ * Synthetic WhatsApp export fixtures for the import e2e flows (flows 2–5). Built at test time with zip.js in Node — real zips, real
+ * parser input, no committed chat data.
  */
 import * as zipJs from '@zip.js/zip.js';
 
@@ -33,7 +32,7 @@ function iosLine(i: number, author: string): string {
 }
 
 /** A zip whose chat is large enough that the parse-phase cancellation poll
- * (per 1,000 items, §9.3) fires before the commit. */
+ * (per 1,000 items) fires before the commit. */
 export async function buildCancellableZip(messageCount: number): Promise<Blob> {
   const authors = ['Sara', 'Ali Khan', 'Bob'];
   const lines: string[] = [];
@@ -43,7 +42,7 @@ export async function buildCancellableZip(messageCount: number): Promise<Blob> {
   return buildZipBlob({ '_chat.txt': lines.join('\n') });
 }
 
-/** The §19.5 flow-2 fixture: iOS group export with one media file present. */
+/** The flow-2 fixture: iOS group export with one media file present. */
 export async function buildIosGroupZip(): Promise<Blob> {
   return buildZipBlob({
     '_chat.txt': IOS_GROUP_TEXT,
@@ -51,9 +50,9 @@ export async function buildIosGroupZip(): Promise<Blob> {
   });
 }
 
-/** The §19.5 flow-4 superset: the SAME 6 base messages plus 2 newer ones
+/** The flow-4 superset: the SAME 6 base messages plus 2 newer ones
  * (one interleaved right after base 1, one at the end). Content-derived
- * fingerprints keep the base 6 as duplicates (§8.10 occurrence counting is
+ * fingerprints keep the base 6 as duplicates (occurrence counting is
  * per-file, and these bodies are unique). */
 export function supersetText(): string {
   return [
@@ -75,7 +74,7 @@ export async function buildSupersetZip(): Promise<Blob> {
   });
 }
 
-/** The §19.5 flow-3 fixture: ambiguous 05/06/2026 dates (DMY reads as 5
+/** The flow-3 fixture: ambiguous 05/06/2026 dates (DMY reads as 5
  * June; MDY reads as May 6 — the toggle decides). */
 export function ambiguousText(): string {
   return [
@@ -89,7 +88,7 @@ export async function buildAmbiguousZip(): Promise<Blob> {
   return buildZipBlob({ '_chat.txt': ambiguousText() });
 }
 
-/** Counts OPFS files under `media/` (chat dirs → attachment files), §9.3
+/** Counts OPFS files under `media/` (chat dirs → attachment files),
  * flow-5 assertion helper. */
 export async function countOpfsMediaFiles(page: {
   readonly evaluate: (fn: () => Promise<number>) => Promise<number>;
@@ -118,8 +117,7 @@ export async function countOpfsMediaFiles(page: {
 }
 
 /** A zip with `count` media messages (referenced, files PRESENT in the zip)
- * — large enough that a mid-import cancel lands inside writing-media
- * (§9.3). Files share tiny bodies; names are unique. */
+ * — large enough that a mid-import cancel lands inside writing-media. Files share tiny bodies; names are unique. */
 export async function buildMediaCancelZip(count: number): Promise<Blob> {
   const entries: Record<string, string> = { '_chat.txt': '' };
   const lines: string[] = [];

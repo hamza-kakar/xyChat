@@ -46,7 +46,7 @@ export default tseslint.config(
       'import-x': importX,
     },
     rules: {
-      // eslint-comments (AGENTS.md §18.2)
+      // eslint-comments
       'eslint-comments/require-description': 'error',
       'eslint-comments/no-unlimited-disable': 'error',
       'eslint-comments/no-unused-disable': 'error',
@@ -56,7 +56,7 @@ export default tseslint.config(
       'import-x/no-default-export': 'error',
       'import-x/no-extraneous-dependencies': 'error',
 
-      // Additional hard rules (AGENTS.md §18.2)
+      // Additional hard rules
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-non-null-assertion': 'error',
       '@typescript-eslint/no-floating-promises': 'error',
@@ -71,9 +71,9 @@ export default tseslint.config(
       ],
       'no-console': 'error',
 
-      // Untrusted-content and forbidden API surface (AGENTS.md §15.2 / §25).
+      // Untrusted-content and forbidden API surface.
       // Logger calls take a stable code plus a structured payload — never
-      // template literals (keeps chat content and names out of logs, §18.7).
+      // template literals (keeps chat content and names out of logs).
       'no-restricted-syntax': [
         'error',
         {
@@ -88,7 +88,7 @@ export default tseslint.config(
         },
         {
           selector: "Identifier[name='localStorage']",
-          message: 'localStorage may only be used by the theme preference hook (AGENTS.md §15.4).',
+          message: 'localStorage may only be used by the theme preference hook.',
         },
         {
           selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
@@ -174,7 +174,7 @@ export default tseslint.config(
     },
   },
   // A constants file's VALUES are the named constants themselves — the rule
-  // targets magic numbers in logic, not constant definitions (§18.6).
+  // targets magic numbers in logic, not constant definitions.
   {
     files: ['src/core/limits.ts'],
     rules: {
@@ -182,7 +182,7 @@ export default tseslint.config(
     },
   },
 
-  // ---- Logger sink may use console (dev builds only, §18.7) ----
+  // ---- Logger sink may use console (dev builds only) ----
   {
     files: ['src/app/logging/**/*.ts'],
     rules: { 'no-console': 'off' },

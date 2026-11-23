@@ -1,5 +1,5 @@
 /**
- * Typed client for the audio decode worker (AGENTS.md §3.1, §13.2). The
+ * Typed client for the audio decode worker. The
  * worker is spawned on first use only, so engines that play Opus never
  * load the decoder. Calls run through the shared RPC caller with a long
  * timeout: a voice note of several minutes takes seconds to decode.
@@ -32,7 +32,7 @@ const caller = createRpcCaller({
   exempt: new Set<string>(),
 });
 
-/** Registers the failure sink (logger-backed, from the app layer §3.1). */
+/** Registers the failure sink (logger-backed, from the app layer ). */
 export function setAudioRpcErrorSink(sink: RpcErrorSink | null): void {
   caller.setSink(sink);
 }

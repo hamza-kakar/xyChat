@@ -1,7 +1,7 @@
 /**
- * db.worker (AGENTS.md §3.2): owns the ONLY SQLite connection. Opens the
- * sahpool-backed database, runs boot rollback (§9.3), and serves repository
- * calls over Comlink. Every RPC wraps unexpected exceptions (§18.7).
+ * db.worker: owns the ONLY SQLite connection. Opens the
+ * sahpool-backed database, runs boot rollback, and serves repository
+ * calls over Comlink. Every RPC wraps unexpected exceptions.
  */
 import * as Comlink from 'comlink';
 import { loadSqlite, openDatabase } from '../storage/sqlite/open';
@@ -43,7 +43,7 @@ import { inspectBackup } from './restore-inspect';
 import { runRestore } from './restore-run';
 import { clearBackupFiles, productionBackupDeps, productionRestoreDeps } from './transfer-deps';
 
-/** Production crypto and clock for the app lock (§15.3). */
+/** Production crypto and clock for the app lock. */
 const pinDeps: PinDeps = { derive: derivePinHash, randomSalt: randomPinSalt, now: Date.now };
 
 /** PIN checks run one at a time: the lockout is read before the slow key
@@ -53,9 +53,9 @@ const pinQueue = createSerialQueue();
 let repository: SqliteChatRepository | null = null;
 let scratchDatabases: ScratchDatabases | null = null;
 
-/** Serializes an unexpected exception into a WorkerError (§18.7). The stack
+/** Serializes an unexpected exception into a WorkerError. The stack
  * is preserved so the client-side diagnostics can quote it; it contains
- * engine locations only, never message content (§15.4). */
+ * engine locations only, never message content. */
 function toWorkerError(error: unknown, code: WorkerError['code'] = 'INTERNAL'): WorkerError {
   return {
     code,
@@ -81,10 +81,10 @@ function scratch(): ScratchDatabases {
   return scratchDatabases;
 }
 
-/** Wraps a repository call: validation failures answer INVALID_INPUT (§18.5),
+/** Wraps a repository call: validation failures answer INVALID_INPUT,
  * everything else serializes as INTERNAL with the worker-side stack. The
  * stack rides in the thrown message because Comlink re-creates Errors with
- * the message only (§18.7). */
+ * the message only. */
 function wrap<T>(fn: () => T | Promise<T>): Promise<T> {
   return Promise.resolve()
     .then(fn)
@@ -111,15 +111,15 @@ const api: DbApi = {
       }
       repository = new SqliteChatRepository(opened.value);
       scratchDatabases = createScratchDatabases(sqlite3);
-      // §9.3 boot rollback: mark in_progress imports rolled_back and return
+      //  boot rollback: mark in_progress imports rolled_back and return
       // their written OPFS paths — the client deletes the files.
       const orphanPaths = repository.rollbackInProgressImports();
-      // §9.3: the worker deletes the crashed import's files itself (workers
-      // may import storage per §3.1); the client only logs the count.
+      //  the worker deletes the crashed import's files itself (workers
+      // may import storage); the client only logs the count.
       for (const path of orphanPaths) {
         await deleteMediaFile(path);
       }
-      // Archives left from an earlier session were offered already (§10.6).
+      // Archives left from an earlier session were offered already.
       await clearBackupFiles();
       return { ok: true as const };
     } catch (error) {
@@ -167,10 +167,10 @@ const api: DbApi = {
       const id = rpcInput.chatId('deleteChat', chatId);
       const paths = repo().listChatMediaPaths(id);
       repo().deleteChat(id);
-      // §10.4: files go after the DB commit; a failure here leaves orphans
-      // for the sweeper (§9.3), never rows pointing at missing files.
+      //  files go after the DB commit; a failure here leaves orphans
+      // for the sweeper, never rows pointing at missing files.
       await deleteChatMedia(id);
-      // Decoded voice notes sit outside the chat folders (§13.2).
+      // Decoded voice notes sit outside the chat folders.
       await Promise.all(
         paths.filter((path) => path.startsWith(`${AUDIO_CACHE_DIR}/`)).map(deleteMediaFile),
       );
@@ -240,7 +240,7 @@ const api: DbApi = {
       return results.filter(Boolean).length;
     }),
   connectCommitPort: (port) => {
-    // §3.2: the only place beyond db.worker methods that executes commits.
+    //  the only place beyond db.worker methods that executes commits.
     // commit-port validates every message; anything but a commit is ignored.
     port.onmessage = (event: MessageEvent) => {
       const answer = handleCommitMessage(

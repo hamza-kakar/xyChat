@@ -1,5 +1,5 @@
 /**
- * Orphan sweeper test (§9.3): an OPFS file under media/ with no attachment
+ * Orphan sweeper test: an OPFS file under media/ with no attachment
  * row shows up in listOrphanMedia and is gone after deleteOrphanMedia.
  * Every test leaves OPFS as it found it, because later suites in the same
  * origin count files. Chromium-only per ADR 0007.
@@ -41,7 +41,7 @@ async function writeOpfsFile(path: string, bytes: Uint8Array): Promise<void> {
   await writable.close();
 }
 
-describe('orphan sweeper API (§9.3)', () => {
+describe('orphan sweeper API', () => {
   it('lists OPFS files with no attachment row and deletes them', async () => {
     // The db.worker's deleteOrphanMedia calls deleteMediaFile per path, the
     // same delete exercised here. No attachment rows exist, so both files

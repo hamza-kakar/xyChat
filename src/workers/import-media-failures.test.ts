@@ -1,6 +1,5 @@
 /**
- * Import media phase failure and progress tests (§9.1, §9.2 steps 8–9,
- * §9.3, §9.4): a write that throws mid-entry becomes a typed error with
+ * Import media phase failure and progress tests: a write that throws mid-entry becomes a typed error with
  * every touched path deleted, paths are flushed before their file exists,
  * oversized images get no thumbnail, and both phase bars are determinate.
  */
@@ -134,7 +133,7 @@ function run(
   });
 }
 
-describe('writeImportMedia: write failures (§9.3)', () => {
+describe('writeImportMedia: write failures', () => {
   it('turns a sink throw mid-entry into a typed error and deletes every touched path', async () => {
     const { deps, rec } = harness({
       zip: new Map([
@@ -174,7 +173,7 @@ describe('writeImportMedia: write failures (§9.3)', () => {
   });
 });
 
-describe('writeImportMedia: thumbnails and progress (§9.1, §9.4)', () => {
+describe('writeImportMedia: thumbnails and progress', () => {
   it('skips the thumbnail for an image over the size cap, without buffering it', async () => {
     const { deps, rec } = harness({
       zip: new Map([['IMG-huge.jpg', IMPORT_LIMITS.maxThumbnailSourceBytes + 1]]),

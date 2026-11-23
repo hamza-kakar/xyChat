@@ -12,7 +12,7 @@ function jpeg(size: number): Uint8Array {
   return bytes;
 }
 
-describe('media RPC inputs (§18.5)', () => {
+describe('media RPC inputs', () => {
   it('accepts a duration and rejects nonsense', () => {
     expect(rpcMediaInput.duration('m', { attachmentId: ID, durationMs: 4200 })).toEqual({
       attachmentId: ID,

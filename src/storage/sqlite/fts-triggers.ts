@@ -1,5 +1,5 @@
 /**
- * FTS sync-trigger DDL (AGENTS.md §10.2, §11): the single source of truth
+ * FTS sync-trigger DDL: the single source of truth
  * for the messages_fts maintenance triggers. Migration 0001 creates them
  * with this constant, and the import commit's bulk-load path drops and
  * restores them through these helpers — keeping the DDL byte-identical in

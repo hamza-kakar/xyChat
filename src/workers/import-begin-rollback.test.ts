@@ -1,5 +1,5 @@
 /**
- * Pipeline rollback test (§9.3): when the archive stream rejects partway
+ * Pipeline rollback test: when the archive stream rejects partway
  * through the media phase, every file touched so far is deleted and the
  * import fails with a typed error instead of throwing.
  */
@@ -63,7 +63,7 @@ function failingMediaIO(): { readonly deps: MediaPhaseDeps; readonly deleted: st
   };
 }
 
-describe('runPipeline rollback during the media phase (§9.3)', () => {
+describe('runPipeline rollback during the media phase', () => {
   it('deletes every touched file and fails with INTERNAL when the stream rejects', async () => {
     const { deps, deleted } = failingMediaIO();
     const flushes: (readonly string[])[] = [];

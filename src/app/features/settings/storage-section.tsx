@@ -1,7 +1,7 @@
 /**
- * Settings → Storage (AGENTS.md §12.9): used/quota, media per chat,
+ * Settings → Storage: used/quota, media per chat,
  * persistent storage status with a Request button, and the orphan-file
- * clean-up (§9.3) behind a confirmation.
+ * clean-up behind a confirmation.
  */
 import { useMemo, useState } from 'react';
 import { APP_NAME } from '../../config';

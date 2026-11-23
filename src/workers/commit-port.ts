@@ -1,16 +1,16 @@
 /**
- * Commit-port message dispatch (AGENTS.md §3.2): a gated
+ * Commit-port message dispatch: a gated
  * page module handling the db-side end of the commit MessageChannel. The
  * WHOLE message union is validated with Valibot — unknown or malformed
  * messages are ignored (no SQL runs) — and commit inputs pass the same
- * §18.5 validation as the RPC surface. Only this module touches the port;
+ *  validation as the RPC surface. Only this module touches the port;
  * db.worker wires it to the SQLite owner.
  */
 import * as v from 'valibot';
 import type { ImportCommitInput, ImportCommitResult } from '../storage/sqlite/import-commit';
 import { rpcInput } from './rpc-validate';
 
-/** The commit message union (§3.2). Written-path batches never appear
+/** The commit message union. Written-path batches never appear
  * here — bookkeeping goes through the recordWrittenPaths RPC. */
 const COMMIT_MESSAGE = v.object({
   type: v.literal('commit'),
@@ -27,12 +27,12 @@ export type CommitPortAnswer =
     }
   | { readonly type: 'commit-error'; readonly requestId: number; readonly detail: string };
 
-/** Deps injected by db.worker: the SQLite-backed commit (§3.2). */
+/** Deps injected by db.worker: the SQLite-backed commit. */
 export interface CommitPortDeps {
   readonly commit: (input: ImportCommitInput) => ImportCommitResult;
 }
 
-/** Raw exception text can echo user values (§15.4) — answers carry the
+/** Raw exception text can echo user values — answers carry the
  * error class name only. */
 function errorNameOf(error: unknown): string {
   return error instanceof Error ? error.name : 'unknown error';

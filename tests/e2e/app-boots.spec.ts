@@ -35,7 +35,7 @@ test('boot screen is axe-clean in dark mode (home or unsupported)', async ({ pag
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  // §12.1: the dark palette must actually activate via prefers-color-scheme.
+  //  the dark palette must actually activate via prefers-color-scheme.
   const surface = await page.evaluate(() =>
     getComputedStyle(document.documentElement).getPropertyValue('--surface').trim(),
   );
