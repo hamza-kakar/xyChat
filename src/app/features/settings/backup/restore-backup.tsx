@@ -77,7 +77,7 @@ export function RestoreBackup() {
       <h3 className="text-text font-semibold">{en.backup.restoreHeading}</h3>
       <label
         htmlFor={inputId}
-        className="border-border text-text flex min-h-11 cursor-pointer items-center rounded-lg border px-4 font-semibold has-disabled:opacity-60"
+        className="border-border text-text has-focus-visible:outline-focus-ring flex min-h-11 cursor-pointer items-center rounded-lg border px-4 font-semibold has-focus-visible:outline-2 has-disabled:opacity-60"
       >
         {file === null ? en.backup.chooseFile : en.backup.chooseAnother}
         <input
@@ -135,6 +135,7 @@ export function RestoreBackup() {
       {restore.isPending ? (
         <TransferProgressView
           transfer={transfer}
+          firstPhase="reading"
           canCancel={transfer.progress?.phase !== 'committing'}
         />
       ) : null}

@@ -7,20 +7,27 @@ import { en } from '../../../i18n/en';
 import { formatString } from '../../../i18n/format-string';
 import { useScreenWakeLock } from '../../../hooks/use-screen-wake-lock';
 import type { TransferState } from './use-transfer';
+import type { TransferProgress } from '../../../../client/db-client';
 
 /** Props for {@link TransferProgressView}. */
 export interface TransferProgressViewProps {
   readonly transfer: TransferState;
+  /** The phase named before the first progress event arrives. */
+  readonly firstPhase: TransferProgress['phase'];
   /** False once the work can no longer stop (the commit). */
   readonly canCancel: boolean;
 }
 
-export function TransferProgressView({ transfer, canCancel }: TransferProgressViewProps) {
+export function TransferProgressView({
+  transfer,
+  firstPhase,
+  canCancel,
+}: TransferProgressViewProps) {
   useScreenWakeLock(true);
   const { progress } = transfer;
   const label =
     progress === null
-      ? en.backup.phases.snapshot
+      ? en.backup.phases[firstPhase]
       : formatString(en.backup.phases[progress.phase], {
           current: progress.current.toLocaleString(),
           total: progress.total.toLocaleString(),

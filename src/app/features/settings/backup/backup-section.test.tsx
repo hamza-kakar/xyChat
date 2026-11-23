@@ -202,7 +202,8 @@ describe('restore from a backup', () => {
   it('disables restore when everything is skipped and shows errors', async () => {
     const user = userEvent.setup();
     db.inspectBackup.mockResolvedValue(preview);
-    db.restoreBackup.mockResolvedValue({ ok: false, error: { code: 'CANCELLED' } });
+    const run = deferred<unknown>();
+    db.restoreBackup.mockReturnValue(run.promise);
     renderWithProviders(<BackupSection />);
     await user.upload(screen.getByLabelText('Choose a backup file'), new File(['z'], 'b.zip'));
     const family = await screen.findByRole('group', { name: 'Family' });
@@ -211,6 +212,8 @@ describe('restore from a backup', () => {
     expect(screen.getByRole('button', { name: 'Restore' })).toBeDisabled();
     await user.click(within(family).getByLabelText('Merge into “Family”'));
     await user.click(screen.getByRole('button', { name: 'Restore' }));
+    expect(await screen.findByText('Reading the backup…')).toBeInTheDocument();
+    run.resolve({ ok: false, error: { code: 'CANCELLED' } });
     expect(await screen.findByRole('alert')).toHaveTextContent('Cancelled. Nothing was restored.');
   });
 
