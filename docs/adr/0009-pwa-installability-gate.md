@@ -6,8 +6,8 @@
 12 removed the PWA category entirely (including the `installable-manifest`
 audit), so `lhci` cannot express that assertion any more; the only available
 category assertions are performance, accessibility and best-practices.
-Round-1 review flagged that replacing the gate with a STATUS.md note violates
-§0.5 (gates are changed via ADR, with a concrete replacement).
+Replacing the gate with a note in the docs would quietly weaken it; the spec
+(§0.5) requires a gate change to come with an ADR and a concrete replacement.
 
 ## Decision
 

@@ -2,7 +2,7 @@
 
 ## Context
 
-AGENTS.md §4 fixes the technology choices and requires exact version pins,
+the spec (`docs/SPEC.md`) §4 fixes the technology choices and requires exact version pins,
 recorded in an ADR. Versions were resolved from the npm registry at project
 start (2026-11-17). Two practical constraints surfaced while resolving:
 

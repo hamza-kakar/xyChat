@@ -176,8 +176,9 @@ pnpm dev         # development server
 pnpm verify      # everything CI runs
 ```
 
-Requires Node (see `.nvmrc`) and pnpm. See `AGENTS.md` for the full build
-specification and `docs/STATUS.md` for progress.
+Requires Node (see `.nvmrc`) and pnpm. The design specification is in
+[`docs/SPEC.md`](docs/SPEC.md), decisions are recorded in [`docs/adr`](docs/adr),
+and [`docs/ROADMAP.md`](docs/ROADMAP.md) lists what's next.
 
 ## License
 

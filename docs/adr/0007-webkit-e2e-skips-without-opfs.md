@@ -46,7 +46,7 @@ platform gap rather than a transient failure.
 
 - CI reports WebKit e2e as "skipped (4)" rather than red, with an explicit
   reason string.
-- The dev-facing limitation is stated in `docs/STATUS.md`.
+- The dev-facing limitation is stated in `docs/TESTING.md`.
 - When microsoft/playwright#18235 lands in a Playwright release, the skip
   guard self-deactivates (the probe passes and tests run) — no code change
   needed beyond removing it for tidiness.
