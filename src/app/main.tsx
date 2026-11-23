@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import { App } from './app';
+import { registerServiceWorker } from './features/shell/service-worker-update';
 import { installRpcErrorSink } from './logging/rpc-sink';
 import { applyThemePreference, readThemePreference } from './hooks/use-theme-preference';
 import './styles/tailwind.css';
@@ -14,9 +15,8 @@ applyThemePreference(readThemePreference());
 installRpcErrorSink();
 
 // Register the service worker for offline use. registerType is 'prompt', so a
-// waiting worker is never activated automatically (AGENTS.md §12.12); the
-// update prompt UI arrives with milestone M9.
-void registerSW({ immediate: true });
+// waiting worker is activated only from the update prompt (AGENTS.md §12.12).
+registerServiceWorker(registerSW);
 
 const rootElement = document.getElementById('root');
 if (rootElement === null) {

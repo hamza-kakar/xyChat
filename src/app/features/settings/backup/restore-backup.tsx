@@ -14,6 +14,7 @@ import { RestoreChoices } from './restore-choices';
 import { defaultChoices, toDecisions, type ChoiceMap } from './restore-decisions';
 import { TransferProgressView } from './transfer-progress';
 import { useTransfer } from './use-transfer';
+import { useHoldLongTask } from '../../../hooks/use-long-task';
 
 function errorText(code: keyof typeof en.backup.restoreErrors): string {
   return formatString(en.backup.restoreErrors[code], { appName: APP_NAME });
@@ -71,6 +72,8 @@ export function RestoreBackup() {
   const preview = inspect.data?.ok === true ? inspect.data.value : null;
   const busy = inspect.isPending || restore.isPending;
   const failed = inspect.isError || restore.isError;
+  const awaitingChoices = preview !== null && restore.data === undefined;
+  useHoldLongTask(busy || awaitingChoices);
 
   return (
     <div className="flex flex-col gap-3">

@@ -4,6 +4,7 @@ import { HashRouter } from 'react-router';
 import { AppRoutes } from './routes';
 import { AppErrorBoundary } from './features/shell/app-error-boundary';
 import { CapabilityGate } from './features/shell/capability-gate';
+import { UpdatePrompt } from './features/shell/update-prompt';
 import { LockGate } from './features/lock';
 import { installLogPersistence } from './logging/log-persistence';
 import { createAppQueryClient } from './queries/query-client';
@@ -18,7 +19,7 @@ function LogPersistence() {
 }
 
 /** App root: error boundary outermost, then the capability gate, then the
- * query client, the app lock and routes. */
+ * query client, the app lock, routes and the update prompt. */
 export function App() {
   return (
     <AppErrorBoundary>
@@ -29,6 +30,7 @@ export function App() {
             <HashRouter>
               <AppRoutes />
             </HashRouter>
+            <UpdatePrompt />
           </LockGate>
         </QueryClientProvider>
       </CapabilityGate>
