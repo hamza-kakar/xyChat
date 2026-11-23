@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="xyChat logo">
+  <rect width="1024" height="1024" rx="230" fill="#0E7C66"/>
+  <rect x="182" y="220" width="660" height="500" rx="130" fill="#FFFFFF"/>
+  <polygon points="350,690 350,850 520,710" fill="#FFFFFF"/>
+  <circle cx="392" cy="470" r="38" fill="#0E7C66"/>
+  <circle cx="512" cy="470" r="38" fill="#0E7C66"/>
+  <circle cx="632" cy="470" r="38" fill="#0E7C66"/>
+</svg>
