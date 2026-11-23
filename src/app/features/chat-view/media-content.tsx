@@ -169,20 +169,17 @@ function isTilePreview(attachment: AttachmentView): boolean {
 
 /** The preview inside a viewer button, by media type. */
 function Preview({ attachment }: { readonly attachment: AttachmentView }) {
-  const { mediaType } = attachment;
-  if (mediaType === 'image') {
-    return <PhotoPreview attachment={attachment} />;
+  if (isTilePreview(attachment)) {
+    return <MediaTile attachment={attachment} />;
   }
   // GIFs from WhatsApp are usually MP4 files; a real GIF shows as a photo.
-  const isVideoFile = mediaType === 'video' || attachment.mime?.startsWith('video/') === true;
-  if (mediaType === 'gif' || mediaType === 'video') {
-    return isVideoFile ? (
-      <VideoPreview attachment={attachment} />
-    ) : (
-      <PhotoPreview attachment={attachment} />
-    );
-  }
-  return <MediaTile attachment={attachment} />;
+  const isVideoFile =
+    attachment.mediaType === 'video' || attachment.mime?.startsWith('video/') === true;
+  return isVideoFile ? (
+    <VideoPreview attachment={attachment} />
+  ) : (
+    <PhotoPreview attachment={attachment} />
+  );
 }
 
 /** A preview that opens the full-screen viewer on this one item (a plain
