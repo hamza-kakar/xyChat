@@ -1,0 +1,87 @@
+/**
+ * UI strings for Settings → Backup and restore (part of `en`, split out to
+ * keep files small). The app name is interpolated via `{appName}`.
+ */
+export const enBackup = {
+  backup: {
+    heading: 'Backup and restore',
+    intro:
+      'A backup keeps your chats in one file you can store in Files or iCloud Drive and restore later, on this device or another.',
+    exportsNote:
+      'Your original WhatsApp exports are the best safety net. Keep them: you can always import them again.',
+    reimport: 'Re-import an original export',
+    makeHeading: 'Make a backup',
+    scopeLabel: 'Chats',
+    scopeAll: 'All chats',
+    includeMedia: 'Include photos, videos and other media',
+    estimate: 'About {size}',
+    largeWarning:
+      'Backups over 1 GB may fail on iPhone because of memory limits. Back up one chat at a time instead.',
+    noChats: 'Import a chat first. There is nothing to back up yet.',
+    make: 'Make backup',
+    phases: {
+      snapshot: 'Copying the chats…',
+      media: 'Adding media ({current} of {total})…',
+      finishing: 'Finishing the file…',
+      reading: 'Reading the backup…',
+      committing: 'Saving the chats…',
+    },
+    cancel: 'Cancel',
+    cancelling: 'Cancelling…',
+    ready: 'Backup ready: {fileName} ({size}).',
+    mediaMissing: {
+      one: '{count} media file was already gone from this device and is not in the backup.',
+      other: '{count} media files were already gone from this device and are not in the backup.',
+    },
+    share: 'Share backup',
+    save: 'Save backup',
+    keepOpen: 'Keep {appName} open until this finishes.',
+    errors: {
+      NO_CHATS: 'There are no chats to back up.',
+      CANCELLED: 'Cancelled. Nothing was kept.',
+      QUOTA:
+        'Not enough free storage to write the backup. Try without media or one chat at a time.',
+      IO: 'The backup file could not be written. Try again.',
+      INTERNAL: 'Something went wrong. Try again.',
+    },
+    restoreHeading: 'Restore from a backup',
+    chooseFile: 'Choose a backup file',
+    inspecting: 'Checking the backup…',
+    previewSummary: 'Backup from {date}, made with version {version}.',
+    previewWithMedia: 'Includes media.',
+    previewWithoutMedia: 'Without media: restored media shows as not found.',
+    chatMessages: { one: '{count} message', other: '{count} messages' },
+    chatMedia: { one: '{count} media file', other: '{count} media files' },
+    matchesLocal: 'Matches “{title}” on this device.',
+    choiceNew: 'Restore',
+    choiceMerge: 'Merge into “{title}”',
+    choiceReplace: 'Replace “{title}”',
+    choiceSkip: 'Skip',
+    replaceWarning: 'Replace deletes the chat on this device first, with its media and bookmarks.',
+    restore: 'Restore',
+    chooseAnother: 'Choose another file',
+    restored: {
+      one: 'Restored {count} chat.',
+      other: 'Restored {count} chats.',
+    },
+    reportLine: '{title}: {added} added, {duplicates} already there',
+    reportMedia: { one: '{count} media file restored', other: '{count} media files restored' },
+    reportMissing: { one: '{count} media file not found', other: '{count} media files not found' },
+    openChat: 'Open chat',
+    restoreErrors: {
+      NOT_A_BACKUP: 'This file is not a {appName} backup.',
+      INVALID_MANIFEST: 'This backup’s description is damaged, so it can’t be restored.',
+      UNSAFE_ARCHIVE: 'This file contains unsafe entries and was not opened.',
+      DATABASE_TOO_LARGE: 'This backup is too large to restore on this device.',
+      CORRUPT_ARCHIVE: 'This file is damaged and can’t be read.',
+      CORRUPT_DATABASE: 'The chats in this backup are damaged and can’t be restored.',
+      SCHEMA_TOO_NEW: 'This backup comes from a newer version of {appName}. Update the app first.',
+      QUOTA_EXCEEDED: 'Not enough free storage for this backup’s media.',
+      IO: 'The media could not be saved. Nothing was restored.',
+      CANCELLED: 'Cancelled. Nothing was restored.',
+      NOTHING_TO_RESTORE: 'Choose at least one chat to restore.',
+      TARGET_NOT_FOUND: 'A chat on this device changed meanwhile. Choose the backup file again.',
+      INTERNAL: 'Something went wrong. Nothing was restored.',
+    },
+  },
+} as const;

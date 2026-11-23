@@ -19,6 +19,7 @@ const db = vi.hoisted(() => ({
   getSchemaVersion: vi.fn(),
   savePersistedLogs: vi.fn(),
   listPersistedLogs: vi.fn(),
+  estimateBackup: vi.fn(),
 }));
 const platform = vi.hoisted(() => ({
   estimateStorage: vi.fn(),
@@ -70,6 +71,7 @@ beforeEach(() => {
   db.listOrphanMedia.mockResolvedValue([]);
   db.deleteOrphanMedia.mockResolvedValue(2);
   db.getSchemaVersion.mockResolvedValue(2);
+  db.estimateBackup.mockResolvedValue(1_000);
   db.savePersistedLogs.mockResolvedValue(undefined);
   platform.estimateStorage.mockResolvedValue({ usage: 5_242_880, quota: 1_073_741_824 });
   platform.isStoragePersisted.mockResolvedValue(false);

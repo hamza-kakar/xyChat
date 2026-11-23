@@ -1,6 +1,6 @@
 /**
  * Settings (AGENTS.md §12.3 `#/settings`, §12.9): appearance, app lock,
- * storage, diagnostics and about. Backup and restore join in M8.
+ * storage, backup and restore, diagnostics and about.
  */
 import { en } from '../../i18n/en';
 import { ScreenHeader } from '../../components/screen-header';
@@ -9,6 +9,7 @@ import { AppearanceSection } from './appearance-section';
 import { DiagnosticsSection } from './diagnostics-section';
 import { LockSection } from './lock-section';
 import { StorageSection } from './storage-section';
+import { BackupSection } from './backup/backup-section';
 
 export function SettingsScreen() {
   return (
@@ -18,6 +19,7 @@ export function SettingsScreen() {
         <AppearanceSection />
         <LockSection />
         <StorageSection />
+        <BackupSection />
         <DiagnosticsSection />
         <AboutSection />
       </div>
