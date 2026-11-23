@@ -116,7 +116,7 @@ test('app lock: cover, lock, unlock, and backoff after failures (flow 12)', asyn
   await expect(page.locator('#privacy-cover')).toBeVisible();
   await setVisibility(page, 'visible');
   await expect(page.locator('#privacy-cover')).toBeHidden();
-  const lockHeading = page.getByRole('heading', { name: 'waChatBack is locked' });
+  const lockHeading = page.getByRole('heading', { name: 'xyChat is locked' });
   await expect(lockHeading).toBeHidden();
 
   // Immediately: hiding locks at once, so the snapshot shows the lock screen.
@@ -180,7 +180,7 @@ test('the lock screen covers an open sheet and stays usable (§15.3)', async ({ 
   await expect(confirm).toBeVisible();
 
   await setVisibility(page, 'hidden');
-  const lockHeading = page.getByRole('heading', { name: 'waChatBack is locked' });
+  const lockHeading = page.getByRole('heading', { name: 'xyChat is locked' });
   await expect(lockHeading).toBeVisible();
   // The sheet must not paint over the lock screen (top layer order).
   const topmostIsLock = await page.evaluate(() => {

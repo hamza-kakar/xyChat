@@ -25,7 +25,7 @@ vi.mock('../../../../client/db-client', () => ({ dbClient: db }));
 vi.mock('../../../../platform/share-file', () => share);
 vi.mock('../../../../platform/media-url', () => files);
 
-const archive = new File(['zip'], 'wachatback-backup-20261123-0905.zip');
+const archive = new File(['zip'], 'xychat-backup-20261123-0905.zip');
 
 /** A promise with its resolve handle, to hold a run open. */
 function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
@@ -98,7 +98,7 @@ describe('make a backup', () => {
     expect(db.createBackup.mock.calls[0]?.[0]).toMatchObject({
       chatIds: [CHAT_ID],
       includeMedia: false,
-      appName: 'waChatBack',
+      appName: 'xyChat',
     });
     (callbacks as TransferCallbacks | null)?.onProgress({ phase: 'media', current: 2, total: 5 });
     expect(await screen.findByText('Adding media (2 of 5)…')).toBeInTheDocument();
@@ -117,7 +117,7 @@ describe('make a backup', () => {
         mediaMissing: 2,
       },
     });
-    expect(await screen.findByText(/Backup ready: wachatback-backup/u)).toBeInTheDocument();
+    expect(await screen.findByText(/Backup ready: xychat-backup/u)).toBeInTheDocument();
     expect(screen.getByText(/2 media files were already gone/u)).toBeInTheDocument();
     await user.click(await screen.findByRole('button', { name: 'Share backup' }));
     expect(share.shareFile).toHaveBeenCalledWith(archive);
@@ -223,7 +223,7 @@ describe('restore from a backup', () => {
     renderWithProviders(<BackupSection />);
     await user.upload(screen.getByLabelText('Choose a backup file'), new File(['z'], 'b.zip'));
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'This file is not a waChatBack backup.',
+      'This file is not a xyChat backup.',
     );
     expect(screen.getByLabelText('Choose another file')).toBeInTheDocument();
   });

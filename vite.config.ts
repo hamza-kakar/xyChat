@@ -33,7 +33,7 @@ const CSP_DIRECTIVES = [
 
 function injectBuildMeta(): Plugin {
   return {
-    name: 'wachatback:inject-meta',
+    name: 'xychat:inject-meta',
     apply: 'build',
     transformIndexHtml(html) {
       const metaTag = `<meta http-equiv="Content-Security-Policy" content="${CSP_DIRECTIVES}">`;
@@ -58,7 +58,7 @@ async function readPackageVersion(): Promise<string> {
 export default defineConfig(async () => {
   const appVersion = await readPackageVersion();
   return {
-    base: process.env['VITE_BASE'] ?? '/wachatback/',
+    base: process.env['VITE_BASE'] ?? '/xychat/',
     plugins: [
       react(),
       tailwindcss(),

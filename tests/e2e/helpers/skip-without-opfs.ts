@@ -34,7 +34,7 @@ async function opfsSupported(page: Page): Promise<boolean> {
  */
 export async function expectBootOrUnsupported(page: Page): Promise<boolean> {
   await page.goto('/');
-  const homeHeading = page.getByRole('heading', { level: 1, name: 'waChatBack' });
+  const homeHeading = page.getByRole('heading', { level: 1, name: 'xyChat' });
   const unsupportedHeading = page.getByRole('heading', {
     level: 1,
     name: 'This browser isn’t supported',

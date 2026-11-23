@@ -1,6 +1,6 @@
 # Status
 
-Progress tracker for waChatBack. Updated in every PR.
+Progress tracker for xyChat. Updated in every PR.
 
 ## Current milestone
 
@@ -47,7 +47,7 @@ M8 — Backup and restore: merged (PR #11).
     estimated size shows first, with the iPhone warning above 1 GB.
     Progress (copying the chats, adding media n of m, finishing) with
     Cancel; the screen stays awake. The archive is
-    `wachatback-backup-YYYYMMDD-HHMM.zip`: `manifest.json`, the
+    `xychat-backup-YYYYMMDD-HHMM.zip`: `manifest.json`, the
     `db.sqlite3` snapshot, then `media/…` and `thumbs/…`, written into
     `backup-tmp/` in OPFS. "Share backup" opens the share sheet when the
     browser can share files; "Save backup" downloads it.
@@ -347,7 +347,7 @@ Screenshots (iPhone viewport, light and dark): `docs/screenshots/m4/`.
 
 - Repository initialized; spec (`AGENTS.md`) committed at the repo root and
   adopted as the source of truth.
-- App named **waChatBack** (owner rename; single `APP_NAME` constant in
+- App named **xyChat** (owner rename; single `APP_NAME` constant in
   `src/app/app-name.ts`, interpolated into i18n strings and injected into
   `index.html` at build time).
 - Vite + React + TypeScript (strict) scaffold with the layer layout from §3.1.
@@ -521,7 +521,7 @@ test:coverage` in the unit job); overall 60% lines — `platform/capabilities.ts
   scratch databases instead of sahpool `exportFile` / `VACUUM INTO`;
   backups leave out app settings and the full-text index; backup and
   restore run in db.worker; a restored chat's import history starts with
-  the restore; the archive name uses the app name (`wachatback-backup-…`).
+  the restore; the archive name uses the app name (`xychat-backup-…`).
 - M8: the db.worker API gains `estimateBackup`, `createBackup`,
   `clearBackupFiles`, `inspectBackup` and `restoreBackup` (beyond §10.5).
 - ADR 0016 (M9): the update prompt also waits during backups and during

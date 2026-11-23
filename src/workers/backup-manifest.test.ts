@@ -3,8 +3,8 @@ import { backupFileName, buildManifest, parseManifest } from './backup-manifest'
 
 describe('backup manifest', () => {
   it('names archives after the app and the local time', () => {
-    expect(backupFileName('waChatBack', new Date(2026, 0, 2, 3, 4))).toBe(
-      'wachatback-backup-20260102-0304.zip',
+    expect(backupFileName('xyChat', new Date(2026, 0, 2, 3, 4))).toBe(
+      'xychat-backup-20260102-0304.zip',
     );
     expect(backupFileName('!!', new Date(2026, 10, 23, 23, 59))).toBe(
       'chats-backup-20261123-2359.zip',
@@ -13,7 +13,7 @@ describe('backup manifest', () => {
 
   it('round-trips a manifest and rejects anything else', () => {
     const manifest = buildManifest({
-      app: 'waChatBack',
+      app: 'xyChat',
       appVersion: '0.1.0',
       schemaVersion: 2,
       createdAt: new Date(Date.UTC(2026, 10, 23, 9, 5)),

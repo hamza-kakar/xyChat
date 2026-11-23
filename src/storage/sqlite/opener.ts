@@ -10,6 +10,8 @@ import { migrate } from './migrate';
 import { verifyFts5Trigram, type SqliteDatabase } from './db-wrapper';
 
 /** The single navigator.locks key guarding database ownership (§10.1). */
+// Kept from the app's earlier name: copies of the old and new builds on
+// one origin share this database, so they must keep sharing the lock.
 export const INSTANCE_LOCK_NAME = 'wachatback-db';
 
 /** Error codes for database opening. */

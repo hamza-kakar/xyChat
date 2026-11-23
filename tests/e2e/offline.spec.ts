@@ -10,7 +10,7 @@ import { expectBootOrUnsupported, skipWithoutOpfs } from './helpers/skip-without
 import { importChat } from './helpers/import-ui';
 import { buildIosGroupZipWithImage } from './helpers/chat-fixtures';
 
-const appHeading = (page: Page) => page.getByRole('heading', { level: 1, name: 'waChatBack' });
+const appHeading = (page: Page) => page.getByRole('heading', { level: 1, name: 'xyChat' });
 
 /** True once the page is controlled and the precache holds entries. */
 async function waitForPrecache(page: Page): Promise<void> {

@@ -70,7 +70,7 @@ async function makeBackup(page: Page): Promise<SavedBackup> {
   const section = page.getByRole('region', { name: 'Backup and restore' });
   await expect(section.getByText(/^About /u)).toBeVisible();
   await section.getByRole('button', { name: 'Make backup' }).click();
-  await expect(section.getByText(/Backup ready: wachatback-backup-\d{8}-\d{4}\.zip/u)).toBeVisible({
+  await expect(section.getByText(/Backup ready: xychat-backup-\d{8}-\d{4}\.zip/u)).toBeVisible({
     timeout: 30_000,
   });
   const [download] = await Promise.all([
@@ -78,7 +78,7 @@ async function makeBackup(page: Page): Promise<SavedBackup> {
     section.getByRole('button', { name: 'Save backup' }).click(),
   ]);
   const name = download.suggestedFilename();
-  expect(name).toMatch(/^wachatback-backup-\d{8}-\d{4}\.zip$/u);
+  expect(name).toMatch(/^xychat-backup-\d{8}-\d{4}\.zip$/u);
   return { path: await download.path(), name };
 }
 

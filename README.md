@@ -1,24 +1,24 @@
-<h1 align="center">waChatBack</h1>
+<h1 align="center">xyChat</h1>
 
 <p align="center">
   <strong>Your WhatsApp chat exports, readable forever: private, offline, on your own device.</strong>
 </p>
 
 <p align="center">
-  <a href="https://github.com/hamza-kakar/wachatback/actions/workflows/ci.yml"><img src="https://github.com/hamza-kakar/wachatback/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/hamza-kakar/xychat/actions/workflows/ci.yml"><img src="https://github.com/hamza-kakar/xychat/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license"></a>
   <img src="https://img.shields.io/badge/iOS-17%2B-black.svg" alt="iOS 17+">
   <img src="https://img.shields.io/badge/works-offline-success.svg" alt="Works offline">
 </p>
 
 <p align="center">
-  <a href="https://hamza-kakar.github.io/wachatback/"><strong>Open the app</strong></a> ·
+  <a href="https://hamza-kakar.github.io/xychat/"><strong>Open the app</strong></a> ·
   <a href="#install-on-iphone">Install</a> ·
   <a href="#import-a-chat">Import a chat</a> ·
   <a href="#privacy">Privacy</a>
 </p>
 
-waChatBack is a viewer for chats exported with WhatsApp's **Export Chat**. Import
+xyChat is a viewer for chats exported with WhatsApp's **Export Chat**. Import
 an export once and browse it in a familiar messaging layout: bubbles, photos,
 voice notes, search and more, even years later and in airplane mode.
 
@@ -94,9 +94,9 @@ storage. **Your chats never leave your device.**
 
 Requires iOS or iPadOS 17 or later.
 
-1. Open <https://hamza-kakar.github.io/wachatback/> in **Safari**.
+1. Open <https://hamza-kakar.github.io/xychat/> in **Safari**.
 2. Tap **Share**, then **Add to Home Screen**, then **Add**.
-3. Open waChatBack from your Home Screen.
+3. Open xyChat from your Home Screen.
 
 > [!IMPORTANT]
 > Install to the Home Screen **before** importing. On iPhone, a Home Screen
@@ -113,7 +113,7 @@ and use its **Install** option, or simply keep using it in a tab.
 2. Pick **Attach Media** to keep photos, videos and voice notes, or **Without
    Media** for text only.
 3. Save the export to **Files** (iPhone) or your device storage.
-4. In waChatBack, tap **+**, choose the export, confirm the detected date
+4. In xyChat, tap **+**, choose the export, confirm the detected date
    format and which person is you, and start the import. Keep the app open
    until it finishes.
 
@@ -142,7 +142,7 @@ and the message waits until any import, backup or restore has finished.
 ## Limitations
 
 - WhatsApp exports don't include reactions, quoted replies or read receipts,
-  so waChatBack can't show them.
+  so xyChat can't show them.
 - Exports carry no time zone; times are shown exactly as written.
 - When an export's day and month order is ambiguous, the import asks you to
   choose.
@@ -150,7 +150,7 @@ and the message waits until any import, backup or restore has finished.
   exported from a phone in another language still import, but some events may
   appear as plain text.
 - iOS may clear a web app's storage when the device is very low on space.
-  waChatBack requests persistent storage, but keep your exports or a backup.
+  xyChat requests persistent storage, but keep your exports or a backup.
 - Backups over 1 GB may fail on iPhone memory limits; back up chat by chat
   instead.
 
@@ -187,6 +187,6 @@ Opus voice-note fallback), is LGPL-3.0 and ships unmodified.
 
 ---
 
-<sub>waChatBack is an independent project. It is not affiliated with, endorsed
+<sub>xyChat is an independent project. It is not affiliated with, endorsed
 by or connected to WhatsApp or Meta. "WhatsApp" is a trademark of its owner
 and is used here only to describe the export format this app reads.</sub>
