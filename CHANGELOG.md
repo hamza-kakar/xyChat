@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.0.1](https://github.com/hamza-kakar/xyChat/compare/v1.0.0...v1.0.1) (2026-11-23)
+
+
+### Bug Fixes
+
+* **chat-view:** keep jumping after scrolling away from the opening message ([cc443be](https://github.com/hamza-kakar/xyChat/commit/cc443be22fb592867a18a9e3f803ee2521c7a0a1))
+* **search:** keep the newest matches when an in-chat search is capped ([0dd5af3](https://github.com/hamza-kakar/xyChat/commit/0dd5af3351939eb181fb7dd637ef1a62d7aaca06))
+
+
+### Performance Improvements
+
+* **search:** pick the newest in-chat matches without sorting in SQL ([dc82eb8](https://github.com/hamza-kakar/xyChat/commit/dc82eb8a120dc076b431316ce530f5326085010e))
+
 ## 1.0.0 (2026-11-23)
 
 
