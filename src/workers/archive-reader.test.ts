@@ -76,9 +76,9 @@ describe('archive reader: large zip exports (§9.2 step 1, §17)', () => {
     // A zip with media is routinely far larger than the 200 MB text cap.
     Object.defineProperty(zip, 'size', { value: 1024 * 1024 * 1024 });
     const result = await readArchive(zip, 'WhatsApp Chat - Big.zip', generousDeps);
-    if (!result.ok) {
-      expect(result.error.code).not.toBe('FILE_TOO_LARGE');
-    }
+    // The faked size makes the zip unreadable later on; what matters is that
+    // the size gate itself did not reject it.
+    expect(result.ok ? 'ok' : result.error.code).not.toBe('FILE_TOO_LARGE');
   });
 });
 
