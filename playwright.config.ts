@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const PORT = 4173;
-const BASE_PATH = process.env['E2E_BASE_PATH'] ?? '/xychat/';
+const BASE_PATH = process.env['E2E_BASE_PATH'] ?? '/xyChat/';
 const BASE_URL = `http://localhost:${PORT}${BASE_PATH}`;
 
 export default defineConfig({

@@ -58,7 +58,7 @@ async function readPackageVersion(): Promise<string> {
 export default defineConfig(async () => {
   const appVersion = await readPackageVersion();
   return {
-    base: process.env['VITE_BASE'] ?? '/xychat/',
+    base: process.env['VITE_BASE'] ?? '/xyChat/',
     plugins: [
       react(),
       tailwindcss(),

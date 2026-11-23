@@ -2,7 +2,7 @@
   "ci": {
     "collect": {
       "startServerCommand": "pnpm preview --port 4173 --strictPort",
-      "url": ["http://localhost:4173/xychat/"],
+      "url": ["http://localhost:4173/xyChat/"],
       "numberOfRuns": 3
     },
     "assert": {
