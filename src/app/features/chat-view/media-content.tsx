@@ -153,6 +153,20 @@ function VideoPreview({ attachment }: { readonly attachment: AttachmentView }) {
   );
 }
 
+/** Whether the preview is the text tile (type icon, name, size) rather
+ * than a picture. */
+function isTilePreview(attachment: AttachmentView): boolean {
+  const { mediaType } = attachment;
+  if (mediaType === 'image') {
+    return attachment.thumbPath === null;
+  }
+  if (mediaType === 'gif' || mediaType === 'video') {
+    const isVideoFile = mediaType === 'video' || attachment.mime?.startsWith('video/') === true;
+    return !isVideoFile && attachment.thumbPath === null;
+  }
+  return true;
+}
+
 /** The preview inside a viewer button, by media type. */
 function Preview({ attachment }: { readonly attachment: AttachmentView }) {
   const { mediaType } = attachment;
@@ -184,18 +198,26 @@ function ViewerButton({
   if (openMedia === null) {
     return <Preview attachment={attachment} />;
   }
+  // A tile's visible name and size must be part of the button's name
+  // (WCAG 2.5.3), so only pictures get a label of their own.
+  const isTile = isTilePreview(attachment);
   return (
     <button
       type="button"
-      aria-label={formatString(en.chatView.openMedia, {
-        label: en.chatView.mediaLabels[attachment.mediaType],
-      })}
+      aria-label={
+        isTile
+          ? undefined
+          : formatString(en.chatView.openMedia, {
+              label: en.chatView.mediaLabels[attachment.mediaType],
+            })
+      }
       aria-haspopup="dialog"
       className="block max-w-full text-start"
       onClick={() => {
         openMedia(message, attachment);
       }}
     >
+      {isTile ? <span className="sr-only">{en.chatView.openTile}</span> : null}
       <Preview attachment={attachment} />
     </button>
   );

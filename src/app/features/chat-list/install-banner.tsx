@@ -15,8 +15,8 @@ export function InstallBanner() {
     return null;
   }
   return (
-    <aside className="bg-surface-raised border-border flex items-center gap-2 border-b py-1 ps-4 pe-1 text-sm">
-      <p className="text-text flex-1">
+    <aside className="bg-surface-raised border-border flex flex-wrap items-center gap-x-2 border-b py-1 ps-4 pe-1 text-sm">
+      <p className="text-text min-w-40 flex-1">
         {formatString(en.installBanner.text, { appName: APP_NAME })}
       </p>
       <button

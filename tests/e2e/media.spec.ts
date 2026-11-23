@@ -86,7 +86,7 @@ test('documents and links tabs (§12.6)', async ({ page }) => {
 
   await page.getByRole('link', { name: 'Documents' }).click();
   await expect(page).toHaveURL(/tab=docs$/u);
-  await page.getByRole('button', { name: /^Document, Ali Khan/u }).click();
+  await page.getByRole('button', { name: /^DOC-20261117-WA0004\.pdf Ali Khan/u }).click();
   const viewer = page.getByRole('dialog', { name: 'Document' });
   await expect(viewer).toContainText('DOC-20261117-WA0004.pdf');
   await expect(viewer.getByRole('button', { name: 'Open' })).toBeEnabled();

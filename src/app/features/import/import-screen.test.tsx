@@ -3,7 +3,7 @@
  * begin flow with both worker clients mocked (§18.4); the report and
  * error branches.
  */
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { installGateDone } from './install-gate-state';
@@ -106,12 +106,7 @@ function beginSuccess(counts: { readonly attachments: number; readonly stored: n
 /** Renders the screen and picks the export file. */
 async function renderAndPick(user: ReturnType<typeof userEvent.setup>): Promise<void> {
   renderWithProviders(<ImportScreen />);
-  await user.click(screen.getByRole('button', { name: 'Choose export file (.zip or .txt)' }));
-  const input = document.querySelector('input[type="file"]');
-  expect(input).not.toBeNull();
-  if (input !== null) {
-    fireEvent.change(input, { target: { files: [pickedFile()] } });
-  }
+  await user.upload(screen.getByLabelText('Choose export file (.zip or .txt)'), pickedFile());
 }
 
 /** On the confirm screen: chooses Sara as "me" and starts the import. */

@@ -276,6 +276,7 @@ export const en = {
     jumpToLatestCount: 'Jump to the latest message, {count} below',
     mediaButton: 'Media, links and docs',
     openMedia: 'Open {label}',
+    openTile: 'Open',
   },
   search: {
     title: 'Search',

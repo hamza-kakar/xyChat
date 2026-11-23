@@ -38,11 +38,13 @@ export function ChatHeader({
 }: ChatHeaderProps) {
   return (
     <header className="border-border bg-surface safe-top border-b">
-      <div className="flex items-center gap-1 py-1 ps-1 pe-2">
+      <div className="flex flex-wrap items-center gap-1 py-1 ps-1 pe-2">
         <Link to="/" aria-label={en.chatView.backLabel} className={`${iconButtonClass} md:hidden`}>
           <BackIcon className="h-6 w-6 rtl:-scale-x-100" />
         </Link>
-        <div className="flex min-w-0 flex-1 flex-col ps-2 md:ps-3">
+        {/* min-w-32: at large text sizes the actions wrap below the title
+            instead of squeezing it away (§16). */}
+        <div className="flex min-w-32 flex-1 flex-col ps-2 md:ps-3">
           <h1
             ref={headingRef}
             tabIndex={-1}
@@ -57,41 +59,43 @@ export function ChatHeader({
             </p>
           )}
         </div>
-        <button
-          ref={searchButtonRef}
-          type="button"
-          aria-label={en.chatView.searchButton}
-          aria-expanded={isSearchOpen}
-          disabled={!canJump}
-          className={`${iconButtonClass} disabled:opacity-40`}
-          onClick={onSearch}
-        >
-          <SearchIcon className="h-6 w-6" />
-        </button>
-        <button
-          type="button"
-          aria-label={en.chatView.jumpButton}
-          aria-haspopup="dialog"
-          disabled={!canJump}
-          className={`${iconButtonClass} disabled:opacity-40`}
-          onClick={onJump}
-        >
-          <CalendarIcon className="h-6 w-6" />
-        </button>
-        <Link
-          to={`/chat/${chatId}/media`}
-          aria-label={en.chatView.mediaButton}
-          className={iconButtonClass}
-        >
-          <GalleryIcon className="h-6 w-6" />
-        </Link>
-        <Link
-          to={`/chat/${chatId}/info`}
-          aria-label={en.chatInfo.infoButton}
-          className={iconButtonClass}
-        >
-          <InfoIcon className="h-6 w-6" />
-        </Link>
+        <div className="ms-auto flex items-center gap-1">
+          <button
+            ref={searchButtonRef}
+            type="button"
+            aria-label={en.chatView.searchButton}
+            aria-expanded={isSearchOpen}
+            disabled={!canJump}
+            className={`${iconButtonClass} disabled:opacity-40`}
+            onClick={onSearch}
+          >
+            <SearchIcon className="h-6 w-6" />
+          </button>
+          <button
+            type="button"
+            aria-label={en.chatView.jumpButton}
+            aria-haspopup="dialog"
+            disabled={!canJump}
+            className={`${iconButtonClass} disabled:opacity-40`}
+            onClick={onJump}
+          >
+            <CalendarIcon className="h-6 w-6" />
+          </button>
+          <Link
+            to={`/chat/${chatId}/media`}
+            aria-label={en.chatView.mediaButton}
+            className={iconButtonClass}
+          >
+            <GalleryIcon className="h-6 w-6" />
+          </Link>
+          <Link
+            to={`/chat/${chatId}/info`}
+            aria-label={en.chatInfo.infoButton}
+            className={iconButtonClass}
+          >
+            <InfoIcon className="h-6 w-6" />
+          </Link>
+        </div>
       </div>
     </header>
   );
