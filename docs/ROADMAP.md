@@ -9,6 +9,11 @@ app lock, storage management, backup and restore, and full offline use. See the
 
 ## Known gaps
 
+- On iPhone, the app can intermittently show "This browser isn't supported"
+  at startup right after a quick relaunch or an update, because the previous
+  instance still holds the database. Reopening the app clears it. The fix:
+  wait and retry the database open, show the real reason with a Try again
+  button, and don't cache a failed start.
 - The on-device checklist in [TESTING.md](TESTING.md) has only been run in
   part on a real iPhone. Automated end-to-end tests cover the same flows in
   WebKit and Chromium.
