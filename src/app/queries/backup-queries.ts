@@ -10,6 +10,7 @@ import { readStoredFile } from '../../platform/media-url';
 import { useInvalidateImportedChat } from './chat-queries';
 import { queryKeys } from './keys';
 import { logger } from '../logging/logger';
+import { trackLongTask } from '../hooks/use-long-task';
 
 /** Progress and cancellation for a running backup or restore. */
 export interface TransferCallbacks {
@@ -36,14 +37,18 @@ export function useCreateBackup() {
       readonly appVersion: string;
       readonly callbacks: TransferCallbacks;
     }) =>
-      dbClient.createBackup(
-        {
-          chatIds: variables.chatId === null ? null : [variables.chatId],
-          includeMedia: variables.includeMedia,
-          appName: variables.appName,
-          appVersion: variables.appVersion,
-        },
-        variables.callbacks,
+      // Tracked until the worker answers, even if Settings closes: the
+      // update prompt waits for it (§12.12).
+      trackLongTask(
+        dbClient.createBackup(
+          {
+            chatIds: variables.chatId === null ? null : [variables.chatId],
+            includeMedia: variables.includeMedia,
+            appName: variables.appName,
+            appVersion: variables.appVersion,
+          },
+          variables.callbacks,
+        ),
       ),
     onSuccess: (outcome) => {
       if (outcome.ok) {
@@ -90,9 +95,11 @@ export function useRestoreBackup() {
       readonly decisions: readonly RestoreDecisionInput[];
       readonly callbacks: TransferCallbacks;
     }) =>
-      dbClient.restoreBackup(
-        { file: variables.file, fileName: variables.file.name, decisions: variables.decisions },
-        variables.callbacks,
+      trackLongTask(
+        dbClient.restoreBackup(
+          { file: variables.file, fileName: variables.file.name, decisions: variables.decisions },
+          variables.callbacks,
+        ),
       ),
     onSuccess: async (outcome) => {
       client.removeQueries({ queryKey: queryKeys.backupEstimates() });

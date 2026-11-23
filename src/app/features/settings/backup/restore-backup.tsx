@@ -72,8 +72,10 @@ export function RestoreBackup() {
   const preview = inspect.data?.ok === true ? inspect.data.value : null;
   const busy = inspect.isPending || restore.isPending;
   const failed = inspect.isError || restore.isError;
+  // Reading the backup and choosing are steps of the restore; the restore
+  // call itself is tracked until it settles (useRestoreBackup).
   const awaitingChoices = preview !== null && restore.data === undefined;
-  useHoldLongTask(busy || awaitingChoices);
+  useHoldLongTask(inspect.isPending || awaitingChoices);
 
   return (
     <div className="flex flex-col gap-3">

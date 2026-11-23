@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { installGateDone } from './install-gate-state';
 import { ImportScreen } from './import-screen';
 import { renderWithProviders } from '../../test/providers';
+import { useIsLongTaskRunning } from '../../hooks/use-long-task';
 import type { DetectReport } from '../../../workers/import-detect';
 
 const detectMock = vi.hoisted(() => vi.fn());
@@ -104,9 +105,16 @@ function beginSuccess(counts: { readonly attachments: number; readonly stored: n
 }
 
 /** Renders the screen and picks the export file. */
-async function renderAndPick(user: ReturnType<typeof userEvent.setup>): Promise<void> {
-  renderWithProviders(<ImportScreen />);
+async function renderAndPick(
+  user: ReturnType<typeof userEvent.setup>,
+): Promise<ReturnType<typeof renderWithProviders>> {
+  const view = renderWithProviders(<ImportScreen />);
   await user.upload(screen.getByLabelText('Choose export file (.zip or .txt)'), pickedFile());
+  return view;
+}
+
+function LongTaskProbe() {
+  return <p>{useIsLongTaskRunning() ? 'task running' : 'no task'}</p>;
 }
 
 /** On the confirm screen: chooses Sara as "me" and starts the import. */
@@ -249,5 +257,34 @@ describe('ImportScreen (§12.8)', () => {
     await user.click(screen.getByRole('button', { name: 'Start import' }));
     await screen.findByText('Import complete');
     expect(screen.queryByText('The import finished before it could be cancelled.')).toBeNull();
+  });
+});
+
+describe('ImportScreen and the update prompt (§12.12)', () => {
+  beforeEach(() => {
+    detectMock.mockReset();
+    beginMock.mockReset();
+    persistedMock.mockResolvedValue(true);
+    installGateDone(true);
+  });
+
+  it('keeps the update prompt away until begin answers, even after leaving (§12.12)', async () => {
+    const user = userEvent.setup();
+    detectMock.mockResolvedValue({ report, suggestedTargetChatId: null });
+    let answer: (value: unknown) => void = () => undefined;
+    beginMock.mockReturnValue(
+      new Promise((resolve) => {
+        answer = resolve;
+      }),
+    );
+    getParticipantsMock.mockResolvedValue([]);
+    const view = await renderAndPick(user);
+    await confirmAsSara(user);
+
+    view.unmount();
+    renderWithProviders(<LongTaskProbe />);
+    expect(screen.getByText('task running')).toBeInTheDocument();
+    answer(beginSuccess({ attachments: 0, stored: 0 }));
+    await screen.findByText('no task');
   });
 });

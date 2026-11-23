@@ -12,7 +12,6 @@ import { useBackupEstimate, useCreateBackup } from '../../../queries/backup-quer
 import { BackupFileActions } from './backup-file-actions';
 import { TransferProgressView } from './transfer-progress';
 import { useTransfer } from './use-transfer';
-import { useHoldLongTask } from '../../../hooks/use-long-task';
 
 function Estimate({ chatId, includeMedia }: { chatId: string | null; includeMedia: boolean }) {
   const estimate = useBackupEstimate(chatId, includeMedia);
@@ -73,7 +72,6 @@ export function MakeBackup() {
   const chats = useChats();
   const create = useCreateBackup();
   const transfer = useTransfer();
-  useHoldLongTask(create.isPending);
   const [chatId, setChatId] = useState<string | null>(null);
   const [includeMedia, setIncludeMedia] = useState(true);
   const scopeId = useId();

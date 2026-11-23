@@ -15,6 +15,7 @@ import type { BeginOutcome } from '../../../../client/import-client';
 import type { ChatId } from '../../../../core/ids';
 import type { ConfirmChoices } from '../import-confirm-step';
 import { useInvalidateImportedChat } from '../../../queries/chat-queries';
+import { trackLongTask } from '../../../hooks/use-long-task';
 
 /** The §12.8 flow states. */
 type ImportStep =
@@ -186,15 +187,18 @@ export function useImportFlow() {
         selfName: choices.selfName,
       });
       const unsubscribe = onImportProgress(() => undefined);
-      void importClient
-        .begin({
+      // Tracked until begin() answers, even if the user leaves the screen:
+      // the update prompt must not offer a reload mid-import (§12.12).
+      void trackLongTask(
+        importClient.begin({
           file,
           fileName: file.name,
           format: report.format,
           title: choices.confirmedTitle,
           isGroup: report.isGroup,
           targetChatId: choices.targetChatId,
-        })
+        }),
+      )
         .then(async (outcome) => {
           unsubscribe();
           if ('code' in outcome) {

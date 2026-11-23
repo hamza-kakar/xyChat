@@ -103,10 +103,11 @@ function renderStep(deps: RenderDeps) {
 export function ImportScreen() {
   const { state, dispatch, runDetect, startImport, cancel } = useImportFlow();
   const navigate = useNavigate();
-  // From the picked file until the report, the import is running: the
-  // update prompt waits (§12.12).
+  // Detecting and confirming are steps of the import, so the update
+  // prompt waits (§12.12); from Start, the worker call itself is tracked
+  // until it answers (useImportFlow).
   const step = state.step.name;
-  useHoldLongTask(step === 'detecting' || step === 'confirm' || step === 'progress');
+  useHoldLongTask(step === 'detecting' || step === 'confirm');
   return renderStep({
     state,
     dispatch,
