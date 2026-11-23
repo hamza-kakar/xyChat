@@ -5,7 +5,7 @@
  * in the device's time zone.
  */
 import { en } from '../../i18n/en';
-import { formatString } from '../../i18n/format-string';
+import { formatCount, formatString } from '../../i18n/format-string';
 import { SettingsSection } from '../../components/settings-section';
 import { useImports } from '../../queries/chat-queries';
 import type { ImportRecordView } from '../../../client/db-client';
@@ -44,7 +44,7 @@ function ImportItem({ record }: { readonly record: ImportRecordView }) {
         {' · '}
         {warnings === 0
           ? en.chatInfo.importNoWarnings
-          : formatString(en.chatInfo.importWarnings, { count: warnings })}
+          : formatCount(warnings, en.chatInfo.importWarnings)}
       </span>
     </li>
   );

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatString } from './format-string';
+import { formatCount, formatString } from './format-string';
 
 describe('formatString', () => {
   it('replaces known placeholders', () => {
@@ -16,5 +16,15 @@ describe('formatString', () => {
 
   it('handles a template without placeholders', () => {
     expect(formatString('No placeholders', {})).toBe('No placeholders');
+  });
+});
+
+describe('formatCount', () => {
+  const templates = { one: '{count} file in {where}', other: '{count} files in {where}' };
+
+  it('picks the singular for one and the plural otherwise', () => {
+    expect(formatCount(1, templates, { where: 'A' })).toBe('1 file in A');
+    expect(formatCount(0, templates, { where: 'A' })).toBe('0 files in A');
+    expect(formatCount(2, templates, { where: 'A' })).toBe('2 files in A');
   });
 });

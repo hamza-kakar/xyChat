@@ -6,7 +6,7 @@
 import { useMemo, useState } from 'react';
 import { APP_NAME } from '../../config';
 import { en } from '../../i18n/en';
-import { formatBytes, formatString } from '../../i18n/format-string';
+import { formatBytes, formatCount, formatString } from '../../i18n/format-string';
 import { Sheet, SheetButton } from '../../components/sheet';
 import { SettingsSection } from '../../components/settings-section';
 import { useChats } from '../../queries/chat-queries';
@@ -115,7 +115,7 @@ function OrphanCleanup() {
   } else if (find.isError || remove.isError) {
     status = en.settings.storage.failed;
   } else if (remove.data !== undefined) {
-    status = formatString(en.settings.storage.cleanUpDone, { count: remove.data });
+    status = formatCount(remove.data, en.settings.storage.cleanUpDone);
   } else if (find.data?.length === 0) {
     status = en.settings.storage.cleanUpNone;
   }
@@ -152,7 +152,7 @@ function OrphanCleanup() {
         }}
       >
         <p className="text-text-muted text-sm">
-          {formatString(en.settings.storage.cleanUpBody, { count: confirming?.length ?? 0 })}
+          {formatCount(confirming?.length ?? 0, en.settings.storage.cleanUpBody)}
         </p>
         <button
           type="button"

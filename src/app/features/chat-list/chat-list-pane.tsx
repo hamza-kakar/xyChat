@@ -66,10 +66,10 @@ export function ChatListPane({ asSidebar }: ChatListPaneProps) {
           </Link>
           <Link
             to="/import"
-            className="text-accent flex min-h-11 items-center gap-1 rounded-lg px-3 font-semibold"
+            aria-label={en.chatList.importButton}
+            className="text-accent flex min-h-11 min-w-11 items-center justify-center rounded-full"
           >
-            <PlusIcon />
-            {en.chatList.importButton}
+            <PlusIcon className="h-6 w-6" />
           </Link>
         </nav>
       </header>

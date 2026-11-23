@@ -3,7 +3,7 @@
  * (no chart library), and the "This is me" choice (§12.7).
  */
 import { en } from '../../i18n/en';
-import { formatString } from '../../i18n/format-string';
+import { formatCount } from '../../i18n/format-string';
 import { SettingsSection } from '../../components/settings-section';
 import { useParticipants, useSetSelf } from '../../queries/chat-queries';
 import type { ChatId, ParticipantId } from '../../../core/ids';
@@ -34,9 +34,8 @@ export function ParticipantsSection({ chatId, selfId }: ParticipantsSectionProps
           {sorted.map((person) => (
             <li
               key={person.id}
-              aria-label={formatString(en.chatInfo.participantShare, {
+              aria-label={formatCount(person.messageCount, en.chatInfo.participantShare, {
                 name: person.displayName,
-                count: person.messageCount.toLocaleString(),
               })}
               className="flex flex-col gap-1"
             >
@@ -45,9 +44,7 @@ export function ParticipantsSection({ chatId, selfId }: ParticipantsSectionProps
                   {person.displayName}
                 </span>
                 <span className="text-text-muted shrink-0">
-                  {formatString(en.chatInfo.participantCount, {
-                    count: person.messageCount.toLocaleString(),
-                  })}
+                  {formatCount(person.messageCount, en.chatInfo.participantCount)}
                 </span>
               </div>
               <div
