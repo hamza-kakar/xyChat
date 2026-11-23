@@ -123,6 +123,50 @@ function updateChatAggregates(db: SqliteDatabase, chatId: string, now: string): 
   );
 }
 
+/** The commit's timestamp format: ISO-8601 UTC without milliseconds. */
+export function commitTimestamp(): string {
+  return new Date().toISOString().replace(/\.\d{3}Z$/u, 'Z');
+}
+
+/**
+ * Applies an import inside the CALLER's transaction (§9.2 step 10): the
+ * restore path (§10.6) commits several chats atomically with it.
+ *
+ * @param db The open database, inside a transaction.
+ * @param input The assembled commit inputs (import row already in_progress).
+ * @param now The commit timestamp ({@link commitTimestamp}).
+ * @returns The counts for the import report.
+ */
+export function applyImportCommit(
+  db: SqliteDatabase,
+  input: ImportCommitInput,
+  now: string,
+): ImportCommitResult {
+  const chatId = resolveTargetChat(db, input, now);
+  const stored = loadStoredEntries(db, chatId);
+  const counts = applyPlan(db, input, chatId, stored);
+  updateChatAggregates(db, chatId, now);
+  const report: ImportReport = {
+    ...input.report,
+    messagesAdded: counts.messagesInserted,
+    duplicatesSkipped: counts.duplicatesSkipped,
+    mediaUpgraded: counts.mediaUpgraded,
+  };
+  db.run("UPDATE imports SET status = 'complete', finished_at = ?, report_json = ? WHERE id = ?", [
+    now,
+    JSON.stringify(report),
+    input.importId,
+  ]);
+  return {
+    chatId,
+    importId: input.importId,
+    messagesInserted: counts.messagesInserted,
+    duplicatesSkipped: counts.duplicatesSkipped,
+    attachmentsInserted: input.attachments.length,
+    mediaUpgraded: counts.mediaUpgraded,
+  };
+}
+
 /**
  * Commits an import in ONE transaction (§9.2 step 10, §8.10 semantics).
  *
@@ -132,30 +176,6 @@ function updateChatAggregates(db: SqliteDatabase, chatId: string, now: string): 
  * @returns The counts for the import report.
  */
 export function commitImport(db: SqliteDatabase, input: ImportCommitInput): ImportCommitResult {
-  const now = new Date().toISOString().replace(/\.\d{3}Z$/u, 'Z');
-
-  return db.transaction(() => {
-    const chatId = resolveTargetChat(db, input, now);
-    const stored = loadStoredEntries(db, chatId);
-    const counts = applyPlan(db, input, chatId, stored);
-    updateChatAggregates(db, chatId, now);
-    const report: ImportReport = {
-      ...input.report,
-      messagesAdded: counts.messagesInserted,
-      duplicatesSkipped: counts.duplicatesSkipped,
-      mediaUpgraded: counts.mediaUpgraded,
-    };
-    db.run(
-      "UPDATE imports SET status = 'complete', finished_at = ?, report_json = ? WHERE id = ?",
-      [now, JSON.stringify(report), input.importId],
-    );
-    return {
-      chatId,
-      importId: input.importId,
-      messagesInserted: counts.messagesInserted,
-      duplicatesSkipped: counts.duplicatesSkipped,
-      attachmentsInserted: input.attachments.length,
-      mediaUpgraded: counts.mediaUpgraded,
-    };
-  });
+  const now = commitTimestamp();
+  return db.transaction(() => applyImportCommit(db, input, now));
 }
