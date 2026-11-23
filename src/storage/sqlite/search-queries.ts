@@ -158,19 +158,32 @@ export function searchMessages(db: SqliteDatabase, q: SearchQuery): SearchPage {
 export function listMatchingSeqs(db: SqliteDatabase, q: InChatSearchQuery): MatchingSeqs {
   const cap = q.query.length < 3 ? LIKE_RESULT_CAP : IN_CHAT_MATCH_CAP;
   const { conditions, params, joins } = searchConditions({ ...q, limit: cap, cursor: null });
+  const where = conditions.join(' AND ');
   // One packed row: per-row results cost a wasm-bridge crossing each,
   // which dominated large match lists.
+  if (joins === '') {
+    // LIKE fallback: the (chat_id, seq) index walks newest first and stops
+    // after cap + 1 rows.
+    const rows = db.selectArrays(
+      `SELECT group_concat(seq, ',' ORDER BY seq) FROM (
+         SELECT m.seq FROM messages m WHERE ${where} ORDER BY m.seq DESC LIMIT ?
+       )`,
+      [...params, cap + 1],
+    );
+    return newestOf(unpackIntegers(rows[0]?.[0]), cap);
+  }
+  // FTS: matches arrive in FTS order, and sorting them by seq in SQL costs
+  // more than the scan itself, so the newest are picked here instead.
   const rows = db.selectArrays(
-    `SELECT group_concat(seq, ',' ORDER BY seq) FROM (
-       SELECT m.seq FROM messages m ${joins}
-       WHERE ${conditions.join(' AND ')}
-       ORDER BY m.seq DESC
-       LIMIT ?
-     )`,
-    [...params, cap + 1],
+    `SELECT group_concat(m.seq, ',') FROM messages m ${joins} WHERE ${where}`,
+    params,
   );
-  const all = unpackIntegers(rows[0]?.[0]);
-  // `all` is ascending; with one extra row fetched, the oldest is the extra.
-  const isCapped = all.length > cap;
-  return { seqs: isCapped ? all.slice(1) : all, isCapped };
+  const all = unpackIntegers(rows[0]?.[0]).sort((a, b) => a - b);
+  return newestOf(all, cap);
+}
+
+/** The newest `cap` seqs of an ascending list, and whether any were cut. */
+function newestOf(ascending: readonly number[], cap: number): MatchingSeqs {
+  const isCapped = ascending.length > cap;
+  return { seqs: isCapped ? ascending.slice(-cap) : [...ascending], isCapped };
 }
