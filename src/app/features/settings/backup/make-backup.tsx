@@ -122,7 +122,7 @@ export function MakeBackup() {
       </div>
       <Estimate chatId={chatId} includeMedia={includeMedia} />
       {create.isPending ? (
-        <TransferProgressView transfer={transfer} canCancel />
+        <TransferProgressView transfer={transfer} firstPhase="snapshot" canCancel />
       ) : (
         <button
           type="button"
