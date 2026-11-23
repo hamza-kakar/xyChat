@@ -9,6 +9,7 @@ import { asChatId } from '../../core/ids';
 import { readStoredFile } from '../../platform/media-url';
 import { useInvalidateImportedChat } from './chat-queries';
 import { queryKeys } from './keys';
+import { logger } from '../logging/logger';
 
 /** Progress and cancellation for a running backup or restore. */
 export interface TransferCallbacks {
@@ -44,6 +45,17 @@ export function useCreateBackup() {
         },
         variables.callbacks,
       ),
+    onSuccess: (outcome) => {
+      if (outcome.ok) {
+        logger.info('backup.created', {
+          chats: outcome.value.chatCount,
+          mediaFiles: outcome.value.mediaFiles,
+          bytes: outcome.value.bytes,
+        });
+      } else {
+        logger.warn('backup.failed', { reason: outcome.error.code });
+      }
+    },
   });
 }
 
@@ -58,7 +70,14 @@ export function useBackupFile(path: string) {
 
 /** Checks a picked backup and previews its chats. */
 export function useInspectBackup() {
-  return useMutation({ mutationFn: (file: File) => dbClient.inspectBackup(file) });
+  return useMutation({
+    mutationFn: (file: File) => dbClient.inspectBackup(file),
+    onSuccess: (outcome) => {
+      if (!outcome.ok) {
+        logger.warn('restore.rejected', { reason: outcome.error.code });
+      }
+    },
+  });
 }
 
 /** Restores the chosen chats; every restored or replaced chat refreshes. */
@@ -78,7 +97,10 @@ export function useRestoreBackup() {
     onSuccess: async (outcome) => {
       client.removeQueries({ queryKey: queryKeys.backupEstimates() });
       if (outcome.ok) {
+        logger.info('restore.done', { chats: outcome.value.length });
         await Promise.all(outcome.value.map((chat) => invalidateChat(asChatId(chat.chatId))));
+      } else {
+        logger.warn('restore.failed', { reason: outcome.error.code });
       }
     },
   });
