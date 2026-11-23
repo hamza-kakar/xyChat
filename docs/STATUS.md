@@ -4,7 +4,11 @@ Progress tracker for waChatBack. Updated in every PR.
 
 ## Current milestone
 
-M9 — PWA hardening and release (branch `m9-pwa-release`, PR open).
+All milestones are merged; M9 — PWA hardening and release: merged (PR #12).
+
+After M9: zip exports over 200 MB are accepted (the text cap now applies to
+the chat text only), and the project is MIT-licensed. The real-iPhone run of
+`docs/TESTING.md` is in progress.
 
 M8 — Backup and restore: merged (PR #11).
 

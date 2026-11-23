@@ -98,5 +98,6 @@ specification and `docs/STATUS.md` for progress.
 
 ## License
 
-No license has been chosen yet, so all rights are reserved. The licenses of
-the bundled third-party packages are listed in Settings → About.
+MIT — see [LICENSE](LICENSE). The licenses of the bundled third-party
+packages are listed in Settings → About. One of them, `codec-parser` (used by
+the Opus voice-note fallback), is LGPL-3.0 and ships unmodified.

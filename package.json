@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "description": "Private, offline viewer for exported WhatsApp chats. Your chats never leave this device.",
+  "license": "MIT",
   "type": "module",
   "packageManager": "pnpm@12.21.0",
   "engines": {
