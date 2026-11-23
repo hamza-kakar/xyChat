@@ -18,12 +18,14 @@ toast can be put off, and which screens get launch images.
   unit-tested with a fake. Reload calls the plugin's `updateSW(true)`
   (skip waiting, reload once the new worker controls the page); it is
   only reachable from the button.
-- **What "running" means.** A long-task counter (`useHoldLongTask`) is
-  held by the import screen from the picked file until the report (the
-  detect and confirm steps are import phases in §9.1), by backup while it
-  runs, and by restore from reading the picked backup until its report.
-  Backup is included even though §12.12 names only import and restore:
-  reloading mid-backup loses the work the same way.
+- **What "running" means.** A long-task counter tracks the worker calls
+  themselves (`trackLongTask` around import `begin`, `createBackup` and
+  `restoreBackup`) until they settle, so leaving the screen mid-job keeps
+  the prompt away. Screens also hold it for job steps without a running
+  call: the import's detect and confirm steps (§9.1 lists them as import
+  phases) and reading and choosing in a restore. Backup is included even
+  though §12.12 names only import and restore: reloading mid-backup loses
+  the work the same way.
 - **"Later" dismisses for the session.** The toast has Later as well as
   Reload; the waiting worker activates on the next launch anyway, once
   every window has closed.

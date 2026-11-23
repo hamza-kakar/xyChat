@@ -14,8 +14,8 @@ M8 — Backup and restore: merged (PR #11).
   "Update available" toast offers Reload and Later. Nothing reloads on
   its own; Reload activates the waiting worker and reloads once it takes
   control. The toast waits while an import (picked file → report), a
-  backup or a restore (picked backup → report) runs, and sits under the
-  lock screen.
+  backup or a restore (picked backup → report) runs, also when the user
+  leaves the screen mid-job, and sits under the lock screen.
 - iOS launch images (§14): the app badge on each theme's surface color
   for the 11 iPhone screens that run iOS 17+, light and dark, generated
   with the icons and linked with exact device media queries.
@@ -33,7 +33,7 @@ M8 — Backup and restore: merged (PR #11).
 - README final: install guide, importing, updates, privacy, limitations.
   `docs/TESTING.md` gains update, launch-image and large-text checks and
   a run log for on-device results.
-- Local gates: 706 unit, 95 browser, 34 Chromium e2e. Bundle 162.9 kB JS
+- Local gates: 708 unit, 95 browser, 34 Chromium e2e. Bundle 162.9 kB JS
   / 7.0 kB CSS gzip (budgets 170 / 25).
 
 ## Previously (M8)
