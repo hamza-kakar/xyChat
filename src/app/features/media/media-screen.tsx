@@ -10,6 +10,7 @@ import { asChatId, type ChatId } from '../../../core/ids';
 import { en } from '../../i18n/en';
 import { BackIcon } from '../../components/icons';
 import { useFocusHeading } from '../../hooks/use-focus-heading';
+import { useLockPageScroll } from '../../hooks/use-lock-page-scroll';
 import { useChat } from '../../queries/chat-queries';
 import { GalleryTab } from './gallery-tab';
 import { LinksTab } from './links-tab';
@@ -19,6 +20,7 @@ import { MEDIA_TABS, parseTab, type MediaTab } from './media-tabs';
 const ChatIdParam = v.pipe(v.string(), v.regex(/^[0-9a-f-]{8,64}$/iu));
 
 export function MediaScreen() {
+  useLockPageScroll();
   const params = useParams();
   const [search] = useSearchParams();
   const parsed = v.safeParse(ChatIdParam, params['chatId']);

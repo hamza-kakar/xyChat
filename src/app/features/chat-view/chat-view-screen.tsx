@@ -22,6 +22,7 @@ import type { ChatView, WindowMessage } from '../../../client/db-client';
 import { useBookmarks } from '../../queries/bookmark-queries';
 import { MessageList, type JumpRequest } from './message-list';
 import { ChatHeader } from './chat-header';
+import { useLockPageScroll } from '../../hooks/use-lock-page-scroll';
 import { InChatSearch } from './in-chat-search';
 import { JumpToDateSheet } from './jump-to-date-sheet';
 import { SelfBanner } from './self-banner';
@@ -165,6 +166,7 @@ function ChatViewBody({
   readonly linkedSeq: number | null;
   readonly initialQuery: string | null;
 }) {
+  useLockPageScroll();
   const participants = useParticipants(chat.id);
   const bookmarks = useBookmarks(chat.id);
   const headingRef = useFocusHeading<HTMLHeadingElement>();

@@ -6,7 +6,7 @@
  * placeholder. The first paint lands on the restored position, or on the
  * last message.
  */
-import { useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { formatDaySeparator } from '../../../core/dates';
 import { en } from '../../i18n/en';
@@ -26,6 +26,9 @@ const OVERSCAN_ROWS = 10;
 /** Rows of data loaded beyond the rendered range, so neighbors (day
  * separators, run grouping) are known before they scroll in. */
 const PREFETCH_ROWS = 100;
+
+/** How long the floating day pill stays after scrolling stops (ms). */
+const DAY_PILL_LINGER_MS = 1500;
 
 /** A request to scroll a message into the middle of the view. */
 export interface JumpRequest {
@@ -115,6 +118,7 @@ export function MessageList(props: MessageListProps) {
     }
   }, [jump, jumpLoaded, virtualizer]);
 
+  const isScrolling = useRecentScroll(scrollRef);
   const topSeq = virtualizer.range?.startIndex;
   const endSeq = virtualizer.range?.endIndex;
   const below = positioned.current && endSeq !== undefined ? total - 1 - endSeq : 0;
@@ -130,7 +134,7 @@ export function MessageList(props: MessageListProps) {
       {topMessage === undefined ? null : (
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-2 z-10 flex justify-center"
+          className={`pointer-events-none absolute inset-x-0 top-2 z-10 flex justify-center ${isScrolling ? 'visible opacity-100' : 'invisible opacity-0 transition-[opacity,visibility] duration-300'}`}
         >
           <span className="bg-surface-raised/95 text-text-muted rounded-full px-3 py-1 text-xs font-medium shadow">
             {formatDaySeparator(topMessage.tsLocal, now, {
@@ -190,6 +194,49 @@ export function MessageList(props: MessageListProps) {
       ) : null}
     </div>
   );
+}
+
+/** True while the user scrolls the element and for a moment after. The
+ * floating day pill uses it so it does not sit over the top message once
+ * the list is still. */
+function useRecentScroll(ref: RefObject<HTMLElement | null>): boolean {
+  const [isScrolling, setScrolling] = useState(false);
+  useEffect(() => {
+    const element = ref.current;
+    if (element === null) {
+      return undefined;
+    }
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    // The landing scroll on open is not the user's: wait for a first
+    // touch, wheel, pointer or key on the list.
+    let hasUserInput = false;
+    const onInput = (): void => {
+      hasUserInput = true;
+    };
+    const inputEvents = ['touchstart', 'wheel', 'pointerdown', 'keydown'] as const;
+    for (const type of inputEvents) {
+      element.addEventListener(type, onInput, { passive: true });
+    }
+    const onScroll = (): void => {
+      if (!hasUserInput) {
+        return;
+      }
+      setScrolling(true);
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        setScrolling(false);
+      }, DAY_PILL_LINGER_MS);
+    };
+    element.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      element.removeEventListener('scroll', onScroll);
+      for (const type of inputEvents) {
+        element.removeEventListener(type, onInput);
+      }
+      clearTimeout(timer);
+    };
+  }, [ref]);
+  return isScrolling;
 }
 
 /** Union of two block lists, keeping order and dropping repeats. */

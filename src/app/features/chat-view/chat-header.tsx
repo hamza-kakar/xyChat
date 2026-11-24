@@ -1,12 +1,13 @@
 /**
  * Chat view header: back, title, participant count for
- * groups, and the search, jump-to-date, media and info buttons.
+ * groups, and the search, jump-to-date and media buttons. Tapping the
+ * title opens chat info.
  */
 import type { Ref } from 'react';
 import { Link } from 'react-router';
 import { en } from '../../i18n/en';
 import { formatString } from '../../i18n/format-string';
-import { BackIcon, CalendarIcon, GalleryIcon, InfoIcon, SearchIcon } from '../../components/icons';
+import { BackIcon, CalendarIcon, GalleryIcon, SearchIcon } from '../../components/icons';
 
 /** Props for {@link ChatHeader}. */
 export interface ChatHeaderProps {
@@ -42,9 +43,10 @@ export function ChatHeader({
         <Link to="/" aria-label={en.chatView.backLabel} className={`${iconButtonClass} md:hidden`}>
           <BackIcon className="h-6 w-6 rtl:-scale-x-100" />
         </Link>
-        {/* min-w-32: at large text sizes the actions wrap below the title
-            instead of squeezing it away. */}
-        <div className="flex min-w-32 flex-1 flex-col ps-2 md:ps-3">
+        {/* The title opens chat info, so the actions fit on the same row.
+            min-w-20: at large text sizes they wrap below the title instead
+            of squeezing it away. */}
+        <div className="relative flex min-w-20 flex-1 flex-col ps-2 md:ps-3">
           <h1
             ref={headingRef}
             tabIndex={-1}
@@ -54,12 +56,17 @@ export function ChatHeader({
             {title}
           </h1>
           {participantCount === null ? null : (
-            <p className="text-text-muted text-xs">
+            <p className="text-text-muted truncate text-xs">
               {formatString(en.chatView.participants, { count: participantCount })}
             </p>
           )}
+          <Link
+            to={`/chat/${chatId}/info`}
+            aria-label={en.chatInfo.infoButton}
+            className="absolute inset-0 rounded-lg"
+          />
         </div>
-        <div className="ms-auto flex items-center gap-1">
+        <div className="ms-auto flex items-center">
           <button
             ref={searchButtonRef}
             type="button"
@@ -87,13 +94,6 @@ export function ChatHeader({
             className={iconButtonClass}
           >
             <GalleryIcon className="h-6 w-6" />
-          </Link>
-          <Link
-            to={`/chat/${chatId}/info`}
-            aria-label={en.chatInfo.infoButton}
-            className={iconButtonClass}
-          >
-            <InfoIcon className="h-6 w-6" />
           </Link>
         </div>
       </div>

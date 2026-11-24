@@ -15,8 +15,9 @@ xyChat opens the chats you export from WhatsApp (**Export Chat**) and shows them
 the way you remember them: bubbles, photos, voice notes and search, even years
 later and in airplane mode.
 
-There is no server and no account. Everything is stored in your browser's
-private storage, so **your chats never leave your device.**
+xyChat is a web app you install on your phone or computer (a PWA). There is
+no server and no account: your chats are stored inside the app on your
+device, so **they never leave it.**
 
 **Open the app:** <https://hamza-kakar.github.io/xyChat/>
 
@@ -82,11 +83,14 @@ Requires iOS 17 or later.
 2. Tap **Share → Add to Home Screen → Add**.
 3. Open xyChat from your Home Screen.
 
-Install it before importing: on iPhone, a Home Screen app has its own storage,
-separate from Safari tabs.
+Install it before importing: on iPhone, the Home Screen app keeps its own
+chats, separate from Safari, so chats imported in a Safari tab won't appear in
+the app.
 
-On Android or a computer, open the same address in a current browser and use
-its **Install** option, or just use it in a tab.
+## Install on Android or a computer
+
+Open the same address in Chrome or Edge and choose **Install app** (in the
+menu or the address bar). You can also use it in a normal tab.
 
 ## Import a chat
 
@@ -101,8 +105,8 @@ and import it the same way (pick **Sam** as yourself).
 
 ## Privacy
 
-- No network access for your data: a strict Content Security Policy lets the
-  app load only its own files.
+- Your chats are never sent anywhere: a strict Content Security Policy lets
+  the app load only its own files.
 - No accounts, cloud sync, analytics or ads.
 - The PIN hides the app; it is not encryption. Backup files are not encrypted
   either.
@@ -110,10 +114,11 @@ and import it the same way (pick **Sam** as yourself).
 
 ## FAQ
 
-**Does it upload my chats?** No. There is no server.
+**Does it upload my chats?** No. There is no server, and the app works fully
+offline once installed.
 
-**What if I delete the app?** Its storage goes with it. Keep your exports or a
-backup.
+**What if I delete the app?** Your imported chats are deleted with it. Keep
+your exports or a backup file.
 
 **Why are reactions and quoted replies missing?** WhatsApp's export doesn't
 include them.
@@ -136,7 +141,7 @@ pnpm verify    # everything CI runs
 ```
 
 Requires Node 24+ and pnpm 12+. Built with React, TypeScript and SQLite
-(WebAssembly) in the browser's private file system. See
+(WebAssembly), stored in the Origin Private File System (OPFS). See
 [CONTRIBUTING.md](CONTRIBUTING.md), and report security issues privately as
 described in [SECURITY.md](SECURITY.md).
 
