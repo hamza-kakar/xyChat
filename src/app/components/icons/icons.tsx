@@ -283,13 +283,3 @@ export function SettingsIcon(props: IconProps) {
     </Svg>
   );
 }
-
-/** A lowercase i in a circle: information. */
-export function InfoIcon(props: IconProps) {
-  return (
-    <Svg {...props}>
-      <circle cx="12" cy="12" r="8.5" />
-      <path d="M12 11v5.5M12 7.75v.5" />
-    </Svg>
-  );
-}
