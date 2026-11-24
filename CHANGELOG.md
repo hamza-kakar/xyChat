@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/hamza-kakar/xyChat/compare/v1.0.1...v1.0.2) (2026-11-24)
+
+
+### Bug Fixes
+
+* **chat-view:** sharper header on iPhone, one-row header, quieter day pill ([#23](https://github.com/hamza-kakar/xyChat/issues/23)) ([10969e9](https://github.com/hamza-kakar/xyChat/commit/10969e9bd1d0431c42fd43cb5952bfef683628a7))
+
 ## [1.0.1](https://github.com/hamza-kakar/xyChat/compare/v1.0.0...v1.0.1) (2026-11-23)
 
 
